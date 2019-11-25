@@ -257,9 +257,8 @@ public class QSuitsEntry {
         } else if ("baidu".equals(source)) {
             return getBaiduBosContainer();
         } else if ("local".equals(source)) {
-//            if (commonParams.isSelfUpload()) return getFilepathContainer();
-//            else
-                return getLocalFileContainer();
+            if (commonParams.isSelfUpload()) return getDefaultFileContainer();
+            else return getLocalFileContainer();
         } else {
             throw new IOException("no such datasource: " + source);
         }
@@ -287,19 +286,16 @@ public class QSuitsEntry {
         return localFileContainer;
     }
 
-//    public FilepathContainer getFilepathContainer() throws IOException {
-//        String filePath = commonParams.getPath();
-//        String parse = commonParams.getParse();
-//        String separator = commonParams.getSeparator();
-//        String addKeyPrefix = commonParams.getAddKeyPrefix();
-//        String rmKeyPrefix = commonParams.getRmKeyPrefix();
-//        Map<String, String> linesMap = commonParams.getLinesMap();
-//        FilepathContainer filepathContainer = new FilepathContainer(filePath, parse, separator, addKeyPrefix,
-//                rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
-//        filepathContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
-//        filepathContainer.setRetryTimes(retryTimes);
-//        return filepathContainer;
-//    }
+    public DefaultFileContainer getDefaultFileContainer() throws IOException {
+        String path = commonParams.getPath();
+        Map<String, Map<String, String>> directoriesMap = commonParams.getPrefixesMap();
+        List<String> antiDirectories = commonParams.getAntiPrefixes();
+        DefaultFileContainer defaultFileContainer = new DefaultFileContainer(path, directoriesMap, antiDirectories,
+                indexMap, null, unitLen, threads);
+        defaultFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
+        defaultFileContainer.setRetryTimes(retryTimes);
+        return defaultFileContainer;
+    }
 
     public QiniuQosContainer getQiniuQosContainer() throws IOException {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
@@ -441,7 +437,7 @@ public class QSuitsEntry {
             ParamsUtils.checked(strictError, "f-strict-error", "(true|false)");
             List<String> fields = ConvertingUtils.getOrderedFields(indexMap, rmFields);
             FilterProcess<Map<String, String>> filterProcessor;
-            if ("true".equals(strictError)) {
+            if ("true".equals(strictError) || processor == null) {
                 filterProcessor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath) {
                     @Override
                     protected ITypeConvert<Map<String, String>, String> newPersistConverter() throws IOException {

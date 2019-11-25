@@ -5,7 +5,7 @@ import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
@@ -81,7 +81,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     }
 
     @Override
-    protected ILister<FileInfo> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
+    protected IPrefixLister<FileInfo> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getQiniuMarker(start);
         return new QiniuLister(new BucketManager(Auth.create(accessKey, secretKey), configuration.clone()), bucket,
                 prefix, marker, end, unitLen);

@@ -7,12 +7,12 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.util.List;
 
-public class TenLister implements ILister<COSObjectSummary> {
+public class TenLister implements IPrefixLister<COSObjectSummary> {
 
     private COSClient cosClient;
     private ListObjectsRequest listObjectsRequest;

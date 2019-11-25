@@ -12,7 +12,7 @@ import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
@@ -106,7 +106,7 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
     }
 
     @Override
-    protected ILister<S3ObjectSummary> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
+    protected IPrefixLister<S3ObjectSummary> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
 //        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
 //                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey)))
 //                .withRegion(region)

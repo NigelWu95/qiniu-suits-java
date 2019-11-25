@@ -8,7 +8,7 @@ import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
@@ -82,7 +82,7 @@ public class HuaweiObsContainer extends CloudStorageContainer<ObsObject, Buffere
     }
 
     @Override
-    protected ILister<ObsObject> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
+    protected IPrefixLister<ObsObject> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
         return new HuaweiLister(new ObsClient(accessKeyId, accessKeySecret, configuration), bucket, prefix, marker, end, unitLen);
     }

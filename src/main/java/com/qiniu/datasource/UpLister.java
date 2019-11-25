@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.JsonUtils;
@@ -15,7 +15,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UpLister implements ILister<FileItem> {
+public class UpLister implements IPrefixLister<FileItem> {
 
     private UpYunClient upYunClient;
     private final String bucket;

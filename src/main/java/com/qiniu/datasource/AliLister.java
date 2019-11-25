@@ -7,12 +7,12 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.util.List;
 
-public class AliLister implements ILister<OSSObjectSummary> {
+public class AliLister implements IPrefixLister<OSSObjectSummary> {
 
     private OSSClient ossClient;
     private ListObjectsRequest listObjectsRequest;

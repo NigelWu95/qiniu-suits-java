@@ -6,14 +6,6 @@ import java.util.List;
 
 public interface ILister<E> {
 
-    String getBucket();
-
-    String getPrefix();
-
-    void setMarker(String marker);
-
-    String getMarker();
-
     void setEndPrefix(String endPrefix);
 
     String getEndPrefix();
@@ -25,8 +17,6 @@ public interface ILister<E> {
     void listForward() throws SuitsException;
 
     boolean hasNext();
-
-    boolean hasFutureNext() throws SuitsException;
 
     List<E> currents();
 

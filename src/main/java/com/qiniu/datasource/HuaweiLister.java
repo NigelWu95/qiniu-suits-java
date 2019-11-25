@@ -6,13 +6,13 @@ import com.obs.services.model.ListObjectsRequest;
 import com.obs.services.model.ObjectListing;
 import com.obs.services.model.ObsObject;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.io.IOException;
 import java.util.List;
 
-public class HuaweiLister implements ILister<ObsObject> {
+public class HuaweiLister implements IPrefixLister<ObsObject> {
 
     private ObsClient obsClient;
     private ListObjectsRequest listObjectsRequest;

@@ -7,12 +7,12 @@ import com.baidubce.services.bos.model.BosObjectSummary;
 import com.baidubce.services.bos.model.ListObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsResponse;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.util.List;
 
-public class BaiduLister implements ILister<BosObjectSummary> {
+public class BaiduLister implements IPrefixLister<BosObjectSummary> {
 
     private BosClient bosClient;
     private ListObjectsRequest listObjectsRequest;

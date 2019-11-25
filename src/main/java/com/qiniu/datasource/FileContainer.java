@@ -3,8 +3,8 @@ package com.qiniu.datasource;
 import com.google.gson.JsonObject;
 import com.qiniu.common.JsonRecorder;
 import com.qiniu.common.QiniuException;
+import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.*;
-import com.qiniu.model.local.FileInfo;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.util.*;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import static com.qiniu.entry.CommonParams.lineFormats;
 
-public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister, IResultOutput<W>, T> {
+public abstract class FileContainer<E, W, T> implements IDataSource<IFileDirLister<E, File>, IResultOutput<W>, T> {
 
     static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
     static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
@@ -34,7 +34,6 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
     static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
 
     protected String path;
-    protected List<FileInfo> totalFileInfoList;
     protected String transferPath = null;
     protected int leftTrimSize = 0;
     protected String realPath;
@@ -54,6 +53,7 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
     protected List<String> fields;
     protected ExecutorService executorPool;
     protected ILineProcess<T> processor; // 定义的资源处理器
+    protected ConcurrentMap<String, IFileDirLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
     protected ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
     protected ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
     private boolean stopped;
@@ -101,9 +101,9 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
         this.processor = processor;
     }
 
-    protected abstract ITypeConvert<FileInfo, T> getNewConverter() throws IOException;
+    protected abstract ITypeConvert<E, T> getNewConverter() throws IOException;
 
-    protected abstract ITypeConvert<FileInfo, String> getNewStringConverter() throws IOException;
+    protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
     private void setTransferPathAndLeftTrimSize() throws IOException {
         if (path.indexOf(FileUtils.pathSeparator + FileUtils.currentPath) > 0 ||
@@ -197,18 +197,47 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
         }
     }
 
+    protected abstract IFileDirLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
+
+    IFileDirLister<E, File> generateLister(File directory) throws IOException {
+        return generateLister(directory, 0);
+    }
+
+    private IFileDirLister<E, File> generateLister(File directory, int limit) throws IOException {
+        limit = limit > 0 ? limit : unitLen;
+        int retry = retryTimes;
+        Map<String, String> map = directoriesMap.get(directory.getPath());
+        String start;
+        String end;
+        if (map == null) {
+            start = end = null;
+        } else {
+            start = map.get("start");
+            end = map.get("end");
+        }
+        while (true) {
+            try {
+                return getLister(directory, start, end, limit);
+            } catch (SuitsException e) {
+                retry = HttpRespUtils.listExceptionWithRetry(e, retry);
+                try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                errorLogger.error("generate lister by directory:{} retrying...", directory, e);
+            }
+        }
+    }
+
     private JsonRecorder recorder = new JsonRecorder();
 
-    public void export(FileInfoLister lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
-        ITypeConvert<FileInfo, T> converter = getNewConverter();
-        ITypeConvert<FileInfo, String> stringConverter = null;
+    public void export(IFileDirLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+        ITypeConvert<E, T> converter = getNewConverter();
+        ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
             stringConverter = getNewStringConverter();
             saver.preAddWriter("failed");
         }
         List<T> convertedList;
         List<String> writeList;
-        List<FileInfo> objects = lister.currents();
+        List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
         Map<String, String> map = directoriesMap.get(lister.getName());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
@@ -253,7 +282,7 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
-    private void listing(FileInfoLister lister) {
+    private void listing(IFileDirLister<E, File> lister) {
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
@@ -348,21 +377,21 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
 
     private List<File> directoriesAfterListerRun(File directory) {
         try {
-            FileInfoLister fileInfoLister = new FileInfoLister(directory, true, transferPath, leftTrimSize, null, null, unitLen);
-            if (fileInfoLister.hasNext() || fileInfoLister.getDirectories() != null) {
-                listing(fileInfoLister);
-                if (fileInfoLister.getDirectories() == null || fileInfoLister.getDirectories().size() <= 0) {
+            IFileDirLister<E, File> lister = generateLister(directory);
+            if (lister.hasNext() || lister.getDirectories() != null) {
+                listing(lister);
+                if (lister.getDirectories() == null || lister.getDirectories().size() <= 0) {
                     return null;
                 } else if (hasAntiDirectories) {
-                    return fileInfoLister.getDirectories().stream().filter(this::checkDirectory)
+                    return lister.getDirectories().stream().filter(this::checkDirectory)
                             .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList());
                 } else {
-                    for (File dir : fileInfoLister.getDirectories()) recordListerByDirectory(dir.getPath());
-                    return fileInfoLister.getDirectories();
+                    for (File dir : lister.getDirectories()) recordListerByDirectory(dir.getPath());
+                    return lister.getDirectories();
                 }
             } else {
-                listing(fileInfoLister);
-                return fileInfoLister.getDirectories();
+                listing(lister);
+                return lister.getDirectories();
             }
         } catch (IOException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
@@ -415,7 +444,7 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
         rootLogger.info("{} running...", info);
         showdownHook();
         if (directories == null || directories.size() == 0) {
-            FileInfoLister fileInfoLister = new FileInfoLister(new File(realPath), true, transferPath, leftTrimSize, null, null, unitLen);
+            IFileDirLister<E, File> fileInfoLister = generateLister(new File(realPath));
             if (fileInfoLister.currents().size() > 0 || fileInfoLister.hasNext()) {
                 listing(fileInfoLister);
             }

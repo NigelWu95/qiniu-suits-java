@@ -1,6 +1,6 @@
 package com.qiniu.datasource;
 
-import com.qiniu.interfaces.IDirectoryLister;
+import com.qiniu.interfaces.IFileDirLister;
 import com.qiniu.model.local.FileInfo;
 import com.qiniu.util.FileUtils;
 
@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
+public class FileInfoLister implements IFileDirLister<FileInfo, File> {
 
     private String name;
     private int limit;
@@ -22,7 +22,28 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
     private Iterator<FileInfo> iterator;
     private List<FileInfo> currents;
     private FileInfo last;
+    private String truncated;
     private long count;
+
+    private void checkFileInfoList(String start) throws IOException {
+        if ((start == null || "".equals(start)) && (endPrefix == null || "".equals(endPrefix))) {
+            fileInfoList.sort(Comparator.comparing(fileInfo -> fileInfo.filepath));
+        } else if (start == null || "".equals(start)) {
+            fileInfoList = fileInfoList.stream()
+                    .filter(fileInfo -> fileInfo.filepath.compareTo(endPrefix) <= 0)
+                    .sorted().collect(Collectors.toList());
+        } else if (endPrefix == null || "".equals(endPrefix)) {
+            fileInfoList = fileInfoList.stream()
+                    .filter(fileInfo -> fileInfo.filepath.compareTo(start) > 0)
+                    .sorted().collect(Collectors.toList());
+        } else if (start.compareTo(endPrefix) >= 0) {
+            throw new IOException("start filename can not be larger than end filename prefix.");
+        } else {
+            fileInfoList = fileInfoList.stream()
+                    .filter(fileInfo -> fileInfo.filepath.compareTo(start) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0)
+                    .sorted().collect(Collectors.toList());
+        }
+    }
 
     public FileInfoLister(File file, boolean checkText, String transferPath, int leftTrimSize, String start,
                           String endPrefix, int limit) throws IOException {
@@ -47,25 +68,9 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
                 }
             }
         }
-        if ((start == null || "".equals(start)) && (endPrefix == null || "".equals(endPrefix))) {
-            fileInfoList.sort(Comparator.comparing(fileInfo -> fileInfo.filepath));
-        } else if (start == null || "".equals(start)) {
-            fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.filepath.compareTo(endPrefix) <= 0)
-                    .sorted().collect(Collectors.toList());
-        } else if (endPrefix == null || "".equals(endPrefix)) {
-            fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.filepath.compareTo(start) > 0)
-                    .sorted().collect(Collectors.toList());
-        } else if (start.compareTo(endPrefix) >= 0) {
-            throw new IOException("start filename can not be larger than end filename prefix.");
-        } else {
-            fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.filepath.compareTo(start) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0)
-                    .sorted().collect(Collectors.toList());
-        }
         this.limit = limit;
         this.endPrefix = endPrefix;
+        checkFileInfoList(start);
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
         if (iterator.hasNext()) {
@@ -75,6 +80,23 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
         }
         count = fileInfoList.size();
         file = null;
+    }
+
+    public FileInfoLister(String name, List<FileInfo> fileInfoList, String start, String endPrefix, int limit) throws IOException {
+        this.name = name;
+        if (fileInfoList == null) throw new IOException("init fileInfoList can not be null.");
+        this.fileInfoList = fileInfoList;
+        this.limit = limit;
+        this.endPrefix = endPrefix;
+        checkFileInfoList(start);
+        currents = new ArrayList<>();
+        iterator = fileInfoList.iterator();
+        if (iterator.hasNext()) {
+            last = iterator.next();
+            iterator.remove();
+            currents.add(last);
+        }
+        count = fileInfoList.size();
     }
 
     @Override
@@ -141,6 +163,7 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
 
     @Override
     public String currentEndKey() {
+        if (truncated != null) return truncated;
         return last.filepath;
     }
 
@@ -149,8 +172,16 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
     }
 
     @Override
+    public List<FileInfo> getRemainedFiles() {
+        if (iterator == null) return null;
+        else return fileInfoList;
+    }
+
+    @Override
     public String truncate() {
-        return null;
+        truncated = last.filepath;
+        last = null;
+        return truncated;
     }
 
     @Override
@@ -165,7 +196,7 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
             last = currents.get(currents.size() - 1);
             currents.clear();
         }
-        fileInfoList = null;
+//        fileInfoList = null;
         currents = null;
     }
 }

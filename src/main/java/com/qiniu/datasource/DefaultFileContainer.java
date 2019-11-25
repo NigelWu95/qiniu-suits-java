@@ -1,18 +1,17 @@
 package com.qiniu.datasource;
 
 import com.qiniu.convert.*;
-import com.qiniu.interfaces.IResultOutput;
-import com.qiniu.interfaces.IStringFormat;
-import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.interfaces.*;
 import com.qiniu.model.local.FileInfo;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.util.ConvertingUtils;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class DefaultFileContainer extends FileContainer<BufferedWriter, Map<String, String>> {
+public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter, Map<String, String>> {
 
     public DefaultFileContainer(String path, Map<String, Map<String, String>> directoriesMap,
                                 List<String> antiDirectories, Map<String, String> indexMap,
@@ -44,6 +43,11 @@ public class DefaultFileContainer extends FileContainer<BufferedWriter, Map<Stri
                 return stringFormatter.toFormatString(line);
             }
         };
+    }
+
+    @Override
+    protected IFileDirLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
+        return new FileInfoLister(directory, false, transferPath, leftTrimSize, start, end, unitLen);
     }
 
     @Override

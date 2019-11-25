@@ -7,12 +7,12 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.util.List;
 
-public class AwsS3Lister implements ILister<S3ObjectSummary> {
+public class AwsS3Lister implements IPrefixLister<S3ObjectSummary> {
 
     private AmazonS3 s3Client;
     private ListObjectsV2Request listObjectsRequest;

@@ -4,7 +4,7 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
@@ -13,7 +13,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class QiniuLister implements ILister<FileInfo> {
+public class QiniuLister implements IPrefixLister<FileInfo> {
 
     private BucketManager bucketManager;
     private final String bucket;
