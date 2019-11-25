@@ -1,41 +1,23 @@
 package com.qiniu.datasource;
 
 import com.google.gson.JsonObject;
-import com.qiniu.common.JsonRecorder;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.IDataSource;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.interfaces.IPrefixLister;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sun.misc.*;
 
-import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.Timer;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.qiniu.entry.CommonParams.lineFormats;
-
-public abstract class CloudStorageContainer<E, W, T> implements IDataSource<IPrefixLister<E>, IResultOutput<W>, T> {
-
-    static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
-    private static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
-    private static final File procedureLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.PROCEDURE), LogUtils.LOG_EXT));
-    static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    static final Logger errorLogger = LoggerFactory.getLogger(LogUtils.ERROR);
-    private static final Logger infoLogger = LoggerFactory.getLogger(LogUtils.INFO);
-    private static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
+public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor implements IDataSource<IPrefixLister<E>, IResultOutput<W>, T> {
 
     protected String bucket;
     protected List<String> antiPrefixes;
@@ -44,29 +26,16 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<IPre
     protected List<String> prefixes;
     protected boolean prefixLeft;
     protected boolean prefixRight;
-    protected int unitLen;
-    protected int threads;
-    protected int retryTimes = 5;
-    protected boolean saveTotal;
-    protected String savePath;
-    protected String saveFormat;
-    protected String saveSeparator;
-    protected List<String> rmFields;
-    protected Map<String, String> indexMap;
-    protected List<String> fields;
-    protected ExecutorService executorPool; // 线程池
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected List<String> originPrefixList = new ArrayList<>();
     static String firstPoint;
     private String lastPoint;
     private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>(100);
-    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
-    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
-    private boolean stopped;
 
     public CloudStorageContainer(String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                                  int unitLen, int threads) throws IOException {
+        super(unitLen, threads);
         this.bucket = bucket;
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
@@ -74,42 +43,17 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<IPre
         this.antiPrefixes = antiPrefixes;
         if (antiPrefixes != null && antiPrefixes.size() > 0) hasAntiPrefixes = true;
         setPrefixesAndMap(prefixesMap);
-        this.unitLen = unitLen;
-        this.threads = threads;
-        // default save parameters
-        this.saveTotal = true; // 默认全记录保存
-        this.savePath = "result";
-        this.saveFormat = "tab";
-        this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
-        if (fields == null || fields.size() == 0) {
-            this.fields = ConvertingUtils.getOrderedFields(this.indexMap, rmFields);
-        }
-        else this.fields = fields;
+        if (fields != null && fields.size() > 0) this.fields = fields;
+        else this.fields = ConvertingUtils.getOrderedFields(this.indexMap, null);
+        // default save parameters，默认全记录保存
+        setSaveOptions(true, "result", "tab", "\t", null);
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
         originPrefixList.addAll(Arrays.asList(("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
         originPrefixList.addAll(Arrays.asList(("OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
         firstPoint = originPrefixList.get(0);
         lastPoint = originPrefixList.get(originPrefixList.size() - 1);
-    }
-
-    // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields)
-            throws IOException {
-        this.saveTotal = saveTotal;
-        this.savePath = savePath;
-        this.saveFormat = format;
-        if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
-        this.saveSeparator = separator;
-        this.rmFields = rmFields;
-        if (rmFields != null && rmFields.size() > 0) {
-            this.fields = ConvertingUtils.getFields(fields, rmFields);
-        }
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
 
     private void setIndexMapWithDefault(Map<String, String> indexMap) throws IOException {
@@ -205,8 +149,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<IPre
     protected abstract ITypeConvert<E, T> getNewConverter();
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
-
-    private JsonRecorder recorder = new JsonRecorder();
 
     void recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
@@ -476,15 +418,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<IPre
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
-    void sleep(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException ignored) {
-            int i = 0;
-            while (i < millis) i++;
-        }
-    }
-
     private List<String> checkListerInPool(List<IPrefixLister<E>> listerList, int cValue, int tiny) {
         List<String> extremePrefixes = null;
         int count = 0;
@@ -579,52 +512,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<IPre
         return phraseLastPrefixes;
     }
 
-    void endAction() throws IOException {
-        ILineProcess<T> processor;
-        for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
-            saverEntry.getValue().closeWriters();
-            processor = processorMap.get(saverEntry.getKey());
-            if (processor != null) processor.cancel();
-        }
-        String record = recorder.toString();
-        if (recorder.size() > 0) {
-            String path = new File(savePath).getCanonicalPath();
-            FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
-            saveMapper.setAppend(false);
-            saveMapper.setFileExt(".json");
-//        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
-            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-prefixes";
-            saveMapper.addWriter(fileName);
-            saveMapper.writeToKey(fileName, record, true);
-            saveMapper.closeWriters();
-            rootLogger.info("please check the prefixes breakpoint in {}.json, " +
-                            "it can be used for one more time listing remained objects.", fileName);
-        }
-        procedureLogger.info(record);
-    }
-
-    void showdownHook() {
-        SignalHandler handler = signal -> {
-            try {
-//                executorPool.shutdownNow();
-                stopped = true; // 使用该语句使线程池中的任务退出循环可能比直接 shutdownNow() 要好
-                endAction();
-            } catch (IOException e) {
-                rootLogger.error("showdown error", e);
-            }
-            System.exit(0);
-        };
-        try { // 设置 INT 信号 (Ctrl + C 中断执行) 交给指定的信号处理器处理，废掉系统自带的功能
-            Signal.handle(new Signal("INT"), handler); } catch (Exception ignored) {}
-        try { Signal.handle(new Signal("TERM"), handler); } catch (Exception ignored) {}
-        try { Signal.handle(new Signal("USR1"), handler); } catch (Exception ignored) {}
-        try { Signal.handle(new Signal("USR2"), handler); } catch (Exception ignored) {}
-        // 以下几种信号实际上不能被处理
-//        try { Signal.handle(new Signal("QUIT"), handler); } catch (Exception ignored) {}
-//        try { Signal.handle(new Signal("KILL"), handler); } catch (Exception ignored) {}
-//        try { Signal.handle(new Signal("STOP"), handler); } catch (Exception ignored) {}
-    }
-
     private void prefixesListing() {
         List<IPrefixLister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
         while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
@@ -668,6 +555,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<IPre
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
      */
+    @Override
     public void export() throws Exception {
         String info = processor == null ?
                 String.join(" ", "list objects from", getSourceName(), "bucket:", bucket) :
@@ -710,45 +598,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<IPre
             rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);
-        }
-    }
-
-    private final Object object = new Object();
-    private LocalDateTime pauseDateTime = LocalDateTime.MAX;
-
-    public void export(LocalDateTime startTime, long pauseDelay, long duration) throws Exception {
-        if (startTime != null) {
-            Clock clock = Clock.systemDefaultZone();
-            LocalDateTime now = LocalDateTime.now(clock);
-            if (startTime.minusWeeks(1).isAfter(now)) {
-                throw new Exception("startTime is not allowed to exceed next week");
-            }
-            while (now.isBefore(startTime)) {
-                System.out.printf("\r%s", LocalDateTime.now(clock).toString().substring(0, 19));
-                sleep(1000);
-                now = LocalDateTime.now(clock);
-            }
-        }
-        if (duration <= 0 || pauseDelay < 0) {
-            export();
-        } else if (duration > 84600 || duration < 1800) {
-            throw new Exception("duration can not be bigger than 23.5 hours or smaller than 0.5 hours.");
-        } else {
-            pauseDateTime = LocalDateTime.now().plusSeconds(pauseDelay);
-            Timer timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    synchronized (object) {
-                        object.notifyAll();
-                    }
-                    pauseDateTime = LocalDateTime.now().plusSeconds(86400 - duration);
-//                    pauseDateTime = LocalDateTime.now().plusSeconds(20 - duration);
-                }
-            }, (pauseDelay + duration) * 1000, 86400000);
-//            }, (pauseDelay + duration) * 1000, 20000);
-            export();
-            timer.cancel();
         }
     }
 }

@@ -7,7 +7,7 @@ public interface IReader<T> {
 
     String getName();
 
-    List<T> readElements() throws IOException;
+    List<T> readLines() throws IOException;
 
     String lastLine();
 

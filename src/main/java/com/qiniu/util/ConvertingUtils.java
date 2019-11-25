@@ -89,6 +89,17 @@ public final class ConvertingUtils {
         add(defaultOwnerField);
     }};
 
+    // 为了保证字段按照设置的顺序来读取，故使用 ArrayList
+    final static public List<String> defaultFileInfos = new ArrayList<String>(){{
+        add("filepath");
+        add("key");
+        add(defaultEtagField);
+        add(defaultSizeField);
+        add(defaultDatetimeField);
+        add(defaultMimeField);
+        add("parent");
+    }};
+
     final static public List<String> fileFields = new ArrayList<String>(){{
         add("filepath");
         add("key");

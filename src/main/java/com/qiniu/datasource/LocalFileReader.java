@@ -40,7 +40,7 @@ public class LocalFileReader implements IReader<String> {
     }
 
     @Override
-    public List<String> readElements() throws IOException {
+    public List<String> readLines() throws IOException {
         if (line == null) return null;
         List<String> srcList = new ArrayList<>(lineList);
         lineList.clear();
