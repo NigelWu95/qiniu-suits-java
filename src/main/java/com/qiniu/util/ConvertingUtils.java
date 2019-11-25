@@ -633,4 +633,22 @@ public final class ConvertingUtils {
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
         return pair.getProtoEntity();
     }
+
+    public static <T> T toPair(com.qiniu.model.local.FileInfo fileInfo, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+        if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
+        for (String field : fields) {
+            switch (field) {
+                case "filepath": pair.put(field, fileInfo.filepath); break;
+                case "key": pair.put(field, fileInfo.key); break;
+                case "etag": pair.put(field, fileInfo.etag); break;
+                case "size": pair.put(field, fileInfo.length); break;
+                case "datetime": pair.put(field, DatetimeUtils.stringOf(fileInfo.timestamp, 10000000)); break;
+                case "timestamp": pair.put(field, fileInfo.timestamp); break;
+                case "mime": pair.put(field, fileInfo.mime); break;
+                default: throw new IOException("local fileInfo doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
 }

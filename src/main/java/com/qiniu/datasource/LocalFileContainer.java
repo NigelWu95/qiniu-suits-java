@@ -11,7 +11,7 @@ import com.qiniu.util.FileUtils;
 import java.io.*;
 import java.util.*;
 
-public class LocalFileContainer extends FileContainer<String, BufferedWriter, Map<String, String>> {
+public class LocalFileContainer extends TextContainer<String, BufferedWriter, Map<String, String>> {
 
     public LocalFileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix,
                               String rmKeyPrefix, Map<String, String> linesMap, Map<String, String> indexMap,

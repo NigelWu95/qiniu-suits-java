@@ -135,7 +135,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             this.prefixesMap = new HashMap<>(threads);
             prefixLeft = true;
             prefixRight = true;
-            if (hasAntiPrefixes) prefixes = originPrefixList.stream().sorted().collect(Collectors.toList());
+            if (hasAntiPrefixes) prefixes = originPrefixList;
         } else {
             if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
             this.prefixesMap = new HashMap<>(threads);
@@ -165,7 +165,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         iterator.remove();
                         this.prefixesMap.remove(prefix);
                     } else if (end.compareTo(prefix) >= 0) {
-                        throw new IOException(temp + "'s end can not be more larger than " + prefix + " in " + prefixesMap);
+                        throw new IOException(temp + "'s end can not be larger than " + prefix + " in " + prefixesMap);
                     }
                 } else {
                     temp = prefix;
@@ -176,7 +176,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         if (hasAntiPrefixes && prefixes != null && prefixes.size() > 0) {
             String lastAntiPrefix = antiPrefixes.stream().max(Comparator.naturalOrder()).orElse(null);
             if (prefixRight && lastAntiPrefix != null && lastAntiPrefix.compareTo(prefixes.get(prefixes.size() - 1)) <= 0) {
-                throw new IOException("max anti-prefix can not be same as or more larger than max prefix.");
+                throw new IOException("max anti-prefix can not be same as or larger than max prefix.");
             }
         }
     }
@@ -625,7 +625,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
 //        try { Signal.handle(new Signal("STOP"), handler); } catch (Exception ignored) {}
     }
 
-    private void prefixesListing() throws Exception {
+    private void prefixesListing() {
         List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
         while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
             prefixesMap.clear();

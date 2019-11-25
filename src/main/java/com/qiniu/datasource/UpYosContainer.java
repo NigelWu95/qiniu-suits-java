@@ -157,12 +157,13 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 String.join(" ", "list objects from upyun bucket:", bucket) :
                 String.join(" ", "list objects from upyun bucket:", bucket, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
+        rootLogger.info("order\tprefix\tquantity");
+        showdownHook();
         if (prefixes == null || prefixes.size() == 0) {
             UpLister startLister = (UpLister) generateLister("");
             listing(startLister);
             if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) {
-                rootLogger.info("{} finished.", info);
-                return;
+                prefixes = null;
             } else if (hasAntiPrefixes) {
                 prefixes = startLister.getDirectories().parallelStream()
                         .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
@@ -176,13 +177,14 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 return prefix;
             }).collect(Collectors.toList());
         }
-        executorPool = Executors.newFixedThreadPool(threads);
-        showdownHook();
         try {
-            listForNextIteratively(prefixes);
-            executorPool.shutdown();
-            while (!executorPool.isTerminated()) {
-                sleep(1000);
+            if (prefixes != null && prefixes.size() > 0) {
+                executorPool = Executors.newFixedThreadPool(threads);
+                listForNextIteratively(prefixes);
+                executorPool.shutdown();
+                while (!executorPool.isTerminated()) {
+                    sleep(1000);
+                }
             }
             rootLogger.info("{} finished.", info);
             endAction();

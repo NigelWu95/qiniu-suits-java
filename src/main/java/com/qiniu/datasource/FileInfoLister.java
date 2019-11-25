@@ -1,6 +1,6 @@
 package com.qiniu.datasource;
 
-import com.qiniu.interfaces.IReader;
+import com.qiniu.interfaces.IDirectoryLister;
 import com.qiniu.model.local.FileInfo;
 import com.qiniu.util.FileUtils;
 
@@ -12,14 +12,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FileInfoLister implements IReader<FileInfo> {
+public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
 
     private String name;
-    private Iterator<FileInfo> iterator;
     private int limit;
-    private FileInfo last;
     private List<FileInfo> fileInfoList;
     private List<File> directories;
+    private Iterator<FileInfo> iterator;
+    private List<FileInfo> currents;
+    private FileInfo last;
     private long count;
 
     public FileInfoLister(File file, boolean checkText, String transferPath, int leftTrimSize, String start,
@@ -62,9 +63,10 @@ public class FileInfoLister implements IReader<FileInfo> {
                     .sorted().collect(Collectors.toList());
         }
         this.limit = limit;
-        count = fileInfoList.size();
         iterator = fileInfoList.iterator();
+        currents = new ArrayList<>();
         last = iterator.next();
+        count = fileInfoList.size();
         file = null;
     }
 
@@ -74,22 +76,47 @@ public class FileInfoLister implements IReader<FileInfo> {
     }
 
     @Override
-    public List<FileInfo> readElements() {
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    @Override
+    public int getLimit() {
+        return limit;
+    }
+
+    @Override
+    public void listForward() {
         if (last == null) {
-            return null;
+            currents.clear();
+            fileInfoList.clear();
         } else if (count <= limit) {
             last = null;
-            return fileInfoList;
+            currents = fileInfoList;
         } else {
-            List<FileInfo> srcList = new ArrayList<>();
+            currents.clear();
             while (iterator.hasNext()) {
-                if (srcList.size() >= limit) return srcList;
-                srcList.add(iterator.next());
+                if (currents.size() >= limit) break;
+                currents.add(iterator.next());
                 iterator.remove();
             }
             last = null;
-            return srcList;
         }
+    }
+
+    @Override
+    public boolean hasNext() {
+        return false;
+    }
+
+    @Override
+    public List<FileInfo> currents() {
+        return currents;
+    }
+
+    @Override
+    public String currentEndKey() {
+        return last.filepath;
     }
 
     public List<File> getDirectories() {
@@ -97,8 +124,8 @@ public class FileInfoLister implements IReader<FileInfo> {
     }
 
     @Override
-    public String lastLine() {
-        return last.filepath;
+    public String truncate() {
+        return null;
     }
 
     @Override
@@ -109,9 +136,11 @@ public class FileInfoLister implements IReader<FileInfo> {
     @Override
     public void close() {
         iterator = null;
-        if (fileInfoList.size() > 0) {
-            last = fileInfoList.get(fileInfoList.size() - 1);
-            fileInfoList.clear();
+        if (currents.size() > 0) {
+            last = currents.get(currents.size() - 1);
+            currents.clear();
         }
+        fileInfoList = null;
+        currents = null;
     }
 }

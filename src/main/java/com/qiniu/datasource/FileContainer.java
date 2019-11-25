@@ -1,13 +1,11 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.JsonRecorder;
 import com.qiniu.common.QiniuException;
-import com.qiniu.interfaces.IDataSource;
-import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.interfaces.IReader;
-import com.qiniu.interfaces.ITypeConvert;
+import com.qiniu.interfaces.*;
+import com.qiniu.model.local.FileInfo;
 import com.qiniu.persistence.FileSaveMapper;
-import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,29 +17,30 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static com.qiniu.entry.CommonParams.lineFormats;
 
-public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, IResultOutput<W>, T> {
+public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister, IResultOutput<W>, T> {
 
     static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
-    private static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
+    static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
     static final File procedureLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.PROCEDURE), LogUtils.LOG_EXT));
     static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
     static final Logger errorLogger = LoggerFactory.getLogger(LogUtils.ERROR);
-    private static final Logger infoLogger = LoggerFactory.getLogger(LogUtils.INFO);
+    static final Logger infoLogger = LoggerFactory.getLogger(LogUtils.INFO);
     static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
 
     protected String path;
-    protected String parse;
-    protected String separator;
-    protected String addKeyPrefix;
-    protected String rmKeyPrefix;
-    protected Map<String, String> linesMap;
+    protected String transferPath = null;
+    protected int leftTrimSize = 0;
+    protected String realPath;
+    protected List<String> antiDirectories;
+    protected boolean hasAntiDirectories = false;
+    protected Map<String, Map<String, String>> directoriesMap;
+    protected List<File> directories;
     protected Map<String, String> indexMap;
     protected int unitLen;
     protected int threads;
@@ -56,16 +55,15 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
     protected ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
+    private boolean stopped;
 
-    public FileContainer(String path, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
-                         Map<String, String> linesMap, Map<String, String> indexMap, List<String> fields, int unitLen,
-                         int threads) throws IOException {
+    public FileContainer(String path, Map<String, Map<String, String>> directoriesMap, List<String> antiDirectories,
+                         Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
         this.path = path;
-        this.parse = parse;
-        this.separator = separator;
-        this.addKeyPrefix = addKeyPrefix;
-        this.rmKeyPrefix = rmKeyPrefix;
-        this.linesMap = linesMap == null ? new HashMap<>() : linesMap;
+        this.antiDirectories = antiDirectories;
+        if (antiDirectories != null && antiDirectories.size() > 0) hasAntiDirectories = true;
+        setTransferPathAndLeftTrimSize();
+        setDirectoriesAndMap(directoriesMap);
         this.indexMap = indexMap;
         this.unitLen = unitLen;
         this.threads = threads;
@@ -102,66 +100,159 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         this.processor = processor;
     }
 
-    protected abstract ITypeConvert<E, T> getNewConverter() throws IOException;
+    protected abstract ITypeConvert<FileInfo, T> getNewConverter() throws IOException;
 
-    protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
+    protected abstract ITypeConvert<FileInfo, String> getNewStringConverter() throws IOException;
 
-    protected JsonRecorder recorder = new JsonRecorder();
+    private void setTransferPathAndLeftTrimSize() throws IOException {
+        if (path.indexOf(FileUtils.pathSeparator + FileUtils.currentPath) > 0 ||
+                path.indexOf(FileUtils.pathSeparator + FileUtils.parentPath) > 0 ||
+                path.endsWith(FileUtils.pathSeparator + ".") ||
+                path.endsWith(FileUtils.pathSeparator + "..")) {
+            throw new IOException("please set straight path.");
+        } else if (path.startsWith(FileUtils.userHomeStartPath)) {
+            realPath = String.join("", FileUtils.userHome, path.substring(1));
+            transferPath = "~";
+            leftTrimSize = FileUtils.userHome.length();
+        } else {
+            realPath = path;
+            if (path.startsWith(FileUtils.parentPath) || "..".equals(path)) {
+                transferPath = "";
+                leftTrimSize = 3;
+            } else if (path.startsWith(FileUtils.currentPath) || ".".equals(path)) {
+                transferPath = "";
+                leftTrimSize = 2;
+            }
+        }
+        if (realPath.contains("\\~")) realPath = realPath.replace("\\~", "~");
+        if (realPath.endsWith(FileUtils.pathSeparator)) {
+            realPath = realPath.substring(0, realPath.length() - 1);
+        }
+    }
 
-    public void export(IReader<E> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
-        ITypeConvert<E, T> converter = getNewConverter();
-        ITypeConvert<T, String> stringConverter = null;
+    private void setDirectoriesAndMap(Map<String, Map<String, String>> directoriesMap) throws IOException {
+        if (directoriesMap == null || directoriesMap.size() <= 0) {
+            this.directoriesMap = new HashMap<>(threads);
+        } else {
+            if (directoriesMap.containsKey(null)) throw new IOException("can not find directory named \"null\".");
+            this.directoriesMap = new HashMap<>(threads);
+            this.directoriesMap.putAll(directoriesMap);
+            directories = new ArrayList<>();
+            int size = this.directoriesMap.size();
+            Iterator<String> iterator = this.directoriesMap.keySet().stream().sorted().collect(Collectors.toList()).iterator();
+            String temp = iterator.next();
+            File tempFile;
+            Map<String, String> value = directoriesMap.get(temp);
+            String end;
+            if (temp == null || temp.equals("")) {
+                throw new IOException("directories can not contains empty item");
+            } else {
+                tempFile = new File(temp);
+                if (tempFile.exists() && tempFile.isDirectory()) directories.add(tempFile);
+            }
+            while (iterator.hasNext() && size > 0) {
+                size--;
+                String directory = iterator.next();
+                if (directory == null || directory.equals("")) {
+                    throw new IOException("directories can not contains empty item");
+                } else {
+                    File file = new File(directory);
+                    if (file.isDirectory()) {
+                        if (tempFile.isDirectory()) {
+                            if (file.getPath().startsWith(tempFile.getPath())) {
+                                end = value == null ? null : value.get("end");
+                                if (end == null || "".equals(end)) {
+                                    iterator.remove();
+                                    this.directoriesMap.remove(directory);
+                                } else if (end.compareTo(directory) >= 0) {
+                                    throw new IOException(temp + "'s end can not be more larger than " + directory + " in " + directoriesMap);
+                                } else {
+                                    directories.add(file);
+                                }
+                            } else {
+                                directories.add(file);
+                            }
+                        } else {
+                            directories.add(file);
+                            tempFile = file;
+                            temp = directory;
+                            value = directoriesMap.get(temp);
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean checkDirectory(File directory) {
+        if (hasAntiDirectories) {
+            for (String antiPrefix : antiDirectories) {
+                if (directory.getPath().startsWith(antiPrefix)) return false;
+            }
+            return true;
+        } else {
+            return true;
+        }
+    }
+
+    private JsonRecorder recorder = new JsonRecorder();
+
+    public void export(FileInfoLister lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+        ITypeConvert<FileInfo, T> converter = getNewConverter();
+        ITypeConvert<FileInfo, String> stringConverter = null;
         if (saveTotal) {
             stringConverter = getNewStringConverter();
             saver.preAddWriter("failed");
         }
-        String lastLine = reader.lastLine();
-        List<E> srcList = null;
         List<T> convertedList;
         List<String> writeList;
-        int retry;
-        while (lastLine != null) {
+        List<FileInfo> objects = lister.currents();
+        boolean hasNext = lister.hasNext();
+        Map<String, String> map = directoriesMap.get(lister.getName());
+        // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
+        while (objects.size() > 0 || hasNext) {
+            if (stopped) break;
             if (LocalDateTime.now(DatetimeUtils.clock_Default).isAfter(pauseDateTime)) {
                 synchronized (object) {
                     object.wait();
                 }
             }
-            retry = retryTimes + 1;
-            while (retry > 0) {
+            if (stringConverter != null) {
+                writeList = stringConverter.convertToVList(objects);
+                if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
+                if (stringConverter.errorSize() > 0) saver.writeToKey("failed", stringConverter.errorLines(), false);
+            }
+            if (processor != null) {
+                convertedList = converter.convertToVList(objects);
+                if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
+                // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
                 try {
-                    srcList = reader.readElements();
-                    retry = 0;
-                } catch (IOException e) {
-                    retry--;
-                    if (retry == 0) throw e;
+                    processor.processLine(convertedList);
+                } catch (QiniuException e) {
+                    if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+                    errorLogger.error("process objects: {}", lister.getName(), e);
+                    if (e.response != null) e.response.close();
                 }
             }
-            convertedList = converter.convertToVList(srcList);
-            if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
-            if (stringConverter != null) {
-                writeList = stringConverter.convertToVList(convertedList);
-                if (writeList.size() > 0) saver.writeSuccess(String.join("\n", writeList), false);
-                if (stringConverter.errorSize() > 0)
-                    saver.writeToKey("failed", stringConverter.errorLines(), false);
+            if (hasNext) {
+                JsonObject json = recorder.getOrDefault(lister.getName(), new JsonObject());
+                json.addProperty("end", lister.getEndPrefix());
+                try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+                procedureLogger.info(recorder.put(lister.getName(), json));
             }
-            // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
-            try {
-                if (processor != null) processor.processLine(convertedList);
-            } catch (QiniuException e) {
-                // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
-                // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
-                if (HttpRespUtils.checkException(e, 2) < -1) throw e;
-                if (e.response != null) e.response.close();
-            }
-            try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-            procedureLogger.info(recorder.put(reader.getName(), lastLine));
-            lastLine = reader.lastLine();
+            if (map != null) map.put("start", lister.currentEndKey());
+            if (stopped) break;
+//            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
+            lister.listForward();
+            objects = lister.currents();
+            hasNext = lister.hasNext();
         }
     }
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
-    void reading(IReader<E> reader) {
+    private void listing(FileInfoLister lister) {
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
@@ -173,18 +264,18 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 lineProcessor = processor.clone();
                 processorMap.put(orderStr, lineProcessor);
             }
-            export(reader, saver, lineProcessor);
-            recorder.remove(reader.getName());
+            export(lister, saver, lineProcessor);
+            recorder.remove(lister.getName());
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-            errorLogger.error("{}: {}, {}", reader.getName(), recorder.getString(reader.getName()), e.error(), e);
+            errorLogger.error("{}: {}, {}", lister.getName(), recorder.getString(lister.getName()), e.error(), e);
             if (e.response != null) e.response.close();
         } catch (Throwable e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-            errorLogger.error("{}: {}", reader.getName(), recorder.getString(reader.getName()), e);
+            errorLogger.error("{}: {}", lister.getName(), recorder.getString(lister.getName()), e);
         } finally {
             try { FileUtils.createIfNotExists(infoLogFile); } catch (IOException ignored) {}
-            infoLogger.info("{}\t{}\t{}", orderStr, reader.getName(), reader.count());
+            infoLogger.info("{}\t{}\t{}", orderStr, lister.getName(), lister.count());
             if (saver != null) {
                 saver.closeWriters();
                 saver = null; // let gc work
@@ -195,11 +286,11 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
                 lineProcessor = null;
             }
             UniOrderUtils.returnOrder(order);
-            reader.close();
+            lister.close();
         }
     }
 
-    void sleep(long millis) {
+    private void sleep(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ignored) {
@@ -208,7 +299,7 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         }
     }
 
-    void endAction() throws IOException {
+    private void endAction() throws IOException {
         ILineProcess<T> processor;
         for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
             saverEntry.getValue().closeWriters();
@@ -231,10 +322,10 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         procedureLogger.info(record);
     }
 
-    void showdownHook() {
+    private void showdownHook() {
         SignalHandler handler = signal -> {
             try {
-                pauseDateTime = LocalDateTime.MIN;
+                stopped = true;
                 endAction();
             } catch (IOException e) {
                 rootLogger.error("showdown error", e);
@@ -248,34 +339,113 @@ public abstract class FileContainer<E, W, T> implements IDataSource<IReader<E>, 
         try { Signal.handle(new Signal("USR2"), handler); } catch (Exception ignored) {}
     }
 
-    protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
+    private void recordListerByDirectory(String directory) {
+        JsonObject json = directoriesMap.get(directory) == null ? null : JsonUtils.toJsonObject(directoriesMap.get(directory));
+        try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+        procedureLogger.info(recorder.put(directory, json));
+    }
 
+    private List<File> directoriesAfterListerRun(File directory) {
+        try {
+            FileInfoLister fileInfoLister = new FileInfoLister(directory, true, transferPath, leftTrimSize, null, null, unitLen);
+            if (fileInfoLister.hasNext() || fileInfoLister.getDirectories() != null) {
+                listing(fileInfoLister);
+                if (fileInfoLister.getDirectories() == null || fileInfoLister.getDirectories().size() <= 0) {
+                    return null;
+                } else if (hasAntiDirectories) {
+                    return fileInfoLister.getDirectories().stream().filter(this::checkDirectory)
+                            .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList());
+                } else {
+                    for (File dir : fileInfoLister.getDirectories()) recordListerByDirectory(dir.getPath());
+                    return fileInfoLister.getDirectories();
+                }
+            } else {
+                listing(fileInfoLister);
+                return fileInfoLister.getDirectories();
+            }
+        } catch (IOException e) {
+            try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+            errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
+            return null;
+        }
+    }
+
+    private AtomicLong atomicLong = new AtomicLong(0);
+
+    private void listForNextIteratively(List<File> directories) throws Exception {
+        List<File> tempPrefixes;
+        List<Future<List<File>>> futures = new ArrayList<>();
+        for (File directory : directories) {
+            if (atomicLong.get() > threads) {
+                tempPrefixes = directoriesAfterListerRun(directory);
+                if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
+            } else {
+                atomicLong.incrementAndGet();
+                futures.add(executorPool.submit(() -> {
+                    List<File> list = directoriesAfterListerRun(directory);
+                    atomicLong.decrementAndGet();
+                    return list;
+                }));
+            }
+        }
+        Iterator<Future<List<File>>> iterator;
+        Future<List<File>> future;
+        while (futures.size() > 0) {
+            iterator = futures.iterator();
+            while (iterator.hasNext()) {
+                future = iterator.next();
+                if (future.isDone()) {
+                    tempPrefixes = future.get();
+                    if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
+                    iterator.remove();
+                }
+            }
+        }
+    }
+
+    /**
+     * 根据当前参数值创建多线程执行数据源导出工作
+     */
+    @Override
     public void export() throws Exception {
-        List<IReader<E>> fileReaders = getFileReaders(path);
-        int filesCount = fileReaders.size();
-        int runningThreads = filesCount < threads ? filesCount : threads;
         String info = processor == null ?
                 String.join(" ", "read objects from file(s):", path) :
                 String.join(" ", "read objects from file(s):", path, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
-        rootLogger.info("order\tpath\tquantity");
-        executorPool = Executors.newFixedThreadPool(runningThreads);
+        if (directories == null || directories.size() == 0) {
+//            if (hasAntiDirectories) {
+//                FilepathLister filepathLister = new FilepathLister(new File(realPath), true, transferPath, leftTrimSize);
+//                originalFileInfos = filepathLister.getFileInfos();
+//                directories = filepathLister.getDirectories();
+//            }
+            FileInfoLister fileInfoLister = new FileInfoLister(new File(realPath), true, transferPath, leftTrimSize, null, null, unitLen);
+            if (fileInfoLister.currents().size() > 0) {
+                listing(fileInfoLister);
+            }
+            if (fileInfoLister.getDirectories() == null || fileInfoLister.getDirectories().size() <= 0) {
+                rootLogger.info("{} finished.", info);
+                return;
+            } else if (hasAntiDirectories) {
+                directories = fileInfoLister.getDirectories().parallelStream().filter(this::checkDirectory)
+                        .peek(directory -> recordListerByDirectory(directory.getPath())).collect(Collectors.toList());
+            } else {
+                for (File dir : fileInfoLister.getDirectories()) recordListerByDirectory(dir.getPath());
+                directories = fileInfoLister.getDirectories();
+            }
+        }
+        executorPool = Executors.newFixedThreadPool(threads);
         showdownHook();
         try {
-            String start = null;
-            for (IReader<E> fileReader : fileReaders) {
-                recorder.put(fileReader.getName(), start);
-                executorPool.execute(() -> reading(fileReader));
-            }
+            listForNextIteratively(directories);
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
-                sleep(2000);
+                sleep(1000);
             }
             rootLogger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {
-            executorPool.shutdownNow();
-            rootLogger.error("export failed", e);
+            stopped = true;
+            rootLogger.error(e.toString(), e);
             endAction();
             System.exit(-1);
         }
