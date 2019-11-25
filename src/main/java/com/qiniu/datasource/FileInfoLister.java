@@ -16,6 +16,7 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
 
     private String name;
     private int limit;
+    private String endPrefix;
     private List<FileInfo> fileInfoList;
     private List<File> directories;
     private Iterator<FileInfo> iterator;
@@ -32,6 +33,7 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
         fileInfoList = new ArrayList<>();
         directories = new ArrayList<>();
         for(File f : fs) {
+            if (f.isHidden()) continue;
             if (f.isDirectory()) {
                 directories.add(f);
             } else {
@@ -63,9 +65,14 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
                     .sorted().collect(Collectors.toList());
         }
         this.limit = limit;
-        iterator = fileInfoList.iterator();
+        this.endPrefix = endPrefix;
         currents = new ArrayList<>();
-        last = iterator.next();
+        iterator = fileInfoList.iterator();
+        if (iterator.hasNext()) {
+            last = iterator.next();
+            iterator.remove();
+            currents.add(last);
+        }
         count = fileInfoList.size();
         file = null;
     }
@@ -73,6 +80,22 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public void setEndPrefix(String endPrefix) {
+        if (endPrefix != null && !"".equals(endPrefix)) {
+            fileInfoList = fileInfoList.stream()
+                    .filter(fileInfo -> fileInfo.filepath.compareTo(endPrefix) > 0)
+                    .sorted().collect(Collectors.toList());
+            iterator = fileInfoList.iterator();
+            count = fileInfoList.size();
+        }
+    }
+
+    @Override
+    public String getEndPrefix() {
+        return endPrefix;
     }
 
     @Override
@@ -88,10 +111,12 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
     @Override
     public void listForward() {
         if (last == null) {
+            iterator = null;
             currents.clear();
             fileInfoList.clear();
         } else if (count <= limit) {
             last = null;
+            iterator = null;
             currents = fileInfoList;
         } else {
             currents.clear();
@@ -106,7 +131,7 @@ public class FileInfoLister implements IDirectoryLister<FileInfo, File> {
 
     @Override
     public boolean hasNext() {
-        return false;
+        return iterator != null && iterator.hasNext();
     }
 
     @Override

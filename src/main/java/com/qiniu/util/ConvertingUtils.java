@@ -90,6 +90,7 @@ public final class ConvertingUtils {
     }};
 
     final static public List<String> fileFields = new ArrayList<String>(){{
+        add("filepath");
         add("key");
         addAll(etagFields);
         addAll(sizeFields);
@@ -100,6 +101,7 @@ public final class ConvertingUtils {
         addAll(statusFields);
         addAll(md5Fields);
         addAll(ownerFields);
+        add("parent");
         add("_id");
     }};
 
@@ -388,6 +390,7 @@ public final class ConvertingUtils {
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.timestamp)); break;
                 case "timestamp": pair.put(indexMap.get(index), fileInfo.timestamp); break;
                 case "mime": pair.put(indexMap.get(index), fileInfo.mime); break;
+                case "parent": pair.put(indexMap.get(index), fileInfo.parentPath); break;
                 default: throw new IOException("local FileInfo doesn't have field: " + index);
             }
         }
@@ -645,6 +648,7 @@ public final class ConvertingUtils {
                 case "datetime": pair.put(field, DatetimeUtils.stringOf(fileInfo.timestamp, 10000000)); break;
                 case "timestamp": pair.put(field, fileInfo.timestamp); break;
                 case "mime": pair.put(field, fileInfo.mime); break;
+                case "parent": pair.put(field, fileInfo.parentPath); break;
                 default: throw new IOException("local fileInfo doesn't have field: " + field);
             }
         }

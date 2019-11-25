@@ -854,7 +854,9 @@ public class CommonParams {
             String num = indexes.substring(4);
             if (num.matches("\\d+")) {
                 int number = Integer.valueOf(num);
-                if (isSelfUpload && number < 2) {
+                if (number < 0) {
+                    throw new IOException("pre size can not be smaller than zore.");
+                } else if (isSelfUpload && number < 2) {
                     throw new IOException("indexes must contain \"filepath\" and \"key\" for upload process");
                 } else if (keys.size() > number) {
                     for (int i = 0; i < number; i++) setIndex(String.valueOf(i), keys.get(i));
@@ -914,6 +916,7 @@ public class CommonParams {
                 keys.add("size");
                 keys.add("datetime");
                 keys.add("mime");
+                keys.add("parent");
             }
         } else {
             keys.addAll(ConvertingUtils.defaultFileFields);
@@ -968,14 +971,14 @@ public class CommonParams {
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "key" : "0", "key");
+                    indexMap.put(fieldIndex ? "key" : (isSelfUpload ? "1" : "0"), "key");
                 } else {
                     throw new IOException("f-[x] about key filter for file key must get the key's index in indexes settings.");
                 }
             }
             if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "datetime" : "3", "datetime");
+                    indexMap.put(fieldIndex ? "datetime" : (isSelfUpload ? "4" : "3"), "datetime");
                 } else {
                     throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
                 }
@@ -983,7 +986,7 @@ public class CommonParams {
             if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
                 if (useDefault) {
                     if (fieldsMode != 3) {
-                        indexMap.put(fieldIndex ? "mime" : "4", "mime");
+                        indexMap.put(fieldIndex ? "mime" : (isSelfUpload ? "5" : "4"), "mime");
                     }
                 } else {
                     throw new IOException("f-mime filter must get the mime's index in indexes settings.");
@@ -1012,7 +1015,7 @@ public class CommonParams {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
                     if (useDefault) {
-                        indexMap.put(fieldIndex ? "key" : "0", "key");
+                        indexMap.put(fieldIndex ? "key" : (isSelfUpload ? "1" : "0"), "key");
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                     }
@@ -1020,7 +1023,7 @@ public class CommonParams {
                 if (!indexMap.containsValue("mime")) {
                     if (useDefault) {
                         if (fieldsMode != 3) {
-                            indexMap.put(fieldIndex ? "mime" : "4", "mime");
+                            indexMap.put(fieldIndex ? "mime" : (isSelfUpload ? "5" : "4"), "mime");
                         }
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");

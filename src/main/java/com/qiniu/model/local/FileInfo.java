@@ -8,6 +8,7 @@ import java.io.IOException;
 
 public class FileInfo implements Comparable {
 
+    public String parentPath;
     public String filepath;
     public String key;
     public String etag;
@@ -17,6 +18,7 @@ public class FileInfo implements Comparable {
 
     public FileInfo(File file, String transferPath, int leftTrimSize) throws IOException {
         try {
+            parentPath = file.getParent();
             filepath = file.getPath();
         } catch (NullPointerException e) {
             throw new IOException("file object can not be null.");

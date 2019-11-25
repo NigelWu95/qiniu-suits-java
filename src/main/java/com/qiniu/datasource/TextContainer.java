@@ -247,16 +247,16 @@ public abstract class TextContainer<E, W, T> implements IDataSource<IReader<E>, 
     protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
 
     public void export() throws Exception {
+        String info = processor == null ?
+                String.join(" ", "read lines from path:", path) :
+                String.join(" ", "read lines from path:", path, "and", processor.getProcessName());
+        rootLogger.info("{} running...", info);
+        rootLogger.info("order\tpath\tquantity");
+        showdownHook();
         List<IReader<E>> fileReaders = getFileReaders(path);
         int filesCount = fileReaders.size();
         int runningThreads = filesCount < threads ? filesCount : threads;
-        String info = processor == null ?
-                String.join(" ", "read objects from file(s):", path) :
-                String.join(" ", "read objects from file(s):", path, "and", processor.getProcessName());
-        rootLogger.info("{} running...", info);
-        rootLogger.info("order\tpath\tquantity");
         executorPool = Executors.newFixedThreadPool(runningThreads);
-        showdownHook();
         try {
             String start = null;
             for (IReader<E> fileReader : fileReaders) {

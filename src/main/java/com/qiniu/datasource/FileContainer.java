@@ -34,6 +34,7 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
     static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
 
     protected String path;
+    protected List<FileInfo> totalFileInfoList;
     protected String transferPath = null;
     protected int leftTrimSize = 0;
     protected String realPath;
@@ -109,7 +110,7 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
                 path.indexOf(FileUtils.pathSeparator + FileUtils.parentPath) > 0 ||
                 path.endsWith(FileUtils.pathSeparator + ".") ||
                 path.endsWith(FileUtils.pathSeparator + "..")) {
-            throw new IOException("please set straight path.");
+            throw new IOException("please set straight path, can not contain \"/..\" or \"/.\".");
         } else if (path.startsWith(FileUtils.userHomeStartPath)) {
             realPath = String.join("", FileUtils.userHome, path.substring(1));
             transferPath = "~";
@@ -409,22 +410,17 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
     @Override
     public void export() throws Exception {
         String info = processor == null ?
-                String.join(" ", "read objects from file(s):", path) :
-                String.join(" ", "read objects from file(s):", path, "and", processor.getProcessName());
+                String.join(" ", "list files from path:", path) :
+                String.join(" ", "read files from path:", path, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
+        showdownHook();
         if (directories == null || directories.size() == 0) {
-//            if (hasAntiDirectories) {
-//                FilepathLister filepathLister = new FilepathLister(new File(realPath), true, transferPath, leftTrimSize);
-//                originalFileInfos = filepathLister.getFileInfos();
-//                directories = filepathLister.getDirectories();
-//            }
             FileInfoLister fileInfoLister = new FileInfoLister(new File(realPath), true, transferPath, leftTrimSize, null, null, unitLen);
-            if (fileInfoLister.currents().size() > 0) {
+            if (fileInfoLister.currents().size() > 0 || fileInfoLister.hasNext()) {
                 listing(fileInfoLister);
             }
             if (fileInfoLister.getDirectories() == null || fileInfoLister.getDirectories().size() <= 0) {
-                rootLogger.info("{} finished.", info);
-                return;
+                directories = null;
             } else if (hasAntiDirectories) {
                 directories = fileInfoLister.getDirectories().parallelStream().filter(this::checkDirectory)
                         .peek(directory -> recordListerByDirectory(directory.getPath())).collect(Collectors.toList());
@@ -433,13 +429,14 @@ public abstract class FileContainer<W, T> implements IDataSource<FileInfoLister,
                 directories = fileInfoLister.getDirectories();
             }
         }
-        executorPool = Executors.newFixedThreadPool(threads);
-        showdownHook();
         try {
-            listForNextIteratively(directories);
-            executorPool.shutdown();
-            while (!executorPool.isTerminated()) {
-                sleep(1000);
+            if (directories != null && directories.size() > 0) {
+                executorPool = Executors.newFixedThreadPool(threads);
+                listForNextIteratively(directories);
+                executorPool.shutdown();
+                while (!executorPool.isTerminated()) {
+                    sleep(1000);
+                }
             }
             rootLogger.info("{} finished.", info);
             endAction();

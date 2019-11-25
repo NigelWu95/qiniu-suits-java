@@ -257,8 +257,9 @@ public class QSuitsEntry {
         } else if ("baidu".equals(source)) {
             return getBaiduBosContainer();
         } else if ("local".equals(source)) {
-            if (commonParams.isSelfUpload()) return getFilepathContainer();
-            else return getLocalFileContainer();
+//            if (commonParams.isSelfUpload()) return getFilepathContainer();
+//            else
+                return getLocalFileContainer();
         } else {
             throw new IOException("no such datasource: " + source);
         }
@@ -286,19 +287,19 @@ public class QSuitsEntry {
         return localFileContainer;
     }
 
-    public FilepathContainer getFilepathContainer() throws IOException {
-        String filePath = commonParams.getPath();
-        String parse = commonParams.getParse();
-        String separator = commonParams.getSeparator();
-        String addKeyPrefix = commonParams.getAddKeyPrefix();
-        String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        Map<String, String> linesMap = commonParams.getLinesMap();
-        FilepathContainer filepathContainer = new FilepathContainer(filePath, parse, separator, addKeyPrefix,
-                rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
-        filepathContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
-        filepathContainer.setRetryTimes(retryTimes);
-        return filepathContainer;
-    }
+//    public FilepathContainer getFilepathContainer() throws IOException {
+//        String filePath = commonParams.getPath();
+//        String parse = commonParams.getParse();
+//        String separator = commonParams.getSeparator();
+//        String addKeyPrefix = commonParams.getAddKeyPrefix();
+//        String rmKeyPrefix = commonParams.getRmKeyPrefix();
+//        Map<String, String> linesMap = commonParams.getLinesMap();
+//        FilepathContainer filepathContainer = new FilepathContainer(filePath, parse, separator, addKeyPrefix,
+//                rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
+//        filepathContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
+//        filepathContainer.setRetryTimes(retryTimes);
+//        return filepathContainer;
+//    }
 
     public QiniuQosContainer getQiniuQosContainer() throws IOException {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
