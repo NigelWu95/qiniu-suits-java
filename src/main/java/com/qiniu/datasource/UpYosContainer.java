@@ -5,7 +5,7 @@ import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
-import com.qiniu.interfaces.IPrefixLister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
@@ -85,28 +85,28 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     }
 
     @Override
-    protected IPrefixLister<FileItem> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
+    protected IStorageLister<FileItem> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getUpYunMarker(username, password, bucket, start);
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 
     private List<String> directoriesAfterListerRun(String prefix) {
         try {
-            UpLister upLister = (UpLister) generateLister(prefix);
-            if (upLister.hasNext() || upLister.getDirectories() != null) {
-                listing(upLister);
-                if (upLister.getDirectories() == null || upLister.getDirectories().size() <= 0) {
+            IStorageLister<FileItem> lister = generateLister(prefix);
+            if (lister.hasNext() || lister.getDirectories() != null) {
+                listing(lister);
+                if (lister.getDirectories() == null || lister.getDirectories().size() <= 0) {
                     return null;
                 } else if (hasAntiPrefixes) {
-                    return upLister.getDirectories().stream().filter(this::checkPrefix)
+                    return lister.getDirectories().stream().filter(this::checkPrefix)
                             .peek(this::recordListerByPrefix).collect(Collectors.toList());
                 } else {
-                    for (String dir : upLister.getDirectories()) recordListerByPrefix(dir);
-                    return upLister.getDirectories();
+                    for (String dir : lister.getDirectories()) recordListerByPrefix(dir);
+                    return lister.getDirectories();
                 }
             } else {
-                listing(upLister);
-                return upLister.getDirectories();
+                listing(lister);
+                return lister.getDirectories();
             }
         } catch (SuitsException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
@@ -160,7 +160,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
         if (prefixes == null || prefixes.size() == 0) {
-            UpLister startLister = (UpLister) generateLister("");
+            IStorageLister<FileItem> startLister = generateLister("");
             listing(startLister);
             if (startLister.getDirectories() == null || startLister.getDirectories().size() <= 0) {
                 prefixes = null;

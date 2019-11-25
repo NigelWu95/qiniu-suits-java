@@ -45,7 +45,8 @@ public class CommonParams {
     private String baiduAccessId;
     private String baiduSecretKey;
     private String bucket;
-    private Map<String, Map<String, String>> prefixesMap;
+    private Map<String, Map<String, String>> pathConfigMap;
+    private List<String> antiDirectories;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
@@ -167,7 +168,7 @@ public class CommonParams {
             setAuthKey();
             setBucket();
             String prefixes = entryParam.getValue("prefixes", null);
-            setPrefixesMap(entryParam.getValue("prefix-config", ""), prefixes);
+            setPathConfigMap(entryParam.getValue("prefix-config", ""), prefixes, true, true);
             antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
             setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
@@ -200,7 +201,7 @@ public class CommonParams {
         setStartAndPause();
     }
 
-    public CommonParams(Map<String, String> paramsMap) throws IOException {
+    public CommonParams(Map<String, String> paramsMap) throws Exception {
         this.entryParam = new ParamsConfig(paramsMap);
         setTimeout();
         source = "terminal";
@@ -583,7 +584,7 @@ public class CommonParams {
         }
     }
 
-    private void setProcess() throws IOException {
+    private void setProcess() throws Exception {
         process = entryParam.getValue("process", "").trim();
         if (!process.isEmpty() && isStorageSource && !ProcessUtils.supportStorageSource(process)) {
             throw new IOException("the process: " + process + " don't support getting source line from list.");
@@ -607,6 +608,9 @@ public class CommonParams {
         }
         if ("qupload".equals(process) && entryParam.getValue("parse", null) == null && !"terminal".equals(source)) {
             isSelfUpload = true;
+            String prefixes = entryParam.getValue("directories", null);
+            setPathConfigMap(entryParam.getValue("directory-config", ""), prefixes, false, true);
+            antiDirectories = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-directories", "")));
         }
     }
 
@@ -673,41 +677,45 @@ public class CommonParams {
         }
     }
 
-    private void setPrefixesMap(String prefixConfig, String prefixes) throws Exception {
-        prefixesMap = new HashMap<>();
-        if (prefixConfig != null && !"".equals(prefixConfig)) {
-            JsonFile jsonFile = new JsonFile(prefixConfig);
+    private void setPathConfigMap(String jsonConfigPath, String subPaths, boolean withMarker, boolean withEnd) throws Exception {
+        pathConfigMap = new HashMap<>();
+        if (jsonConfigPath != null && !"".equals(jsonConfigPath)) {
+            JsonFile jsonFile = new JsonFile(jsonConfigPath);
             JsonObject jsonCfg;
             JsonElement markerElement;
             JsonElement startElement;
             JsonElement endElement;
-            for (String prefix : jsonFile.getKeys()) {
+            for (String key : jsonFile.getKeys()) {
                 Map<String, String> markerAndEnd = new HashMap<>();
 //                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
-                JsonElement json = jsonFile.getElement(prefix);
+                JsonElement json = jsonFile.getElement(key);
                 if (json == null || json instanceof JsonNull) {
-                    prefixesMap.put(prefix, null);
+                    pathConfigMap.put(key, null);
                     continue;
                 }
-                if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + prefix + " must be json.");
+                if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + key + " must be json.");
                 jsonCfg = json.getAsJsonObject();
-                markerElement = jsonCfg.get("marker");
-                startElement = jsonCfg.get("start");
-                endElement = jsonCfg.get("end");
-                if (markerElement != null && !(markerElement instanceof JsonNull)) {
-                    markerAndEnd.put("marker", markerElement.getAsString());
+                if (withMarker) {
+                    markerElement = jsonCfg.get("marker");
+                    if (markerElement != null && !(markerElement instanceof JsonNull)) {
+                        markerAndEnd.put("marker", markerElement.getAsString());
+                    }
                 }
+                startElement = jsonCfg.get("start");
                 if (startElement != null && !(startElement instanceof JsonNull)) {
                     markerAndEnd.put("start", startElement.getAsString());
                 }
-                if (endElement != null && !(endElement instanceof JsonNull)) {
-                    markerAndEnd.put("end", endElement.getAsString());
+                if (withEnd) {
+                    endElement = jsonCfg.get("end");
+                    if (endElement != null && !(endElement instanceof JsonNull)) {
+                        markerAndEnd.put("end", endElement.getAsString());
+                    }
                 }
-                prefixesMap.put(prefix, markerAndEnd);
+                pathConfigMap.put(key, markerAndEnd);
             }
-        } else if (prefixes != null && !"".equals(prefixes)) {
-            String[] prefixList = ParamsUtils.escapeSplit(prefixes);
-            for (String prefix : prefixList) prefixesMap.put(prefix, new HashMap<>());
+        } else if (subPaths != null && !"".equals(subPaths)) {
+            String[] subPathList = ParamsUtils.escapeSplit(subPaths);
+            for (String subPath : subPathList) pathConfigMap.put(subPath, new HashMap<>());
         }
     }
 
@@ -1119,7 +1127,7 @@ public class CommonParams {
         if (CloudApiUtils.isFileSource(source) && FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
             throw new IOException("the save-path can not be same as path.");
         } else if (FileUtils.checkKeyFilesInPath(savePath, source)) {
-            if (!savePath.contains(bucket) || prefixesMap == null || prefixesMap.size() <= 0) {
+            if (!savePath.contains(bucket) || pathConfigMap == null || pathConfigMap.size() <= 0) {
                 throw new IOException("please change the savePath, because there are last listed files.");
             }
         }
@@ -1274,8 +1282,12 @@ public class CommonParams {
         this.bucket = bucket;
     }
 
-    public void setPrefixesMap(Map<String, Map<String, String>> prefixesMap) {
-        this.prefixesMap = prefixesMap;
+    public void setPathConfigMap(Map<String, Map<String, String>> pathConfigMap) {
+        this.pathConfigMap = pathConfigMap;
+    }
+
+    public void setAntiDirectories(List<String> antiDirectories) {
+        this.antiDirectories = antiDirectories;
     }
 
     public void setAntiPrefixes(List<String> antiPrefixes) {
@@ -1470,8 +1482,12 @@ public class CommonParams {
         return bucket;
     }
 
-    public Map<String, Map<String, String>> getPrefixesMap() {
-        return prefixesMap;
+    public Map<String, Map<String, String>> getPathConfigMap() {
+        return pathConfigMap;
+    }
+
+    public List<String> getAntiDirectories() {
+        return antiDirectories;
     }
 
     public List<String> getAntiPrefixes() {

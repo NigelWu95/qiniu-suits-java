@@ -1,6 +1,6 @@
 package com.qiniu.datasource;
 
-import com.qiniu.interfaces.IFileDirLister;
+import com.qiniu.interfaces.ILocalFileLister;
 import com.qiniu.model.local.FileInfo;
 import com.qiniu.util.FileUtils;
 
@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FileInfoLister implements IFileDirLister<FileInfo, File> {
+public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
 
     private String name;
     private int limit;
@@ -126,11 +126,6 @@ public class FileInfoLister implements IFileDirLister<FileInfo, File> {
     }
 
     @Override
-    public int getLimit() {
-        return limit;
-    }
-
-    @Override
     public void listForward() {
         if (last == null) {
             iterator = null;
@@ -162,11 +157,12 @@ public class FileInfoLister implements IFileDirLister<FileInfo, File> {
     }
 
     @Override
-    public String currentEndKey() {
+    public String currentEndFilepath() {
         if (truncated != null) return truncated;
         return last.filepath;
     }
 
+    @Override
     public List<File> getDirectories() {
         return directories;
     }

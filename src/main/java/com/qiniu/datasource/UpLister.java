@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.IPrefixLister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.util.JsonUtils;
@@ -15,7 +15,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UpLister implements IPrefixLister<FileItem> {
+public class UpLister implements IStorageLister<FileItem> {
 
     private UpYunClient upYunClient;
     private final String bucket;
@@ -42,18 +42,8 @@ public class UpLister implements IPrefixLister<FileItem> {
     }
 
     @Override
-    public String getBucket() {
-        return bucket;
-    }
-
-    @Override
     public String getPrefix() {
         return prefix;
-    }
-
-    @Override
-    public void setMarker(String marker) {
-        this.marker = marker;
     }
 
     @Override
@@ -77,11 +67,6 @@ public class UpLister implements IPrefixLister<FileItem> {
     @Override
     public void setLimit(int limit) {
         this.limit = limit;
-    }
-
-    @Override
-    public int getLimit() {
-        return limit;
     }
 
     private List<FileItem> getListResult(String prefix, String marker, int limit) throws IOException {
@@ -222,6 +207,7 @@ public class UpLister implements IPrefixLister<FileItem> {
         return fileItems;
     }
 
+    @Override
     public List<String> getDirectories() {
         return directories;
     }

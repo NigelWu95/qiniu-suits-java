@@ -5,7 +5,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.IDataSource;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.interfaces.IPrefixLister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.*;
@@ -17,7 +17,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor implements IDataSource<IPrefixLister<E>, IResultOutput<W>, T> {
+public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor implements IDataSource<IStorageLister<E>, IResultOutput<W>, T> {
 
     protected String bucket;
     protected List<String> antiPrefixes;
@@ -163,7 +163,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(IPrefixLister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+    public void export(IStorageLister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
@@ -233,7 +233,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
      * @param lister 列举对象
      */
-    void listing(IPrefixLister<E> lister) {
+    void listing(IStorageLister<E> lister) {
         // 持久化结果标识信息
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
@@ -275,13 +275,13 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
     }
 
-    protected abstract IPrefixLister<E> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException;
+    protected abstract IStorageLister<E> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException;
 
-    IPrefixLister<E> generateLister(String prefix) throws SuitsException {
+    IStorageLister<E> generateLister(String prefix) throws SuitsException {
         return generateLister(prefix, 0);
     }
 
-    private IPrefixLister<E> generateLister(String prefix, int limit) throws SuitsException {
+    private IStorageLister<E> generateLister(String prefix, int limit) throws SuitsException {
         limit = limit > 0 ? limit : unitLen;
         int retry = retryTimes;
         Map<String, String> map = prefixesMap.get(prefix);
@@ -306,7 +306,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
     }
 
-    private List<String> moreValidPrefixes(IPrefixLister<E> lister, boolean doFutureCheck) {
+    private List<String> moreValidPrefixes(IStorageLister<E> lister, boolean doFutureCheck) {
         boolean next;
         try {
             next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
@@ -359,8 +359,8 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
     }
 
-    private List<IPrefixLister<E>> filteredListerByPrefixes(Stream<String> prefixesStream) {
-        List<IPrefixLister<E>> prefixesLister = prefixesStream.map(prefix -> {
+    private List<IStorageLister<E>> filteredListerByPrefixes(Stream<String> prefixesStream) {
+        List<IStorageLister<E>> prefixesLister = prefixesStream.map(prefix -> {
             try {
                 return generateLister(prefix);
             } catch (SuitsException e) {
@@ -378,7 +378,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             }
         }).collect(Collectors.toList());
         if (prefixesLister.size() > 0) {
-            IPrefixLister<E> lastLister = prefixesLister.stream().max(Comparator.comparing(IPrefixLister::getPrefix)).get();
+            IStorageLister<E> lastLister = prefixesLister.stream().max(Comparator.comparing(IStorageLister::getPrefix)).get();
             Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
             if (map == null) {
                 prefixAndEndedMap.put(lastLister.getPrefix(), new HashMap<>());
@@ -386,9 +386,9 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 prefixAndEndedMap.put(lastLister.getPrefix(), map);
             }
         }
-        Iterator<IPrefixLister<E>> it = prefixesLister.iterator();
+        Iterator<IStorageLister<E>> it = prefixesLister.iterator();
         while (it.hasNext()) {
-            IPrefixLister<E> nLister = it.next();
+            IStorageLister<E> nLister = it.next();
             if(!nLister.hasNext() || (nLister.getEndPrefix() != null && !"".equals(nLister.getEndPrefix()))) {
                 executorPool.execute(() -> listing(nLister));
                 it.remove();
@@ -397,7 +397,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         return prefixesLister;
     }
 
-    private void processNodeLister(IPrefixLister<E> lister) {
+    private void processNodeLister(IStorageLister<E> lister) {
         if (lister.currents().size() > 0 || lister.hasNext()) {
             executorPool.execute(() -> listing(lister));
         } else {
@@ -406,7 +406,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
     }
 
-    private List<IPrefixLister<E>> computeToNextLevel(List<IPrefixLister<E>> listerList) {
+    private List<IStorageLister<E>> computeToNextLevel(List<IStorageLister<E>> listerList) {
         return listerList.parallelStream().map(lister -> {
             List<String> nextPrefixes = moreValidPrefixes(lister, true);
             processNodeLister(lister);
@@ -418,11 +418,11 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
     }
 
-    private List<String> checkListerInPool(List<IPrefixLister<E>> listerList, int cValue, int tiny) {
+    private List<String> checkListerInPool(List<IStorageLister<E>> listerList, int cValue, int tiny) {
         List<String> extremePrefixes = null;
         int count = 0;
-        IPrefixLister<E> iLister;
-        Iterator<IPrefixLister<E>> iterator;
+        IStorageLister<E> iLister;
+        Iterator<IStorageLister<E>> iterator;
         String prefix;
         String nextMarker;
         String start;
@@ -441,7 +441,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 }
                 if (listerList.size() > 0 && listerList.size() <= tiny) {
                     rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...\n", listerList.size(), cValue);
-                    for (IPrefixLister<E> lister : listerList) {
+                    for (IStorageLister<E> lister : listerList) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         prefix = lister.getPrefix();
                         nextMarker = lister.truncate();
@@ -513,7 +513,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
     }
 
     private void prefixesListing() {
-        List<IPrefixLister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
+        List<IStorageLister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
         while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
             prefixesMap.clear();
             listerList = computeToNextLevel(listerList);
@@ -563,7 +563,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
-        IPrefixLister<E> startLister = null;
+        IStorageLister<E> startLister = null;
         if (prefixes == null || prefixes.size() == 0) {
             startLister = generateLister("", 1);
             if (threads > 1) prefixes = moreValidPrefixes(startLister, false);

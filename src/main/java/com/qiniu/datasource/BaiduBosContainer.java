@@ -9,7 +9,7 @@ import com.qiniu.convert.Converter;
 import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.convert.StringMapPair;
-import com.qiniu.interfaces.IPrefixLister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.interfaces.IStringFormat;
 import com.qiniu.interfaces.ITypeConvert;
@@ -89,7 +89,7 @@ public class BaiduBosContainer extends CloudStorageContainer<BosObjectSummary, B
     }
 
     @Override
-    protected IPrefixLister<BosObjectSummary> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
+    protected IStorageLister<BosObjectSummary> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
         if (marker == null || "".equals(marker)) marker = CloudApiUtils.getAliOssMarker(start);
         BosClient bosClient = new BosClient(this.configuration);
         try {

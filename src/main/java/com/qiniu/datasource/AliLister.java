@@ -7,12 +7,12 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.IPrefixLister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.util.List;
 
-public class AliLister implements IPrefixLister<OSSObjectSummary> {
+public class AliLister implements IStorageLister<OSSObjectSummary> {
 
     private OSSClient ossClient;
     private ListObjectsRequest listObjectsRequest;
@@ -49,18 +49,11 @@ public class AliLister implements IPrefixLister<OSSObjectSummary> {
     }
 
     @Override
-    public String getBucket() {
-        return listObjectsRequest.getBucketName();
-    }
-
     public String getPrefix() {
         return listObjectsRequest.getPrefix();
     }
 
-    public void setMarker(String marker) {
-        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
-    }
-
+    @Override
     public String getMarker() {
         return listObjectsRequest.getMarker();
     }
@@ -81,10 +74,6 @@ public class AliLister implements IPrefixLister<OSSObjectSummary> {
     @Override
     public void setLimit(int limit) {
         listObjectsRequest.setMaxKeys(limit);
-    }
-
-    public int getLimit() {
-        return listObjectsRequest.getMaxKeys();
     }
 
     private void checkedListWithEnd() {

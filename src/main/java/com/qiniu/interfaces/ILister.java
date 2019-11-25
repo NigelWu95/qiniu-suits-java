@@ -12,15 +12,11 @@ public interface ILister<E> {
 
     void setLimit(int limit);
 
-    int getLimit();
-
     void listForward() throws SuitsException;
 
     boolean hasNext();
 
     List<E> currents();
-
-    String currentEndKey();
 
     String truncate();
 

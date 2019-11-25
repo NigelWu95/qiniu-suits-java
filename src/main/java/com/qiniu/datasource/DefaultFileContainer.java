@@ -46,7 +46,7 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
     }
 
     @Override
-    protected IFileDirLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
+    protected ILocalFileLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
         return new FileInfoLister(directory, false, transferPath, leftTrimSize, start, end, unitLen);
     }
 

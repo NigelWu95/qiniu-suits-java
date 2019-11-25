@@ -14,7 +14,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public abstract class FileContainer<E, W, T> extends DatasourceActor implements IDataSource<IFileDirLister<E, File>, IResultOutput<W>, T> {
+public abstract class FileContainer<E, W, T> extends DatasourceActor implements IDataSource<ILocalFileLister<E, File>, IResultOutput<W>, T> {
 
     protected String path;
     protected String transferPath = null;
@@ -25,7 +25,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     protected Map<String, Map<String, String>> directoriesMap;
     protected List<File> directories;
     protected ILineProcess<T> processor; // 定义的资源处理器
-    protected ConcurrentMap<String, IFileDirLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
+    protected ConcurrentMap<String, ILocalFileLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
 
     public FileContainer(String path, Map<String, Map<String, String>> directoriesMap, List<String> antiDirectories,
                          Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
@@ -156,13 +156,13 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    protected abstract IFileDirLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
+    protected abstract ILocalFileLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
 
-    IFileDirLister<E, File> generateLister(File directory) throws IOException {
+    ILocalFileLister<E, File> generateLister(File directory) throws IOException {
         return generateLister(directory, 0);
     }
 
-    private IFileDirLister<E, File> generateLister(File directory, int limit) throws IOException {
+    private ILocalFileLister<E, File> generateLister(File directory, int limit) throws IOException {
         limit = limit > 0 ? limit : unitLen;
         int retry = retryTimes;
         Map<String, String> map = directoriesMap.get(directory.getPath());
@@ -185,7 +185,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    public void export(IFileDirLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+    public void export(ILocalFileLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
@@ -228,7 +228,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
                 procedureLogger.info(recorder.put(lister.getName(), json));
             }
-            if (map != null) map.put("start", lister.currentEndKey());
+            if (map != null) map.put("start", lister.currentEndFilepath());
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
             lister.listForward();
@@ -239,7 +239,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
-    private void listing(IFileDirLister<E, File> lister) {
+    private void listing(ILocalFileLister<E, File> lister) {
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
@@ -285,7 +285,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 
     private List<File> directoriesAfterListerRun(File directory) {
         try {
-            IFileDirLister<E, File> lister = generateLister(directory);
+            ILocalFileLister<E, File> lister = generateLister(directory);
             if (lister.hasNext() || lister.getDirectories() != null) {
                 listing(lister);
                 if (lister.getDirectories() == null || lister.getDirectories().size() <= 0) {
@@ -352,7 +352,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         rootLogger.info("{} running...", info);
         showdownHook();
         if (directories == null || directories.size() == 0) {
-            IFileDirLister<E, File> fileInfoLister = generateLister(new File(realPath));
+            ILocalFileLister<E, File> fileInfoLister = generateLister(new File(realPath));
             if (fileInfoLister.currents().size() > 0 || fileInfoLister.hasNext()) {
                 listing(fileInfoLister);
             }
