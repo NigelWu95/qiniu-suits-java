@@ -645,8 +645,9 @@ public class QSuitsEntry {
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new QueryAvinfo(getQiniuConfig(), protocol, domain, urlIndex)
-                : new QueryAvinfo(getQiniuConfig(), protocol, domain, urlIndex, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new QueryAvinfo(configuration, protocol, domain, urlIndex)
+                : new QueryAvinfo(configuration, protocol, domain, urlIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopCommand(Map<String, String> indexMap, boolean single) throws IOException {
@@ -657,9 +658,10 @@ public class QSuitsEntry {
         ParamsUtils.checked(size, "size", "(true|false)");
         String configJson = entryParam.getValue("pfop-config", "").trim();
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
-        return single ? new PfopCommand(getQiniuConfig(), avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new PfopCommand(configuration, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
                 configJson, pfopConfigs)
-                : new PfopCommand(getQiniuConfig(), avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson,
+                : new PfopCommand(configuration, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson,
                 pfopConfigs, savePath);
     }
 
@@ -683,8 +685,9 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         ParamsUtils.checked(protocol, "protocol", "https?");
         String pIdIndex = indexMap.containsValue("id") ? "id" : null;
-        return single ? new QueryPfopResult(getQiniuConfig(), protocol, pIdIndex)
-                : new QueryPfopResult(getQiniuConfig(), protocol, pIdIndex, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new QueryPfopResult(configuration, protocol, pIdIndex)
+                : new QueryPfopResult(configuration, protocol, pIdIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQueryHash(Map<String, String> indexMap, boolean single) throws IOException {
@@ -694,8 +697,9 @@ public class QSuitsEntry {
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String algorithm = entryParam.getValue("algorithm", "md5").trim();
         ParamsUtils.checked(algorithm, "algorithm", "(md5|sha1)");
-        return single ? new QueryHash(getQiniuConfig(), protocol, domain, urlIndex, algorithm)
-                : new QueryHash(getQiniuConfig(), protocol, domain, urlIndex, algorithm, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new QueryHash(configuration, protocol, domain, urlIndex, algorithm)
+                : new QueryHash(configuration, protocol, domain, urlIndex, algorithm, savePath);
     }
 
     private ILineProcess<Map<String, String>> getStatFile(boolean single) throws IOException {
@@ -725,8 +729,9 @@ public class QSuitsEntry {
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new ExportTS(getQiniuConfig(), protocol, domain, urlIndex)
-                : new ExportTS(getQiniuConfig(), protocol, domain, urlIndex, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new ExportTS(configuration, protocol, domain, urlIndex)
+                : new ExportTS(configuration, protocol, domain, urlIndex, savePath);
     }
 
     private Map<String, String> getQueriesMap() {
