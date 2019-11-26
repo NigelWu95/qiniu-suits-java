@@ -7,9 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
-
-public class LocalFileContainerTest {
+public class TextFileContainerTest {
 
     @Test
     public void getFileReaders() throws Exception {
@@ -23,9 +21,9 @@ public class LocalFileContainerTest {
         Map<String, String> indexMap = new HashMap<String, String>(){{
             put("key", "0");
         }};
-        LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, null,
+        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, null,
                 null, linesMap, indexMap, new ArrayList<String>(){{ add("key");}}, 100, 10);
-        localFileContainer.export();
+        textFileContainer.export();
     }
 
     @Test

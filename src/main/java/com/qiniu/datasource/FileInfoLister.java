@@ -25,34 +25,34 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     private String truncated;
     private long count;
 
-    private void checkFileInfoList(String start) throws IOException {
-        if ((start == null || "".equals(start)) && (endPrefix == null || "".equals(endPrefix))) {
+    private void checkFileInfoList(String startPrefix) throws IOException {
+        if ((startPrefix == null || "".equals(startPrefix)) && (endPrefix == null || "".equals(endPrefix))) {
             fileInfoList.sort(Comparator.comparing(fileInfo -> fileInfo.filepath));
-        } else if (start == null || "".equals(start)) {
+        } else if (startPrefix == null || "".equals(startPrefix)) {
             fileInfoList = fileInfoList.stream()
                     .filter(fileInfo -> fileInfo.filepath.compareTo(endPrefix) <= 0)
                     .sorted().collect(Collectors.toList());
         } else if (endPrefix == null || "".equals(endPrefix)) {
             fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.filepath.compareTo(start) > 0)
+                    .filter(fileInfo -> fileInfo.filepath.compareTo(startPrefix) > 0)
                     .sorted().collect(Collectors.toList());
-        } else if (start.compareTo(endPrefix) >= 0) {
+        } else if (startPrefix.compareTo(endPrefix) >= 0) {
             throw new IOException("start filename can not be larger than end filename prefix.");
         } else {
             fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.filepath.compareTo(start) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0)
+                    .filter(fileInfo -> fileInfo.filepath.compareTo(startPrefix) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0)
                     .sorted().collect(Collectors.toList());
         }
     }
 
-    public FileInfoLister(File file, boolean checkText, String transferPath, int leftTrimSize, String start,
+    public FileInfoLister(File file, boolean checkText, String transferPath, int leftTrimSize, String startPrefix,
                           String endPrefix, int limit) throws IOException {
         if (file == null) throw new IOException("input file is null.");
         this.name = file.getPath();
         File[] fs = file.listFiles();
         if (fs == null) throw new IOException("input file is not valid directory: " + file.getPath());
-        fileInfoList = new ArrayList<>();
-        directories = new ArrayList<>();
+        fileInfoList = new ArrayList<>(fs.length);
+        directories = new ArrayList<>(fs.length);
         for(File f : fs) {
             if (f.isHidden()) continue;
             if (f.isDirectory()) {
@@ -68,9 +68,10 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
                 }
             }
         }
+        if (directories.size() == 0) directories = null;
         this.limit = limit;
         this.endPrefix = endPrefix;
-        checkFileInfoList(start);
+        checkFileInfoList(startPrefix);
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
         if (iterator.hasNext()) {
@@ -82,13 +83,14 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         file = null;
     }
 
-    public FileInfoLister(String name, List<FileInfo> fileInfoList, String start, String endPrefix, int limit) throws IOException {
+    public FileInfoLister(String name, List<FileInfo> fileInfoList, String startPrefix, String endPrefix, int limit)
+            throws IOException {
         this.name = name;
         if (fileInfoList == null) throw new IOException("init fileInfoList can not be null.");
         this.fileInfoList = fileInfoList;
         this.limit = limit;
         this.endPrefix = endPrefix;
-        checkFileInfoList(start);
+        checkFileInfoList(startPrefix);
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
         if (iterator.hasNext()) {

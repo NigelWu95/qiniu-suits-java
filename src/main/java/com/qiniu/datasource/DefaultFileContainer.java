@@ -20,6 +20,11 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
     }
 
     @Override
+    public String getSourceName() {
+        return "file";
+    }
+
+    @Override
     protected ITypeConvert<FileInfo, Map<String, String>> getNewConverter() {
         return new Converter<FileInfo, Map<String, String>>() {
             @Override
@@ -46,17 +51,12 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
     }
 
     @Override
-    protected ILocalFileLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
-        return new FileInfoLister(directory, false, transferPath, leftTrimSize, start, end, unitLen);
-    }
-
-    @Override
-    public String getSourceName() {
-        return "file";
-    }
-
-    @Override
     protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
+    }
+
+    @Override
+    protected ILocalFileLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
+        return new FileInfoLister(directory, false, transferPath, leftTrimSize, start, end, unitLen);
     }
 }

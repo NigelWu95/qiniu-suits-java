@@ -4,6 +4,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.*;
 import com.qiniu.util.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -18,14 +19,14 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
     protected String separator;
     protected String addKeyPrefix;
     protected String rmKeyPrefix;
-    protected Map<String, String> linesMap;
+    protected Map<String, Map<String, String>> linesMap;
     protected ILineProcess<T> processor; // 定义的资源处理器
     protected ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
     protected ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
 
     public TextContainer(String path, String parse, String separator, String addKeyPrefix, String rmKeyPrefix,
-                         Map<String, String> linesMap, Map<String, String> indexMap, List<String> fields, int unitLen,
-                         int threads) throws IOException {
+                         Map<String, Map<String, String>> linesMap, Map<String, String> indexMap, List<String> fields,
+                         int unitLen, int threads) throws IOException {
         super(unitLen, threads);
         this.path = path;
         this.parse = parse;
@@ -153,7 +154,60 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    protected abstract List<IReader<E>> getFileReaders(String path) throws IOException;
+    protected abstract IReader<E> getReader(File source, String start, int unitLen) throws IOException;
+
+    private List<IReader<E>> getFileReaders(String path) throws IOException {
+        List<IReader<E>> fileReaders = new ArrayList<>();
+        if (linesMap != null && linesMap.size() > 0) {
+            boolean pathIsValid = true;
+            try { path = FileUtils.convertToRealPath(path); } catch (IOException ignored) { pathIsValid = false; }
+            String type;
+            File file;
+            Map<String, String> map;
+            String start;
+            for (String filename : linesMap.keySet()) {
+                if (pathIsValid) {
+                    file = new File(path, filename);
+                    if (!file.exists()) file = new File(filename);
+                } else {
+                    file = new File(filename);
+                }
+                if (!file.exists()) throw new IOException("the filename not exists: " + filename);
+                if (file.isDirectory()) {
+                    throw new IOException("the filename defined in lines map can not be directory: " + filename);
+                } else {
+                    type = FileUtils.contentType(file);
+                    if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                        map = linesMap.get(filename);
+                        start = map == null ? null : map.get("start");
+                        fileReaders.add(getReader(file, start, unitLen));
+                    } else {
+                        throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);
+                    }
+                }
+            }
+        } else {
+            path = FileUtils.convertToRealPath(path);
+            File sourceFile = new File(path);
+            if (sourceFile.isDirectory()) {
+                List<File> files = FileUtils.getFiles(sourceFile, true);
+                for (File file : files) {
+                    if (file.getPath().contains(FileUtils.pathSeparator + ".")) continue;
+                    fileReaders.add(getReader(file, null, unitLen));
+                }
+            } else {
+                String type = FileUtils.contentType(sourceFile);
+                if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                    fileReaders.add(getReader(sourceFile, null, unitLen));
+                } else {
+                    throw new IOException("please provide the \'text\' file. The current path you gave is: " + path);
+                }
+            }
+        }
+        if (fileReaders.size() == 0) throw new IOException("please provide the \'text\' file in the directory. " +
+                "The current path you gave is: " + path);
+        return fileReaders;
+    }
 
     public void export() throws Exception {
         String info = processor == null ?

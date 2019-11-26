@@ -9,29 +9,36 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocalFileReader implements IReader<String> {
+public class TextFileReader implements IReader<String> {
 
     private String name;
     private BufferedReader bufferedReader;
-    private String startLine;
+//    private String endPrefix;
     private int limit;
     private String line;
-    private List<String> lineList;
+    private List<String> lineList; // 缓存读取的行
     private long count;
 
-    public LocalFileReader(File sourceFile, String startLine, int limit) throws IOException {
+    public TextFileReader(File source, String startPrefix, int limit) throws IOException {
         FileReader fileReader;
         try {
-            fileReader = new FileReader(sourceFile);
+            fileReader = new FileReader(source);
         } catch (IOException e) {
             throw new IOException("file-path parameter may be incorrect, " + e.getMessage());
         }
-        name = sourceFile.getPath();
+        name = source.getPath();
         bufferedReader = new BufferedReader(fileReader);
-        this.startLine =  startLine;
         this.limit = limit;
-        this.line = bufferedReader.readLine();
-        this.lineList = new ArrayList<String>(){{ add(line); }};
+        line = bufferedReader.readLine();
+        if (startPrefix != null) {
+            while (line != null && line.compareTo(startPrefix) <= 0) {
+                line = bufferedReader.readLine();
+            }
+        }
+        lineList = new ArrayList<>();
+        if (line != null) lineList.add(line);
+//        this.endPrefix = "".equals(endPrefix) ? null : endPrefix;
+//        if (line != null && this.endPrefix != null && this.endPrefix.compareTo(line) >= 0) lineList.add(line);
     }
 
     @Override
@@ -53,11 +60,9 @@ public class LocalFileReader implements IReader<String> {
                 lineList = srcList;
                 throw e;
             }
-            if (line == null) {
-                break;
-            } else if (startLine == null || line.compareTo(startLine) > 0) {
-                srcList.add(line);
-            }
+            if (line == null) break;
+//            else if (endPrefix != null && endPrefix.compareTo(line) < 0) line = null;
+            else srcList.add(line);
         }
         count += srcList.size();
         return srcList;

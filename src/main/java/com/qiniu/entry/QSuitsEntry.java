@@ -258,7 +258,7 @@ public class QSuitsEntry {
             return getBaiduBosContainer();
         } else if ("local".equals(source)) {
             if (commonParams.isSelfUpload()) return getDefaultFileContainer();
-            else return getLocalFileContainer();
+            else return getTextFileContainer();
         } else {
             throw new IOException("no such datasource: " + source);
         }
@@ -272,18 +272,18 @@ public class QSuitsEntry {
         return new InputSource(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
-    public LocalFileContainer getLocalFileContainer() throws IOException {
+    public TextFileContainer getTextFileContainer() throws IOException {
         String filePath = commonParams.getPath();
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
         String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        Map<String, String> linesMap = commonParams.getLinesMap();
-        LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, addKeyPrefix,
+        Map<String, Map<String, String>> linesMap = commonParams.getPathConfigMap();
+        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, addKeyPrefix,
                 rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
-        localFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
-        localFileContainer.setRetryTimes(retryTimes);
-        return localFileContainer;
+        textFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
+        textFileContainer.setRetryTimes(retryTimes);
+        return textFileContainer;
     }
 
     public DefaultFileContainer getDefaultFileContainer() throws IOException {

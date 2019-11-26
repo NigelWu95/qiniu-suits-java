@@ -54,7 +54,6 @@ public class CommonParams {
     private String separator;
     private String addKeyPrefix;
     private String rmKeyPrefix;
-    private Map<String, String> linesMap;
     private String process;
     private String privateType;
     private String regionName;
@@ -177,7 +176,8 @@ public class CommonParams {
             setSeparator();
             addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
             rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
-            setLinesMap(entryParam.getValue("line-config", ""));
+            String files = entryParam.getValue("files", null);
+            setPathConfigMap(entryParam.getValue("file-config", ""), files, false, false);
         }
         setProcess();
         setPrivateType();
@@ -385,22 +385,6 @@ public class CommonParams {
             else this.separator = " ";
         } else {
             this.separator = separator;
-        }
-    }
-
-    private void setLinesMap(String linesConfig) throws Exception {
-        linesMap = new HashMap<>();
-        if (linesConfig != null && !"".equals(linesConfig)) {
-            JsonFile jsonFile = new JsonFile(linesConfig);
-            JsonElement lineCfg;
-            for (String filename : jsonFile.getKeys()) {
-                lineCfg = jsonFile.getElement(filename);
-                if (lineCfg == null || lineCfg instanceof JsonNull) {
-                    linesMap.put(filename, "");
-                } else {
-                    linesMap.put(filename, lineCfg.getAsString());
-                }
-            }
         }
     }
 
@@ -686,36 +670,40 @@ public class CommonParams {
             JsonElement startElement;
             JsonElement endElement;
             for (String key : jsonFile.getKeys()) {
-                Map<String, String> markerAndEnd = new HashMap<>();
+                Map<String, String> startAndEnd = new HashMap<>();
 //                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
                 JsonElement json = jsonFile.getElement(key);
                 if (json == null || json instanceof JsonNull) {
                     pathConfigMap.put(key, null);
                     continue;
                 }
-                if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + key + " must be json.");
-                jsonCfg = json.getAsJsonObject();
-                if (withMarker) {
-                    markerElement = jsonCfg.get("marker");
-                    if (markerElement != null && !(markerElement instanceof JsonNull)) {
-                        markerAndEnd.put("marker", markerElement.getAsString());
+                if (withMarker || withEnd) {
+                    if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + key + " must be json.");
+                    jsonCfg = json.getAsJsonObject();
+                    if (withMarker) {
+                        markerElement = jsonCfg.get("marker");
+                        if (markerElement != null && !(markerElement instanceof JsonNull)) {
+                            startAndEnd.put("marker", markerElement.getAsString());
+                        }
                     }
-                }
-                startElement = jsonCfg.get("start");
-                if (startElement != null && !(startElement instanceof JsonNull)) {
-                    markerAndEnd.put("start", startElement.getAsString());
-                }
-                if (withEnd) {
-                    endElement = jsonCfg.get("end");
-                    if (endElement != null && !(endElement instanceof JsonNull)) {
-                        markerAndEnd.put("end", endElement.getAsString());
+                    startElement = jsonCfg.get("start");
+                    if (startElement != null && !(startElement instanceof JsonNull)) {
+                        startAndEnd.put("start", startElement.getAsString());
                     }
+                    if (withEnd) {
+                        endElement = jsonCfg.get("end");
+                        if (endElement != null && !(endElement instanceof JsonNull)) {
+                            startAndEnd.put("end", endElement.getAsString());
+                        }
+                    }
+                } else {
+                    startAndEnd.put("start", json.getAsString());
                 }
-                pathConfigMap.put(key, markerAndEnd);
+                pathConfigMap.put(key, startAndEnd);
             }
         } else if (subPaths != null && !"".equals(subPaths)) {
             String[] subPathList = ParamsUtils.escapeSplit(subPaths);
-            for (String subPath : subPathList) pathConfigMap.put(subPath, new HashMap<>());
+            for (String subPath : subPathList) pathConfigMap.put(subPath, null);
         }
     }
 
@@ -1318,10 +1306,6 @@ public class CommonParams {
         this.rmKeyPrefix = rmKeyPrefix;
     }
 
-    public void setLinesMap(Map<String, String> linesMap) {
-        this.linesMap = linesMap;
-    }
-
     public void setProcess(String process) {
         this.process = process;
     }
@@ -1516,10 +1500,6 @@ public class CommonParams {
 
     public String getRmKeyPrefix() {
         return rmKeyPrefix;
-    }
-
-    public Map<String, String> getLinesMap() {
-        return linesMap;
     }
 
     public String getProcess() {

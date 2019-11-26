@@ -2,7 +2,6 @@ package com.qiniu.datasource;
 
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
-import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.*;
 import com.qiniu.util.*;
 
@@ -158,13 +157,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 
     protected abstract ILocalFileLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
 
-    ILocalFileLister<E, File> generateLister(File directory) throws IOException {
-        return generateLister(directory, 0);
-    }
-
-    private ILocalFileLister<E, File> generateLister(File directory, int limit) throws IOException {
-        limit = limit > 0 ? limit : unitLen;
-        int retry = retryTimes;
+    private ILocalFileLister<E, File> generateLister(File directory) throws IOException {
         Map<String, String> map = directoriesMap.get(directory.getPath());
         String start;
         String end;
@@ -174,15 +167,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             start = map.get("start");
             end = map.get("end");
         }
-        while (true) {
-            try {
-                return getLister(directory, start, end, limit);
-            } catch (SuitsException e) {
-                retry = HttpRespUtils.listExceptionWithRetry(e, retry);
-                try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-                errorLogger.error("generate lister by directory:{} retrying...", directory, e);
-            }
-        }
+        return getLister(directory, start, end, unitLen);
     }
 
     public void export(ILocalFileLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
@@ -350,25 +335,32 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 String.join(" ", "list files from path:", path) :
                 String.join(" ", "read files from path:", path, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
+        rootLogger.info("order\tprefix\tquantity");
         showdownHook();
+        executorPool = Executors.newFixedThreadPool(threads);
         if (directories == null || directories.size() == 0) {
             ILocalFileLister<E, File> fileInfoLister = generateLister(new File(realPath));
-            if (fileInfoLister.currents().size() > 0 || fileInfoLister.hasNext()) {
-                listing(fileInfoLister);
-            }
-            if (fileInfoLister.getDirectories() == null || fileInfoLister.getDirectories().size() <= 0) {
-                directories = null;
-            } else if (hasAntiDirectories) {
-                directories = fileInfoLister.getDirectories().parallelStream().filter(this::checkDirectory)
-                        .peek(directory -> recordListerByDirectory(directory.getPath())).collect(Collectors.toList());
+            if (fileInfoLister.getDirectories() != null && fileInfoLister.getDirectories().size() > 0) {
+                if (hasAntiDirectories) {
+                    directories = fileInfoLister.getDirectories().parallelStream().filter(this::checkDirectory)
+                            .peek(directory -> recordListerByDirectory(directory.getPath())).collect(Collectors.toList());
+                } else {
+                    for (File dir : fileInfoLister.getDirectories()) recordListerByDirectory(dir.getPath());
+                    directories = fileInfoLister.getDirectories();
+                }
+                if (fileInfoLister.currents().size() > 0 || fileInfoLister.hasNext()) {
+                    atomicLong.incrementAndGet();
+                    executorPool.execute(() -> {
+                        listing(fileInfoLister);
+                        atomicLong.decrementAndGet();
+                    });
+                }
             } else {
-                for (File dir : fileInfoLister.getDirectories()) recordListerByDirectory(dir.getPath());
-                directories = fileInfoLister.getDirectories();
+                if (fileInfoLister.currents().size() > 0 || fileInfoLister.hasNext()) listing(fileInfoLister);
             }
         }
         try {
             if (directories != null && directories.size() > 0) {
-                executorPool = Executors.newFixedThreadPool(threads);
                 listForNextIteratively(directories);
                 executorPool.shutdown();
                 while (!executorPool.isTerminated()) {
