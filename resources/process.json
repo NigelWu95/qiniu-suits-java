@@ -2,23 +2,31 @@
   "pfop":[
     {
       "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
-      "saveas":"bucket:$(name)F720.mp4"
+      "saveas":"bucket:$(name)_F720.mp4"
     },
     {
       "cmd":"avthumb/mp4/s/720x480/autoscale/1",
-      "saveas":"bucket:$(name)F480.mp4"
+      "saveas":"bucket:$(name)_F480.mp4"
+    },
+    {
+      "cmd":"avthumb/mp4/s/640x480/autoscale/1",
+      "saveas":"bucket:F480-$(key)"
     }
   ],
   "pfopcmd":[
     {
       "scale":[1000,1280],
       "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
-      "saveas":"bucket:$(key)F720.mp4"
+      "saveas":"bucket:$(name)_F720.mp4"
     },
     {
       "scale":[1280],
-      "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
-      "saveas":"bucket:$(key)F1080"
+      "cmd":"avthumb/mp4/s/1920x1080/autoscale/1",
+      "saveas":"bucket:$(name)_F1080.mp4"
+    },
+    {
+      "cmd":"avthumb/mp4/s/640x480/autoscale/1",
+      "saveas":"bucket:F480-$(key)"
     }
   ]
 }

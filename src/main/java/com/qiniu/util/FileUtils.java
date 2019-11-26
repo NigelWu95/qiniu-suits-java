@@ -131,7 +131,7 @@ public final class FileUtils {
         for (int i = 0; i < items.length - 1; i++) {
             shortName.append(items[i]).append(".");
         }
-        return new String[]{shortName.toString().substring(0, shortName.length() - 1), items[items.length - 1]};
+        return new String[]{shortName.substring(0, shortName.length() - 1), items[items.length - 1]};
     }
 
     public static List<File> getFiles(File directory, boolean checkText) throws IOException {

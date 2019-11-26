@@ -951,16 +951,16 @@ public class CommonParams {
 
         boolean useDefault = false;
         boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);
-        if (indexMap.size() == 0) {
+        if (indexMap.size() == 0 || "".equals(indexes)) {
             useDefault = true;
             if (isStorageSource) {
                 for (String key : keys) indexMap.put(key, key);
             } else if (isSelfUpload) {
                 for (int i = 0; i < keys.size(); i++) indexMap.put(String.valueOf(i), keys.get(i));
             } else if (fieldIndex) {
-                indexMap.put("key", "key");
+                if (!indexMap.containsKey("key") && !indexMap.containsValue("key")) indexMap.put("key", "key");
             } else {
-                indexMap.put("0", "key");
+                if (!indexMap.containsKey("0") && !indexMap.containsValue("key")) indexMap.put("0", "key");
             }
         }
 
@@ -1150,8 +1150,8 @@ public class CommonParams {
             pfopJson.addProperty("cmd", cmd);
             String saveas = entryParam.getValue("saveas");
             pfopJson.addProperty("saveas", saveas);
-            if ("pfopcmd".equals(process)) {
-                String scale = entryParam.getValue("scale").trim();
+            String scale = entryParam.getValue("scale", "").trim();
+            if ("pfopcmd".equals(process) && !"".equals(scale)) {
                 if (!scale.matches("\\[.*]")) throw new IOException("correct \"scale\" parameter should " +
                         "like \"[num1,num2]\"");
                 String[] scales = scale.substring(1, scale.length() - 1).split(",");

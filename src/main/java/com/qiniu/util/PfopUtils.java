@@ -10,9 +10,7 @@ import java.util.List;
 public final class PfopUtils {
 
     public static JsonObject checkPfopJson(JsonObject jsonObject, boolean scaleCheck) throws IOException {
-        if (scaleCheck) {
-            if (!jsonObject.has("scale"))
-                throw new IOException("the json-config miss \"scale\" field in \"" + jsonObject + "\".");
+        if (jsonObject.has("scale")) {
             List<Integer> scale = JsonUtils.fromJsonArray(jsonObject.get("scale").getAsJsonArray(),
                     new TypeToken<List<Integer>>(){});
             if (scale.size() < 1) {
@@ -23,6 +21,8 @@ public final class PfopUtils {
                 jsonArray.add(Integer.MAX_VALUE);
                 jsonObject.add("scale", jsonArray);
             }
+        } else if (scaleCheck) {
+            throw new IOException("the json-config miss \"scale\" field in \"" + jsonObject + "\".");
         }
         if (!jsonObject.keySet().contains("cmd") || !jsonObject.keySet().contains("saveas"))
             throw new IOException("the json-config miss \"cmd\" or \"saveas\" field in \"" + jsonObject + "\".");

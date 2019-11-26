@@ -15,9 +15,7 @@ public class TextFileContainerTest {
         String filePath = "../../Github/temp";
         String parse = "tab";
         String separator = ",";
-        Map<String, String> linesMap = new HashMap<String, String>(){{
-            put("qiniu_success_1.txt", "");
-        }};
+        Map<String, Map<String, String>> linesMap = null;
         Map<String, String> indexMap = new HashMap<String, String>(){{
             put("key", "0");
         }};
