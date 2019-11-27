@@ -69,7 +69,7 @@ public class TextFileReader implements IReader<String> {
     }
 
     @Override
-    public String lastLine() {
+    public String currentEndLine() {
         return line;
     }
 

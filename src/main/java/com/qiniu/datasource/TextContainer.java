@@ -70,7 +70,7 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
             stringConverter = getNewStringConverter();
             saver.preAddWriter("failed");
         }
-        String lastLine = reader.lastLine();
+        String lastLine = reader.currentEndLine();
         List<E> srcList = null;
         List<T> convertedList;
         List<String> writeList;
@@ -110,7 +110,7 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
             }
             try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
             procedureLogger.info(recorder.put(reader.getName(), lastLine));
-            lastLine = reader.lastLine();
+            lastLine = reader.currentEndLine();
         }
     }
 

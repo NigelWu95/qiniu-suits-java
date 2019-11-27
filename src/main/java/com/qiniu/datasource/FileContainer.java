@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public abstract class FileContainer<E, W, T> extends DatasourceActor implements IDataSource<ILocalFileLister<E, File>, IResultOutput<W>, T> {
@@ -268,61 +267,23 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         procedureLogger.info(recorder.put(directory, json));
     }
 
-    private List<File> directoriesAfterListerRun(File directory) {
+    private List<File> directoriesFromLister(File directory) {
         try {
             ILocalFileLister<E, File> lister = generateLister(directory);
-            if (lister.hasNext() || lister.getDirectories() != null) {
-                listing(lister);
-                if (lister.getDirectories() == null || lister.getDirectories().size() <= 0) {
-                    return null;
-                } else if (hasAntiDirectories) {
-                    return lister.getDirectories().stream().filter(this::checkDirectory)
-                            .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList());
-                } else {
-                    for (File dir : lister.getDirectories()) recordListerByDirectory(dir.getPath());
-                    return lister.getDirectories();
-                }
+            if (lister.hasNext()) executorPool.execute(() -> listing(lister));
+            if (lister.getDirectories() == null || lister.getDirectories().size() <= 0) {
+                return null;
+            } else if (hasAntiDirectories) {
+                return lister.getDirectories().stream().filter(this::checkDirectory)
+                        .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList());
             } else {
-                listing(lister);
+                for (File dir : lister.getDirectories()) recordListerByDirectory(dir.getPath());
                 return lister.getDirectories();
             }
         } catch (IOException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
             errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
             return null;
-        }
-    }
-
-    private AtomicLong atomicLong = new AtomicLong(0);
-
-    private void listForNextIteratively(List<File> directories) throws Exception {
-        List<File> tempPrefixes;
-        List<Future<List<File>>> futures = new ArrayList<>();
-        for (File directory : directories) {
-            if (atomicLong.get() > threads) {
-                tempPrefixes = directoriesAfterListerRun(directory);
-                if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
-            } else {
-                atomicLong.incrementAndGet();
-                futures.add(executorPool.submit(() -> {
-                    List<File> list = directoriesAfterListerRun(directory);
-                    atomicLong.decrementAndGet();
-                    return list;
-                }));
-            }
-        }
-        Iterator<Future<List<File>>> iterator;
-        Future<List<File>> future;
-        while (futures.size() > 0) {
-            iterator = futures.iterator();
-            while (iterator.hasNext()) {
-                future = iterator.next();
-                if (future.isDone()) {
-                    tempPrefixes = future.get();
-                    if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
-                    iterator.remove();
-                }
-            }
         }
     }
 
@@ -348,24 +309,25 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     for (File dir : fileInfoLister.getDirectories()) recordListerByDirectory(dir.getPath());
                     directories = fileInfoLister.getDirectories();
                 }
-                if (fileInfoLister.currents().size() > 0 || fileInfoLister.hasNext()) {
-                    atomicLong.incrementAndGet();
-                    executorPool.execute(() -> {
-                        listing(fileInfoLister);
-                        atomicLong.decrementAndGet();
-                    });
-                }
+                if (fileInfoLister.hasNext()) executorPool.execute(() -> listing(fileInfoLister));
             } else {
-                if (fileInfoLister.currents().size() > 0 || fileInfoLister.hasNext()) listing(fileInfoLister);
+                if (fileInfoLister.hasNext()) {
+                    if (threads > 1 ) executorPool.execute(() -> listing(fileInfoLister));
+                    else listing(fileInfoLister);
+                }
             }
         }
         try {
-            if (directories != null && directories.size() > 0) {
-                listForNextIteratively(directories);
-                executorPool.shutdown();
-                while (!executorPool.isTerminated()) {
-                    sleep(1000);
-                }
+            while (directories != null && directories.size() > 0) {
+                directories = directories.parallelStream()
+                        .map(this::directoriesFromLister)
+                        .filter(Objects::nonNull)
+                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
+                        .orElse(null);
+            }
+            executorPool.shutdown();
+            while (!executorPool.isTerminated()) {
+                sleep(1000);
             }
             rootLogger.info("{} finished.", info);
             endAction();

@@ -9,7 +9,7 @@ public interface IReader<T> {
 
     List<T> readLines() throws IOException;
 
-    String lastLine();
+    String currentEndLine();
 
     long count();
 

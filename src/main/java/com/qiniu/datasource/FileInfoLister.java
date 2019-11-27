@@ -19,7 +19,8 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     private List<File> directories;
     private Iterator<FileInfo> iterator;
     private List<FileInfo> currents;
-    private FileInfo last;
+//    private FileInfo last;
+    private String lastFilePath;
     private String truncated;
     private long count;
 
@@ -142,11 +143,12 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
                 indexMap.containsKey("mime"), indexMap.containsKey("parent"));
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
-        if (iterator.hasNext()) {
-            last = iterator.next();
-            iterator.remove();
-            currents.add(last);
-        }
+//        if (iterator.hasNext()) {
+//            last = iterator.next();
+//            iterator.remove();
+//            currents.add(last);
+//        }
+        lastFilePath = "";
         count = fileInfoList.size();
         file = null;
     }
@@ -162,11 +164,12 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
                 .collect(Collectors.toList());
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
-        if (iterator.hasNext()) {
-            last = iterator.next();
-            iterator.remove();
-            currents.add(last);
-        }
+//        if (iterator.hasNext()) {
+//            last = iterator.next();
+//            iterator.remove();
+//            currents.add(last);
+//        }
+        lastFilePath = "";
         count = fileInfoList.size();
     }
 
@@ -197,23 +200,26 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     }
 
     @Override
-    public void listForward() {
-        if (last == null) {
+    public synchronized void listForward() {
+        if (lastFilePath == null) {
             iterator = null;
             currents.clear();
             fileInfoList.clear();
         } else if (count <= limit) {
-            last = null;
+            lastFilePath = null;
             iterator = null;
             currents = fileInfoList;
         } else {
             currents.clear();
             while (iterator.hasNext()) {
-                if (currents.size() >= limit) break;
+                if (currents.size() >= limit) {
+                    lastFilePath = currents.get(currents.size() - 1).filepath;
+                    break;
+                }
                 currents.add(iterator.next());
                 iterator.remove();
             }
-            last = null;
+            lastFilePath = null;
         }
     }
 
@@ -228,9 +234,9 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     }
 
     @Override
-    public String currentEndFilepath() {
+    public synchronized String currentEndFilepath() {
         if (truncated != null) return truncated;
-        return last.filepath;
+        return lastFilePath;
     }
 
     @Override
@@ -245,9 +251,9 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     }
 
     @Override
-    public String truncate() {
-        truncated = last.filepath;
-        last = null;
+    public synchronized String truncate() {
+        truncated = lastFilePath;
+        lastFilePath = null;
         return truncated;
     }
 
@@ -260,7 +266,7 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     public void close() {
         iterator = null;
         if (currents.size() > 0) {
-            last = currents.get(currents.size() - 1);
+            lastFilePath = currents.get(currents.size() - 1).filepath;
             currents.clear();
         }
 //        fileInfoList = null;
