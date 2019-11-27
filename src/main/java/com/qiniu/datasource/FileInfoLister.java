@@ -6,11 +6,9 @@ import com.qiniu.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
 
@@ -25,29 +23,98 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     private String truncated;
     private long count;
 
-    private void checkFileInfoList(String startPrefix) throws IOException {
+    private Stream<FileInfo> checkFileInfoList(String startPrefix) throws IOException {
         if ((startPrefix == null || "".equals(startPrefix)) && (endPrefix == null || "".equals(endPrefix))) {
-            fileInfoList.sort(Comparator.comparing(fileInfo -> fileInfo.filepath));
+            return fileInfoList.stream();
         } else if (startPrefix == null || "".equals(startPrefix)) {
-            fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.filepath.compareTo(endPrefix) <= 0)
-                    .sorted().collect(Collectors.toList());
+            return fileInfoList.stream().filter(fileInfo -> fileInfo.filepath.compareTo(endPrefix) <= 0);
         } else if (endPrefix == null || "".equals(endPrefix)) {
-            fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.filepath.compareTo(startPrefix) > 0)
-                    .sorted().collect(Collectors.toList());
+            return fileInfoList.stream().filter(fileInfo -> fileInfo.filepath.compareTo(startPrefix) > 0);
         } else if (startPrefix.compareTo(endPrefix) >= 0) {
             throw new IOException("start filename can not be larger than end filename prefix.");
         } else {
-            fileInfoList = fileInfoList.stream()
-                    .filter(fileInfo -> fileInfo.filepath.compareTo(startPrefix) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0)
-                    .sorted().collect(Collectors.toList());
+            return fileInfoList.stream().filter(fileInfo ->
+                    fileInfo.filepath.compareTo(startPrefix) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0);
         }
     }
 
-    public FileInfoLister(File file, boolean checkText, String transferPath, int leftTrimSize, String startPrefix,
-                          String endPrefix, int limit) throws IOException {
-        if (file == null) throw new IOException("input file is null.");
+    private List<FileInfo> withExtraInfo(Stream<FileInfo> stream, boolean withEtag, boolean withMime, boolean withParent) {
+        if (withEtag && withMime && withParent) {
+            return stream.map(fileInfo -> {
+                try {
+                    return fileInfo.withEtag().withMime().withParent();
+                } catch (IOException e) {
+                    try {
+                        fileInfo.etag = e.getMessage().replace("\n", ",");
+                        return fileInfo.withMime().withParent();
+                    } catch (IOException ex) {
+                        fileInfo.mime = ex.getMessage().replace("\n", ",");
+                        return fileInfo.withParent();
+                    }
+                }
+            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
+        } else if (withEtag && withMime) {
+            return stream.map(fileInfo -> {
+                try {
+                    return fileInfo.withEtag().withMime();
+                } catch (IOException e) {
+                    try {
+                        fileInfo.etag = e.getMessage().replace("\n", ",");
+                        return fileInfo.withMime();
+                    } catch (IOException ex) {
+                        fileInfo.mime = ex.getMessage().replace("\n", ",");
+                        return fileInfo;
+                    }
+                }
+            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
+        } else if (withEtag && withParent) {
+            return stream.map(fileInfo -> {
+                try {
+                    return fileInfo.withEtag().withParent();
+                } catch (IOException e) {
+                    fileInfo.etag = e.getMessage().replace("\n", ",");
+                    return fileInfo.withParent();
+                }
+            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
+        } else if (withMime && withParent) {
+            return stream.map(fileInfo -> {
+                try {
+                    return fileInfo.withMime().withParent();
+                } catch (IOException e) {
+                    fileInfo.mime = e.getMessage().replace("\n", ",");
+                    return fileInfo.withParent();
+                }
+            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
+        } else if (withEtag) {
+            return stream.map(fileInfo -> {
+                try {
+                    return fileInfo.withEtag();
+                } catch (IOException e) {
+                    fileInfo.etag = e.getMessage().replace("\n", ",");
+                    return fileInfo;
+                }
+            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
+        } else if (withMime) {
+            return stream.map(fileInfo -> {
+                try {
+                    return fileInfo.withMime();
+                } catch (IOException e) {
+                    fileInfo.mime = e.getMessage().replace("\n", ",");
+                    return fileInfo;
+                }
+            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
+        } else if (withParent) {
+            return stream.map(FileInfo::withParent)
+                    .sorted(Comparator.comparing(fileInfo -> fileInfo.filepath))
+                    .collect(Collectors.toList());
+        } else {
+            return stream.collect(Collectors.toList());
+        }
+    }
+
+    public FileInfoLister(File file, Map<String, String> indexMap, boolean checkText, String transferPath, int leftTrimSize,
+                          String startPrefix, String endPrefix, int limit) throws IOException {
+        if (file == null || indexMap == null) throw new IOException("input file or indexMap is null.");
         this.name = file.getPath();
         File[] fs = file.listFiles();
         if (fs == null) throw new IOException("input file is not valid directory: " + file.getPath());
@@ -71,7 +138,8 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         if (directories.size() == 0) directories = null;
         this.limit = limit;
         this.endPrefix = endPrefix;
-        checkFileInfoList(startPrefix);
+        fileInfoList = withExtraInfo(checkFileInfoList(startPrefix), indexMap.containsKey("etag"),
+                indexMap.containsKey("mime"), indexMap.containsKey("parent"));
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
         if (iterator.hasNext()) {
@@ -83,14 +151,15 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         file = null;
     }
 
-    public FileInfoLister(String name, List<FileInfo> fileInfoList, String startPrefix, String endPrefix, int limit)
-            throws IOException {
+    public FileInfoLister(String name, List<FileInfo> fileInfoList, String startPrefix, String endPrefix, int limit) throws IOException {
         this.name = name;
         if (fileInfoList == null) throw new IOException("init fileInfoList can not be null.");
         this.fileInfoList = fileInfoList;
         this.limit = limit;
         this.endPrefix = endPrefix;
-        checkFileInfoList(startPrefix);
+        fileInfoList = checkFileInfoList(startPrefix)
+                .sorted(Comparator.comparing(fileInfo -> fileInfo.filepath))
+                .collect(Collectors.toList());
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
         if (iterator.hasNext()) {

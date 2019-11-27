@@ -68,7 +68,7 @@ combine=true/false
 |cmd| 需要指定的转码指令，这里 cmd 支持[魔法变量](#魔法变量) |  
 |saveas| 转码结果另存的格式，写法为：`<bucket>:<key>`，其中 `<key>` 支持[魔法变量](#魔法变量)|  
 
-#### 关于魔法变量  
+#### 魔法变量  
 `$(duration)` 表示使用 avinfo 中 format 封装信息中的 duration 值来设置该参数  
 `$(name)` 表示去除后缀的原始文件名（如 a.jpg/a.png/a 的 $(name) 均为 a）  
 `$(ext)` 表示文件名的后缀部分（如 a.jpg/b.jpg 的 $(ext) 均为 jpg，c 的 $(ext) 为空字符串）  

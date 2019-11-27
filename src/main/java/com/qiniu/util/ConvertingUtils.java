@@ -91,16 +91,17 @@ public final class ConvertingUtils {
 
     // 为了保证字段按照设置的顺序来读取，故使用 ArrayList
     final static public List<String> defaultFileInfos = new ArrayList<String>(){{
+        add("parent");
         add("filepath");
         add("key");
         add(defaultEtagField);
         add(defaultSizeField);
         add(defaultDatetimeField);
         add(defaultMimeField);
-        add("parent");
     }};
 
     final static public List<String> fileFields = new ArrayList<String>(){{
+        add("parent");
         add("filepath");
         add("key");
         addAll(etagFields);
@@ -112,7 +113,6 @@ public final class ConvertingUtils {
         addAll(statusFields);
         addAll(md5Fields);
         addAll(ownerFields);
-        add("parent");
         add("_id");
     }};
 
@@ -394,14 +394,14 @@ public final class ConvertingUtils {
         if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
         for (String index : indexMap.keySet()) {
             switch (index) {
+                case "parent": if (fileInfo.parentPath != null) pair.put(indexMap.get(index), fileInfo.parentPath); break;
                 case "filepath": pair.put(indexMap.get(index), fileInfo.filepath); break;
                 case "key": pair.put(indexMap.get(index), fileInfo.key); break;
-                case "etag": pair.put(indexMap.get(index), fileInfo.etag); break;
+                case "etag": if (fileInfo.etag != null) pair.put(indexMap.get(index), fileInfo.etag); break;
                 case "size": pair.put(indexMap.get(index), fileInfo.length); break;
                 case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.timestamp)); break;
                 case "timestamp": pair.put(indexMap.get(index), fileInfo.timestamp); break;
-                case "mime": pair.put(indexMap.get(index), fileInfo.mime); break;
-                case "parent": pair.put(indexMap.get(index), fileInfo.parentPath); break;
+                case "mime": if (fileInfo.mime != null) pair.put(indexMap.get(index), fileInfo.mime); break;
                 default: throw new IOException("local FileInfo doesn't have field: " + index);
             }
         }
@@ -652,14 +652,14 @@ public final class ConvertingUtils {
         if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
         for (String field : fields) {
             switch (field) {
+                case "parent": if (fileInfo.parentPath != null) pair.put(field, fileInfo.parentPath); break;
                 case "filepath": pair.put(field, fileInfo.filepath); break;
                 case "key": pair.put(field, fileInfo.key); break;
-                case "etag": pair.put(field, fileInfo.etag); break;
+                case "etag": if (fileInfo.etag != null) pair.put(field, fileInfo.etag); break;
                 case "size": pair.put(field, fileInfo.length); break;
                 case "datetime": pair.put(field, DatetimeUtils.stringOf(fileInfo.timestamp, 10000000)); break;
                 case "timestamp": pair.put(field, fileInfo.timestamp); break;
-                case "mime": pair.put(field, fileInfo.mime); break;
-                case "parent": pair.put(field, fileInfo.parentPath); break;
+                case "mime": if (fileInfo.mime != null) pair.put(field, fileInfo.mime); break;
                 default: throw new IOException("local fileInfo doesn't have field: " + field);
             }
         }

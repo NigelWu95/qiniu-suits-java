@@ -257,7 +257,7 @@ public class QSuitsEntry {
         } else if ("baidu".equals(source)) {
             return getBaiduBosContainer();
         } else if ("local".equals(source)) {
-            if (commonParams.isSelfUpload()) return getDefaultFileContainer();
+            if (commonParams.isSelfUpload() || "file".equals(commonParams.getParse())) return getDefaultFileContainer();
             else return getTextFileContainer();
         } else {
             throw new IOException("no such datasource: " + source);

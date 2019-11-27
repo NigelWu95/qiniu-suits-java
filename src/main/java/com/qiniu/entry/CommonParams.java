@@ -373,14 +373,14 @@ public class CommonParams {
 
     private void setParse() throws IOException {
         parse = entryParam.getValue("parse", "tab").trim();
-        ParamsUtils.checked(parse, "parse", "(csv|tab|json|object)");
+        ParamsUtils.checked(parse, "parse", "(csv|tab|json|object|file)");
     }
 
     private void setSeparator() {
         String separator = entryParam.getValue("separator", null);
         if (separator == null || separator.isEmpty()) {
             if ("terminal".equals(source)) this.separator = " ";
-            else if ("tab".equals(parse)) this.separator = "\t";
+            else if ("tab".equals(parse) || "file".equals(parse)) this.separator = "\t";
             else if ("csv".equals(parse)) this.separator = ",";
             else this.separator = " ";
         } else {
@@ -837,7 +837,8 @@ public class CommonParams {
                 } else {
                     throw new IOException("incorrect " + indexName + "-index: " + index + ", it should be a number.");
                 }
-            } else if (parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse)) {
+            } else if (parse == null || "json".equals(parse) || "".equals(parse)
+                    || "object".equals(parse) || "file".equals(parse)) {
                 indexMap.put(index, indexName);
             } else {
                 throw new IOException("the parse type: " + parse + " is unsupported now.");
@@ -845,17 +846,15 @@ public class CommonParams {
         }
     }
 
-    private void setIndexes(List<String> keys, String indexes) throws IOException {
+    private void setIndexes(List<String> keys, String indexes, boolean fieldIndex) throws IOException {
         if (indexes.startsWith("pre-")) {
             String num = indexes.substring(4);
             if (num.matches("\\d+")) {
                 int number = Integer.valueOf(num);
                 if (number < 0) {
-                    throw new IOException("pre size can not be smaller than zore.");
-                } else if (isSelfUpload && number < 2) {
-                    throw new IOException("indexes must contain \"filepath\" and \"key\" for upload process");
-                } else if (keys.size() > number) {
-                    for (int i = 0; i < number; i++) setIndex(String.valueOf(i), keys.get(i));
+                    throw new IOException("pre size can not be smaller than zero.");
+                } else if (keys.size() >= number) {
+                    for (int i = 0; i < number; i++) setIndex(fieldIndex ? keys.get(i) : String.valueOf(i), keys.get(i));
                 } else {
                     throw new IOException("the indexes are out of default fields' size, default fields are: " + keys);
                 }
@@ -900,21 +899,21 @@ public class CommonParams {
         indexMap = new HashMap<>();
         List<String> keys = new ArrayList<>();
         String indexes = entryParam.getValue("indexes", "").trim();
-        if (isSelfUpload) {
+        if (isSelfUpload || "file".equals(parse)) { // 自上传和导出文件信息都是 local source，需要定义单独的默认 keys
             if (isStorageSource) throw new IOException("self upload only support local file source.");
-            if (!indexes.startsWith("pre-")) {
-                throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
-            } else {
+//            if (!indexes.startsWith("pre-")) {
+//                throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
+//            } else {
                 fieldsMode = 1;
-                keys.add("filepath");
+//                keys.add("filepath");
                 keys.add("key");
                 keys.add("etag");
                 keys.add("size");
                 keys.add("datetime");
                 keys.add("mime");
                 keys.add("parent");
-            }
-        } else {
+//            }
+        } else { // 存储数据源的 keys 定义
             keys.addAll(ConvertingUtils.defaultFileFields);
             if ("upyun".equals(source)) {
                 fieldsMode = 1;
@@ -933,48 +932,67 @@ public class CommonParams {
                 keys.remove(ConvertingUtils.defaultMd5Field);
             }
         }
-        setIndexes(keys, indexes);
+
+        boolean fieldIndex = parse == null || "json".equals(parse)
+                || "".equals(parse) || "object".equals(parse) || "file".equals(parse);
+        setIndexes(keys, indexes, fieldIndex);
+        boolean useDefault = "".equals(indexes);
         if (ProcessUtils.needUrl(process))
             setIndex(entryParam.getValue("url-index", "").trim(), "url");
-        if (ProcessUtils.needToKey(process))
+        if (ProcessUtils.needToKey(process)) {
             setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
-        if (ProcessUtils.needFops(process))
+            if (fieldIndex) {
+                if ("".equals(indexes) && !indexMap.containsKey("key")) indexMap.put("key", "key");
+            } else {
+                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
+            }
+        }
+        if (ProcessUtils.needFops(process)) {
             setIndex(entryParam.getValue("fops-index", "").trim(), "fops");
+            if (fieldIndex) {
+                if (!indexMap.containsKey("key")) indexMap.put("key", "key");
+            } else {
+                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
+            }
+        }
         if (ProcessUtils.needId(process))
             setIndex(entryParam.getValue("id-index", "").trim(), "id");
-        if (ProcessUtils.needAvinfo(process))
+        if (ProcessUtils.needAvinfo(process)) {
             setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
-        if (ProcessUtils.needFilepath(process)) {
-            setIndex(entryParam.getValue("filepath-index", "").trim(), "filepath");
-            setIndex(entryParam.getValue("key-index", "").trim(), "key");
+            if (fieldIndex) {
+                if (!indexMap.containsKey("key")) indexMap.put("key", "key");
+            } else {
+                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
+            }
         }
-
-        boolean useDefault = false;
-        boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse);
-        if (indexMap.size() == 0 || "".equals(indexes)) {
-            useDefault = true;
+        if (ProcessUtils.needFilepath(process) || "file".equals(parse) || isSelfUpload) {
+            setIndex(entryParam.getValue("filepath-index", "filepath").trim(), "filepath");
+//            setIndex("parent", "parent");
+        }
+        if (indexMap.size() == 0) {
+//            useDefault = true;
             if (isStorageSource) {
                 for (String key : keys) indexMap.put(key, key);
             } else if (isSelfUpload) {
                 for (int i = 0; i < keys.size(); i++) indexMap.put(String.valueOf(i), keys.get(i));
             } else if (fieldIndex) {
-                if (!indexMap.containsKey("key") && !indexMap.containsValue("key")) indexMap.put("key", "key");
+                indexMap.put("key", "key");
             } else {
-                if (!indexMap.containsKey("0") && !indexMap.containsValue("key")) indexMap.put("0", "key");
+                indexMap.put("0", "key");
             }
         }
 
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "key" : (isSelfUpload ? "1" : "0"), "key");
+                    indexMap.put(fieldIndex ? "key" : "0", "key");
                 } else {
                     throw new IOException("f-[x] about key filter for file key must get the key's index in indexes settings.");
                 }
             }
             if (baseFilter.checkDatetimeCon() && !indexMap.containsValue("datetime")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "datetime" : (isSelfUpload ? "4" : "3"), "datetime");
+                    indexMap.put(fieldIndex ? "datetime" : "3", "datetime");
                 } else {
                     throw new IOException("f-date-scale filter must get the datetime's index in indexes settings.");
                 }
@@ -982,7 +1000,7 @@ public class CommonParams {
             if (baseFilter.checkMimeTypeCon() && !indexMap.containsValue("mime")) {
                 if (useDefault) {
                     if (fieldsMode != 3) {
-                        indexMap.put(fieldIndex ? "mime" : (isSelfUpload ? "5" : "4"), "mime");
+                        indexMap.put(fieldIndex ? "mime" : "4", "mime");
                     }
                 } else {
                     throw new IOException("f-mime filter must get the mime's index in indexes settings.");
@@ -1011,7 +1029,7 @@ public class CommonParams {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
                     if (useDefault) {
-                        indexMap.put(fieldIndex ? "key" : (isSelfUpload ? "1" : "0"), "key");
+                        indexMap.put(fieldIndex ? "key" : "0", "key");
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                     }
@@ -1019,7 +1037,7 @@ public class CommonParams {
                 if (!indexMap.containsValue("mime")) {
                     if (useDefault) {
                         if (fieldsMode != 3) {
-                            indexMap.put(fieldIndex ? "mime" : (isSelfUpload ? "5" : "4"), "mime");
+                            indexMap.put(fieldIndex ? "mime" : "4", "mime");
                         }
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the mime's index in indexes settings.");
