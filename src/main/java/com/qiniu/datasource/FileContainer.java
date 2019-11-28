@@ -175,6 +175,19 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         return getLister(directory, start, end, unitLen);
     }
 
+    private ILocalFileLister<E, File> generateLister(String name, List<E> fileInfoList) throws IOException {
+        Map<String, String> map = directoriesMap.get(name);
+        String start;
+        String end;
+        if (map == null) {
+            start = end = null;
+        } else {
+            start = map.get("start");
+            end = map.get("end");
+        }
+        return getLister(name, fileInfoList, start, end, unitLen);
+    }
+
     public void export(ILocalFileLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
@@ -241,7 +254,6 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             }
             export(lister, saver, lineProcessor);
             recorder.remove(lister.getName());
-            listerMap.remove(lister.getName());
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
             errorLogger.error("{}: {}, {}", lister.getName(), recorder.getString(lister.getName()), e.error(), e);
@@ -263,6 +275,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             }
             UniOrderUtils.returnOrder(order);
             lister.close();
+            listerMap.remove(lister.getName());
         }
     }
 
@@ -303,24 +316,23 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    private List<String> checkListerInPool(int cValue, int tiny) {
-        List<String> extremeDirectories = null;
+    private List<ILocalFileLister<E, File>> checkListerInPool(int cValue, int tiny) {
         int count = 0;
         ILocalFileLister<E, File> iLister;
-        Iterator<ILocalFileLister<E, File>> iterator;
+        List<ILocalFileLister<E, File>> list = new ArrayList<>(listerMap.values());
+        Iterator<ILocalFileLister<E, File>> iterator = list.iterator();
         String directory;
         String start;
         Map<String, String> endMap;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
-                iterator = listerMap.values().iterator();
                 while (iterator.hasNext()) {
                     iLister = iterator.next();
                     if(!iLister.hasNext()) iterator.remove();
                 }
-                if (listerMap.size() > 0 && listerMap.size() <= tiny) {
-                    rootLogger.info("unfinished: {}, cValue: {}, to re-split lister list...\n", listerMap.size(), cValue);
-                    for (ILocalFileLister<E, File> lister : listerMap.values()) {
+                if (list.size() > 0 && list.size() <= tiny) {
+                    rootLogger.info("unfinished: {}, cValue: {}, to re-split lister list...\n", list.size(), cValue);
+                    for (ILocalFileLister<E, File> lister : list) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         directory = lister.getName();
                         start = lister.truncate();
@@ -330,11 +342,9 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                         rootLogger.info("directory: {}, nextFilepath: {}, endMap: {}\n", directory, start, endMap);
                         // 如果 truncate 时的 start 已经为空说明已经列举完成了
                         if (start == null || start.isEmpty()) continue;
-                        if (extremeDirectories == null) extremeDirectories = new ArrayList<>();
-                        extremeDirectories.add(directory);
                         directoriesMap.put(directory, endMap);
                     }
-                } else if (listerMap.size() <= cValue) {
+                } else if (list.size() <= cValue) {
                     count = 900;
                 } else {
                     count = 0;
@@ -343,10 +353,10 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             sleep(1000);
             count++;
         }
-        return extremeDirectories;
+        return list;
     }
 
-    private void directoriesListing() throws Exception {
+    private void directoriesListing() {
         while (directories != null && directories.size() > 0) {
             directories = directories.parallelStream()
                     .map(this::directoriesFromLister)
@@ -359,39 +369,47 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             int cValue = threads >= 10 ? threads / 2 : 3;
             int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 30 ? threads / 10 :
                     threads >= 10 ? 3 : 1;
-            checkListerInPool(cValue, tiny);
-            while (listerMap.size() > 0) {
-                executorPool = Executors.newFixedThreadPool(threads);
-                int multiple = threads / listerMap.size();
+            List<ILocalFileLister<E, File>> list = checkListerInPool(cValue, tiny);
+            list.parallelStream().forEach(lister -> recordListerByDirectory(lister.getName() + "-||-0"));
+            while (list.size() > 0) {
+                int multiple = threads / list.size();
                 int maxIndex = multiple - 1;
-                int remainedSize;
-                int size;
-                List<E> nextList;
-                ConcurrentMap<String, ILocalFileLister<E, File>> map = new ConcurrentHashMap<>(threads);
-                for (ILocalFileLister<E, File> lister : listerMap.values()) {
-                    nextList = lister.getRemainedFiles();
-                    remainedSize = lister.getRemainedFiles().size();
+                executorPool = Executors.newFixedThreadPool(threads);
+                listerMap.clear();
+                list.parallelStream().forEach(lister -> {
+                    int remainedSize = lister.getRemainedFiles().size();
                     if (remainedSize < multiple) {
                         if (remainedSize > 0) {
-                            ILocalFileLister<E, File> sLister = getLister(lister.getName(), nextList, null, null, unitLen);
-                            map.put(sLister.getName(), sLister);
-                            recordListerByDirectory(sLister.getName());
-                            executorPool.execute(() -> listing(sLister));
+                            try {
+                                ILocalFileLister<E, File> sLister = generateLister(lister.getName() + "-||-0", lister.getRemainedFiles());
+                                listerMap.put(sLister.getName(), sLister);
+                                executorPool.execute(() -> listing(lister));
+                            } catch (IOException e) {
+                                try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                                errorLogger.error("generate lister failed by {}\t{}", lister.getName(),
+                                        directoriesMap.get(lister.getName()), e);
+                            }
                         }
-                        continue;
+                        return;
                     }
-                    size = remainedSize % multiple == 0 ? remainedSize / multiple : remainedSize / multiple + 1;
+                    int size = remainedSize % multiple == 0 ? remainedSize / multiple : remainedSize / multiple + 1;
                     for (int i = 0; i < multiple; i++) {
-                        nextList = lister.getRemainedFiles().subList(size * i, i == maxIndex ? remainedSize : size * (i + 1));
-                        ILocalFileLister<E, File> sLister = getLister(String.join("-||-", lister.getName(), String.valueOf(i)),
-                                nextList, null, null, unitLen);
-                        map.put(sLister.getName(), sLister);
-                        recordListerByDirectory(sLister.getName());
-                        executorPool.execute(() -> listing(sLister));
+                        try {
+                            ILocalFileLister<E, File> sLister = getLister(String.join("-||-", lister.getName(), String.valueOf(i)),
+                                    lister.getRemainedFiles().subList(size * i, i == maxIndex ? remainedSize : size * (i + 1)),
+                                    null, null, unitLen);
+                            listerMap.put(sLister.getName(), sLister);
+                            executorPool.execute(() -> listing(lister));
+                        } catch (IOException e) {
+                            try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                            errorLogger.error("generate lister failed by {}\t{}",
+                                    String.join("-||-", lister.getName(), String.valueOf(i)),
+                                    directoriesMap.get(lister.getName()), e);
+                        }
                     }
-                }
-                listerMap = map;
+                });
                 executorPool.shutdown();
+                list = checkListerInPool(cValue, tiny);
             }
         }
         while (!executorPool.isTerminated()) sleep(1000);
