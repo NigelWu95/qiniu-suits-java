@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
 
-    private String name;
+    private final String name;
     private int limit;
     private String endPrefix;
     private List<FileInfo> fileInfoList;
@@ -40,77 +40,18 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     }
 
     private List<FileInfo> withExtraInfo(Stream<FileInfo> stream, boolean withEtag, boolean withMime, boolean withParent) {
-        if (withEtag && withMime && withParent) {
-            return stream.map(fileInfo -> {
-                try {
-                    return fileInfo.withEtag().withMime().withParent();
-                } catch (IOException e) {
-                    try {
-                        fileInfo.etag = e.getMessage().replace("\n", ",");
-                        return fileInfo.withMime().withParent();
-                    } catch (IOException ex) {
-                        fileInfo.mime = ex.getMessage().replace("\n", ",");
-                        return fileInfo.withParent();
-                    }
-                }
-            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
-        } else if (withEtag && withMime) {
-            return stream.map(fileInfo -> {
-                try {
-                    return fileInfo.withEtag().withMime();
-                } catch (IOException e) {
-                    try {
-                        fileInfo.etag = e.getMessage().replace("\n", ",");
-                        return fileInfo.withMime();
-                    } catch (IOException ex) {
-                        fileInfo.mime = ex.getMessage().replace("\n", ",");
-                        return fileInfo;
-                    }
-                }
-            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
-        } else if (withEtag && withParent) {
-            return stream.map(fileInfo -> {
-                try {
-                    return fileInfo.withEtag().withParent();
-                } catch (IOException e) {
-                    fileInfo.etag = e.getMessage().replace("\n", ",");
-                    return fileInfo.withParent();
-                }
-            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
-        } else if (withMime && withParent) {
-            return stream.map(fileInfo -> {
-                try {
-                    return fileInfo.withMime().withParent();
-                } catch (IOException e) {
-                    fileInfo.mime = e.getMessage().replace("\n", ",");
-                    return fileInfo.withParent();
-                }
-            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
-        } else if (withEtag) {
-            return stream.map(fileInfo -> {
-                try {
-                    return fileInfo.withEtag();
-                } catch (IOException e) {
-                    fileInfo.etag = e.getMessage().replace("\n", ",");
-                    return fileInfo;
-                }
-            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
-        } else if (withMime) {
-            return stream.map(fileInfo -> {
-                try {
-                    return fileInfo.withMime();
-                } catch (IOException e) {
-                    fileInfo.mime = e.getMessage().replace("\n", ",");
-                    return fileInfo;
-                }
-            }).sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
-        } else if (withParent) {
-            return stream.map(FileInfo::withParent)
-                    .sorted(Comparator.comparing(fileInfo -> fileInfo.filepath))
-                    .collect(Collectors.toList());
-        } else {
-            return stream.collect(Collectors.toList());
+        if (withEtag) {
+            stream = stream.map(fileInfo -> { try { return fileInfo.withEtag(); } catch (IOException e) {
+                fileInfo.etag = e.getMessage().replace("\n", ","); return fileInfo; }});
         }
+        if (withMime) {
+            stream = stream.map(fileInfo -> { try { return fileInfo.withMime(); } catch (IOException e) {
+                fileInfo.mime = e.getMessage().replace("\n", ","); return fileInfo; }});
+        }
+        if (withParent) {
+            stream = stream.map(FileInfo::withParent);
+        }
+        return stream.sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
     }
 
     public FileInfoLister(File file, Map<String, String> indexMap, boolean checkText, String transferPath, int leftTrimSize,
@@ -143,13 +84,13 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
                 indexMap.containsKey("mime"), indexMap.containsKey("parent"));
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
+        count = fileInfoList.size();
 //        if (iterator.hasNext()) {
 //            last = iterator.next();
 //            iterator.remove();
 //            currents.add(last);
 //        }
         lastFilePath = "";
-        count = fileInfoList.size();
         file = null;
     }
 
@@ -159,18 +100,18 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         this.fileInfoList = fileInfoList;
         this.limit = limit;
         this.endPrefix = endPrefix;
-        fileInfoList = checkFileInfoList(startPrefix)
+        this.fileInfoList = checkFileInfoList(startPrefix)
                 .sorted(Comparator.comparing(fileInfo -> fileInfo.filepath))
                 .collect(Collectors.toList());
         currents = new ArrayList<>();
-        iterator = fileInfoList.iterator();
+        iterator = this.fileInfoList.iterator();
+        count = this.fileInfoList.size();
 //        if (iterator.hasNext()) {
 //            last = iterator.next();
 //            iterator.remove();
 //            currents.add(last);
 //        }
         lastFilePath = "";
-        count = fileInfoList.size();
     }
 
     @Override
@@ -264,6 +205,8 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
 
     @Override
     public void close() {
+        endPrefix = null;
+//    private FileInfo last;
         iterator = null;
         if (currents.size() > 0) {
             lastFilePath = currents.get(currents.size() - 1).filepath;

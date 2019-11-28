@@ -116,7 +116,7 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
-    void reading(IReader<E> reader) {
+    private void reading(IReader<E> reader) {
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
@@ -210,8 +210,7 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
     }
 
     public void export() throws Exception {
-        String info = processor == null ?
-                String.join(" ", "read lines from path:", path) :
+        String info = processor == null ? String.join(" ", "read lines from path:", path) :
                 String.join(" ", "read lines from path:", path, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tpath\tquantity");
@@ -227,9 +226,7 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
                 executorPool.execute(() -> reading(fileReader));
             }
             executorPool.shutdown();
-            while (!executorPool.isTerminated()) {
-                sleep(2000);
-            }
+            while (!executorPool.isTerminated()) sleep(2000);
             rootLogger.info("{} finished.", info);
             endAction();
         } catch (Throwable e) {

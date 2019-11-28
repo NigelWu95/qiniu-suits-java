@@ -59,4 +59,27 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
     protected ILocalFileLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
         return new FileInfoLister(directory, indexMap, false, transferPath, leftTrimSize, start, end, unitLen);
     }
+
+    @Override
+    protected ILocalFileLister<FileInfo, File> getLister(String name, List<FileInfo> fileInfoList, String start, String end,
+                                                         int unitLen) throws IOException {
+        return new FileInfoLister(name, fileInfoList, start, end, unitLen);
+    }
+
+    @Override
+    protected ILocalFileLister<FileInfo, File> getLister(String singleFilePath) throws IOException {
+        FileInfo fileInfo = new FileInfo(new File(singleFilePath), transferPath, leftTrimSize);
+        if (indexMap.containsKey("etag")) {
+            try { fileInfo = fileInfo.withEtag(); } catch (IOException e) {
+                fileInfo.etag = e.getMessage().replace("\n", ","); }
+        }
+        if (indexMap.containsKey("mime")) {
+            try { fileInfo = fileInfo.withMime(); } catch (IOException e) {
+                fileInfo.mime = e.getMessage().replace("\n", ","); }
+        }
+        if (indexMap.containsKey("parent")) fileInfo = fileInfo.withParent();
+        List<FileInfo> list = new ArrayList<>();
+        list.add(fileInfo);
+        return getLister(singleFilePath, list, null, null, unitLen);
+    }
 }

@@ -7,7 +7,7 @@
     <groupId>com.qiniu</groupId>
     <artifactId>qsuits</artifactId>
     <version>8.1.0</version>
-    <name>qiniu-suits-java</name>
+    <name>qsuits</name>
     <description>qiniu-suits is a efficient tools for qiniu api implemented by java8.</description>
     <url>https://github.com/NigelWu95/qiniu-suits-java</url>
 
@@ -444,6 +444,7 @@
 
         <plugins>
             <plugin>
+                <inherited>true</inherited>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
@@ -457,6 +458,7 @@
                 </configuration>
             </plugin>
             <plugin>
+                <inherited>true</inherited>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.5.5</version>

@@ -77,7 +77,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             this.prefixesMap = new HashMap<>(threads);
             prefixLeft = true;
             prefixRight = true;
-            if (hasAntiPrefixes) prefixes = originPrefixList;
+            if (hasAntiPrefixes && !"upyun".equals(getSourceName())) prefixes = originPrefixList;
         } else {
             if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
             this.prefixesMap = new HashMap<>(threads);
@@ -117,8 +117,11 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
         if (hasAntiPrefixes && prefixes != null && prefixes.size() > 0) {
             antiPrefixes.sort(Comparator.naturalOrder());
+            if (firstPoint.compareTo(antiPrefixes.get(0)) > 0) {
+                throw new IOException("min anti-prefix can not be smaller than prefix: " + firstPoint);
+            }
             String firstPrefix = prefixes.get(0);
-            if (prefixLeft && firstPrefix.compareTo(antiPrefixes.get(0)) > 0) {
+            if (prefixLeft && firstPrefix.compareTo(antiPrefixes.get(0)) >= 0) {
                 throw new IOException("with prefix-left, min anti-prefix can not be smaller than min prefix: " + firstPrefix);
             }
             String lastAntiPrefix = antiPrefixes.get(antiPrefixes.size() - 1);
@@ -126,8 +129,8 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 throw new IOException("max anti-prefix can not be larger than prefix： " + lastPoint);
             }
             String lastPrefix = prefixes.get(prefixes.size() - 1);
-            if (prefixRight && lastPrefix.equals(lastAntiPrefix)) {
-                throw new IOException("with prefix-right, max anti-prefix can not be same as max prefix： " + lastPoint);
+            if (prefixRight && lastPrefix.compareTo(lastAntiPrefix) <= 0) {
+                throw new IOException("with prefix-right, max anti-prefix can not be same as or larger than max prefix： " + lastPoint);
             }
         }
     }
@@ -595,11 +598,17 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
      */
     @Override
     public void export() throws Exception {
+        String info = processor == null ? String.join(" ", "list objects from", getSourceName(), "bucket:", bucket) :
+                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket, "and", processor.getProcessName());
+        rootLogger.info("{} running...", info);
+        rootLogger.info("order\tprefix\tquantity");
+        showdownHook();
         IStorageLister<E> startLister = null;
         // 在初始化时即做检查，hasAntiPrefixes 的情况下 prefixes 不可能为空，所以在 prefixes 为空时，hasAntiPrefixes 一定为 false
         if (prefixes == null || prefixes.size() == 0) {
             recordListerByPrefix("");
             startLister = generateLister("", 1);
+            startLister.setLimit(unitLen);
             if (threads > 1) {
                 String finalPoint = moreValidPrefixes(startLister, false);
                 if (finalPoint != null) {
@@ -614,28 +623,27 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 if ("".equals(prefixes.get(0))) prefixes.remove(0);
                 insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
                 startLister = generateLister("", 1);
+                startLister.setLimit(unitLen);
                 prefixesMap.remove("");
             }
-            if (hasAntiPrefixes) prefixes = prefixes.parallelStream().filter(this::checkPrefix).collect(Collectors.toList());
         }
-        String info = processor == null ?
-                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket) :
-                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket, "and", processor.getProcessName());
-        rootLogger.info("{} running...", info);
-        rootLogger.info("order\tprefix\tquantity");
-        showdownHook();
         try {
-            if (prefixes == null || prefixes.size() == 0) {
-                if (startLister != null) {
-                    if (startLister.currents().size() > 0 || startLister.hasNext()) {
-                        listing(startLister);
-                    } else {
-                        recorder.remove(startLister.getPrefix());
-                        startLister.close();
-                    }
+            if (!hasAntiPrefixes && (prefixes == null || prefixes.size() == 0)) {
+                if (startLister.currents().size() > 0 || startLister.hasNext()) {
+                    listing(startLister);
+                } else {
+                    recorder.remove(startLister.getPrefix());
+                    startLister.close();
                 }
             } else {
-                prefixes.parallelStream().forEach(this::recordListerByPrefix);
+                if (hasAntiPrefixes) {
+                    if (prefixes != null) {
+                        prefixes = prefixes.parallelStream().filter(this::checkPrefix)
+                                .peek(this::recordListerByPrefix).collect(Collectors.toList());
+                    }
+                } else {
+                    prefixes.parallelStream().forEach(this::recordListerByPrefix);
+                }
                 executorPool = Executors.newFixedThreadPool(threads);
                 if (startLister != null) processNodeLister(startLister);
                 prefixesListing();

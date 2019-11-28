@@ -153,8 +153,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
      */
     @Override
     public void export() throws Exception {
-        String info = processor == null ?
-                String.join(" ", "list objects from upyun bucket:", bucket) :
+        String info = processor == null ? String.join(" ", "list objects from upyun bucket:", bucket) :
                 String.join(" ", "list objects from upyun bucket:", bucket, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
@@ -168,23 +167,28 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
                 prefixes = startLister.getDirectories().parallelStream()
                         .filter(this::checkPrefix).peek(this::recordListerByPrefix).collect(Collectors.toList());
             } else {
-                for (String dir : startLister.getDirectories()) recordListerByPrefix(dir);
+                startLister.getDirectories().parallelStream().forEach(this::recordListerByPrefix);
                 prefixes = startLister.getDirectories();
             }
         } else {
-            prefixes = prefixes.stream().map(prefix -> {
-                if (prefix.endsWith("/")) return prefix.substring(0, prefix.length() - 1);
-                return prefix;
-            }).collect(Collectors.toList());
+            if (hasAntiPrefixes) {
+                prefixes = prefixes.stream().filter(this::checkPrefix).map(prefix -> {
+                    if (prefix.endsWith("/")) return prefix.substring(0, prefix.length() - 1);
+                    return prefix;
+                }).collect(Collectors.toList());
+            } else {
+                prefixes = prefixes.stream().map(prefix -> {
+                    if (prefix.endsWith("/")) return prefix.substring(0, prefix.length() - 1);
+                    return prefix;
+                }).collect(Collectors.toList());
+            }
         }
         try {
             if (prefixes != null && prefixes.size() > 0) {
                 executorPool = Executors.newFixedThreadPool(threads);
                 listForNextIteratively(prefixes);
                 executorPool.shutdown();
-                while (!executorPool.isTerminated()) {
-                    sleep(1000);
-                }
+                while (!executorPool.isTerminated()) sleep(1000);
             }
             rootLogger.info("{} finished.", info);
             endAction();

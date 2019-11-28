@@ -23,6 +23,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     protected Map<String, Map<String, String>> directoriesMap;
     protected List<File> directories;
     protected ILineProcess<T> processor; // 定义的资源处理器
+//    protected List<ILocalFileLister<E, File>> listerList = new ArrayList<>(threads);
     protected ConcurrentMap<String, ILocalFileLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
 
     public FileContainer(String path, Map<String, Map<String, String>> directoriesMap, List<String> antiDirectories,
@@ -144,17 +145,22 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
     private boolean checkDirectory(File directory) {
-        if (hasAntiDirectories) {
+//        if (hasAntiDirectories) {
             for (String antiPrefix : antiDirectories) {
                 if (directory.getPath().startsWith(antiPrefix)) return false;
             }
             return true;
-        } else {
-            return true;
-        }
+//        } else {
+//            return true;
+//        }
     }
 
     protected abstract ILocalFileLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
+
+    protected abstract ILocalFileLister<E, File> getLister(String name, List<E> fileInfoList, String start,
+                                                           String end, int unitLen) throws IOException;
+
+    protected abstract ILocalFileLister<E, File> getLister(String singleFilePath) throws IOException;
 
     private ILocalFileLister<E, File> generateLister(File directory) throws IOException {
         Map<String, String> map = directoriesMap.get(directory.getPath());
@@ -180,7 +186,6 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         List<String> writeList;
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
-        Map<String, String> map = directoriesMap.get(lister.getName());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
             if (stopped) break;
@@ -212,7 +217,6 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
                 procedureLogger.info(recorder.put(lister.getName(), json));
             }
-            if (map != null) map.put("start", lister.currentEndFilepath());
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
             lister.listForward();
@@ -237,6 +241,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             }
             export(lister, saver, lineProcessor);
             recorder.remove(lister.getName());
+            listerMap.remove(lister.getName());
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
             errorLogger.error("{}: {}, {}", lister.getName(), recorder.getString(lister.getName()), e.error(), e);
@@ -261,16 +266,27 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    private void recordListerByDirectory(String directory) {
-        JsonObject json = directoriesMap.get(directory) == null ? null : JsonUtils.toJsonObject(directoriesMap.get(directory));
+    private void recordListerByDirectory(String name) {
+        String pName = name.split("-\\|\\|-")[0];
+        JsonObject json = directoriesMap.get(pName) == null ? null : JsonUtils.toJsonObject(directoriesMap.get(pName));
         try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-        procedureLogger.info(recorder.put(directory, json));
+        procedureLogger.info(recorder.put(name, json));
+    }
+
+    private void processNodeLister(ILocalFileLister<E, File> lister) {
+        if (lister.hasNext()) {
+            listerMap.put(lister.getName(), lister);
+            executorPool.execute(() -> listing(lister));
+        } else {
+            recorder.remove(lister.getName());
+            lister.close();
+        }
     }
 
     private List<File> directoriesFromLister(File directory) {
         try {
             ILocalFileLister<E, File> lister = generateLister(directory);
-            if (lister.hasNext()) executorPool.execute(() -> listing(lister));
+            processNodeLister(lister);
             if (lister.getDirectories() == null || lister.getDirectories().size() <= 0) {
                 return null;
             } else if (hasAntiDirectories) {
@@ -287,47 +303,137 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    /**
-     * 根据当前参数值创建多线程执行数据源导出工作
-     */
+    private List<String> checkListerInPool(int cValue, int tiny) {
+        List<String> extremeDirectories = null;
+        int count = 0;
+        ILocalFileLister<E, File> iLister;
+        Iterator<ILocalFileLister<E, File>> iterator;
+        String directory;
+        String start;
+        Map<String, String> endMap;
+        while (!executorPool.isTerminated()) {
+            if (count >= 1200) {
+                iterator = listerMap.values().iterator();
+                while (iterator.hasNext()) {
+                    iLister = iterator.next();
+                    if(!iLister.hasNext()) iterator.remove();
+                }
+                if (listerMap.size() > 0 && listerMap.size() <= tiny) {
+                    rootLogger.info("unfinished: {}, cValue: {}, to re-split lister list...\n", listerMap.size(), cValue);
+                    for (ILocalFileLister<E, File> lister : listerMap.values()) {
+                        // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
+                        directory = lister.getName();
+                        start = lister.truncate();
+                        endMap = directoriesMap.get(directory);
+                        if (endMap == null) endMap = new HashMap<>();
+                        endMap.put("start", start);
+                        rootLogger.info("directory: {}, nextFilepath: {}, endMap: {}\n", directory, start, endMap);
+                        // 如果 truncate 时的 start 已经为空说明已经列举完成了
+                        if (start == null || start.isEmpty()) continue;
+                        if (extremeDirectories == null) extremeDirectories = new ArrayList<>();
+                        extremeDirectories.add(directory);
+                        directoriesMap.put(directory, endMap);
+                    }
+                } else if (listerMap.size() <= cValue) {
+                    count = 900;
+                } else {
+                    count = 0;
+                }
+            }
+            sleep(1000);
+            count++;
+        }
+        return extremeDirectories;
+    }
+
+    private void directoriesListing() throws Exception {
+        while (directories != null && directories.size() > 0) {
+            directories = directories.parallelStream()
+                    .map(this::directoriesFromLister)
+                    .filter(Objects::nonNull)
+                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
+                    .orElse(null);
+        }
+        executorPool.shutdown();
+        if (threads > 1) {
+            int cValue = threads >= 10 ? threads / 2 : 3;
+            int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 30 ? threads / 10 :
+                    threads >= 10 ? 3 : 1;
+            checkListerInPool(cValue, tiny);
+            while (listerMap.size() > 0) {
+                executorPool = Executors.newFixedThreadPool(threads);
+                int multiple = threads / listerMap.size();
+                int maxIndex = multiple - 1;
+                int remainedSize;
+                int size;
+                List<E> nextList;
+                ConcurrentMap<String, ILocalFileLister<E, File>> map = new ConcurrentHashMap<>(threads);
+                for (ILocalFileLister<E, File> lister : listerMap.values()) {
+                    nextList = lister.getRemainedFiles();
+                    remainedSize = lister.getRemainedFiles().size();
+                    if (remainedSize < multiple) {
+                        if (remainedSize > 0) {
+                            ILocalFileLister<E, File> sLister = getLister(lister.getName(), nextList, null, null, unitLen);
+                            map.put(sLister.getName(), sLister);
+                            recordListerByDirectory(sLister.getName());
+                            executorPool.execute(() -> listing(sLister));
+                        }
+                        continue;
+                    }
+                    size = remainedSize % multiple == 0 ? remainedSize / multiple : remainedSize / multiple + 1;
+                    for (int i = 0; i < multiple; i++) {
+                        nextList = lister.getRemainedFiles().subList(size * i, i == maxIndex ? remainedSize : size * (i + 1));
+                        ILocalFileLister<E, File> sLister = getLister(String.join("-||-", lister.getName(), String.valueOf(i)),
+                                nextList, null, null, unitLen);
+                        map.put(sLister.getName(), sLister);
+                        recordListerByDirectory(sLister.getName());
+                        executorPool.execute(() -> listing(sLister));
+                    }
+                }
+                listerMap = map;
+                executorPool.shutdown();
+            }
+        }
+        while (!executorPool.isTerminated()) sleep(1000);
+    }
+
     @Override
     public void export() throws Exception {
-        String info = processor == null ?
-                String.join(" ", "list files from path:", path) :
-                String.join(" ", "read files from path:", path, "and", processor.getProcessName());
+        String info = processor == null ? String.join(" ", "list files from path:", path) :
+                String.join(" ", "read files from path: ", path, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
-        executorPool = Executors.newFixedThreadPool(threads);
+        ILocalFileLister<E, File> fileInfoLister = null;
         if (directories == null || directories.size() == 0) {
-            ILocalFileLister<E, File> fileInfoLister = generateLister(new File(realPath));
+            File file = new File(realPath);
+            if (file.isDirectory()) {
+                recordListerByDirectory(realPath);
+                fileInfoLister = generateLister(file);
+            } else {
+                fileInfoLister = getLister(realPath);
+            }
             if (fileInfoLister.getDirectories() != null && fileInfoLister.getDirectories().size() > 0) {
                 if (hasAntiDirectories) {
                     directories = fileInfoLister.getDirectories().parallelStream().filter(this::checkDirectory)
                             .peek(directory -> recordListerByDirectory(directory.getPath())).collect(Collectors.toList());
                 } else {
-                    for (File dir : fileInfoLister.getDirectories()) recordListerByDirectory(dir.getPath());
                     directories = fileInfoLister.getDirectories();
-                }
-                if (fileInfoLister.hasNext()) executorPool.execute(() -> listing(fileInfoLister));
-            } else {
-                if (fileInfoLister.hasNext()) {
-                    if (threads > 1 ) executorPool.execute(() -> listing(fileInfoLister));
-                    else listing(fileInfoLister);
+                    directories.parallelStream().forEach(directory -> recordListerByDirectory(directory.getPath()));
                 }
             }
         }
         try {
-            while (directories != null && directories.size() > 0) {
-                directories = directories.parallelStream()
-                        .map(this::directoriesFromLister)
-                        .filter(Objects::nonNull)
-                        .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
-                        .orElse(null);
+            if (fileInfoLister != null && !fileInfoLister.hasNext()) {
+                recorder.remove(fileInfoLister.getName());
+                fileInfoLister.close();
             }
-            executorPool.shutdown();
-            while (!executorPool.isTerminated()) {
-                sleep(1000);
+            if (directories == null || directories.size() == 0) {
+                listing(fileInfoLister);
+            } else {
+                executorPool = Executors.newFixedThreadPool(threads);
+                if (fileInfoLister != null) processNodeLister(fileInfoLister);
+                directoriesListing();
             }
             rootLogger.info("{} finished.", info);
             endAction();
