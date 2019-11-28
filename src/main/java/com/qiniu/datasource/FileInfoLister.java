@@ -54,7 +54,7 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         return stream.sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
     }
 
-    public FileInfoLister(File file, Map<String, String> indexMap, boolean checkText, String transferPath, int leftTrimSize,
+    public FileInfoLister(File file, Map<String, String> indexMap, boolean keepDir, String transferPath, int leftTrimSize,
                           String startPrefix, String endPrefix, int limit) throws IOException {
         if (file == null || indexMap == null) throw new IOException("input file or indexMap is null.");
         this.name = file.getPath();
@@ -62,16 +62,24 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         if (fs == null) throw new IOException("input file is not valid directory: " + file.getPath());
         fileInfoList = new ArrayList<>(fs.length);
         directories = new ArrayList<>(fs.length);
-        for(File f : fs) {
-            if (f.isHidden()) continue;
-            if (f.isDirectory()) {
-                directories.add(f);
-            } else {
-                if (checkText) {
-                    String type = FileUtils.contentType(f);
-                    if (type.startsWith("text") || type.equals("application/octet-stream")) {
-                        fileInfoList.add(new FileInfo(f, transferPath, leftTrimSize));
-                    }
+        if (keepDir) {
+            FileInfo fileInfo;
+            for(File f : fs) {
+                if (f.isHidden()) continue;
+                if (f.isDirectory()) {
+                    directories.add(f);
+                    fileInfo = new FileInfo(f, transferPath, leftTrimSize);
+                    fileInfo.filepath = String.format("%s%s", fileInfo.filepath, FileUtils.pathSeparator);
+                } else {
+                    fileInfo = new FileInfo(f, transferPath, leftTrimSize);
+                }
+                fileInfoList.add(fileInfo);
+            }
+        } else {
+            for (File f : fs) {
+                if (f.isHidden()) continue;
+                if (f.isDirectory()) {
+                    directories.add(f);
                 } else {
                     fileInfoList.add(new FileInfo(f, transferPath, leftTrimSize));
                 }
@@ -187,8 +195,8 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
 
     @Override
     public List<FileInfo> getRemainedFiles() {
-        if (iterator == null) return null;
-        else return fileInfoList;
+        if (iterator == null) fileInfoList.clear();
+        return fileInfoList;
     }
 
     @Override

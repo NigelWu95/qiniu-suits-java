@@ -52,6 +52,7 @@ public class CommonParams {
     private boolean prefixRight;
     private String parse;
     private String separator;
+    private boolean keepDir;
     private String addKeyPrefix;
     private String rmKeyPrefix;
     private String process;
@@ -386,6 +387,11 @@ public class CommonParams {
         } else {
             this.separator = separator;
         }
+    }
+
+    private void setKeepDir(String keepDir) throws IOException {
+        ParamsUtils.checked(keepDir, "keep-dir", "(true|false)");
+        this.keepDir = Boolean.valueOf(keepDir);
     }
 
     private void setQiniuAuthKey() throws IOException {
@@ -913,6 +919,7 @@ public class CommonParams {
                 keys.add("mime");
                 keys.add("parent");
 //            }
+            if ("".equals(indexes)) indexes = "key,-1,size,datetime";
         } else { // 存储数据源的 keys 定义
             keys.addAll(ConvertingUtils.defaultFileFields);
             if ("upyun".equals(source)) {
@@ -1316,6 +1323,10 @@ public class CommonParams {
         this.separator = separator;
     }
 
+    public void setKeepDir(boolean keepDir) {
+        this.keepDir = keepDir;
+    }
+
     public void setAddKeyPrefix(String addKeyPrefix) {
         this.addKeyPrefix = addKeyPrefix;
     }
@@ -1510,6 +1521,10 @@ public class CommonParams {
 
     public String getSeparator() {
         return separator;
+    }
+
+    public boolean getKeepDir() {
+        return keepDir;
     }
 
     public String getAddKeyPrefix() {

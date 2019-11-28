@@ -98,7 +98,8 @@ public final class DatetimeUtils {
 
     // 注意：该方法根据时间戳的长度自动判断精度，如 10 位的时间戳精度为秒，13 位的时间戳精度位毫秒，19 位的时间戳精度为纳秒
     public static LocalDateTime datetimeOf(long timestamp) {
-        return datetimeOf(timestamp, (long)Math.pow(10, Math.floorMod(String.valueOf(timestamp).length(), 10)));
+//        return datetimeOf(timestamp, (long)Math.pow(10, Math.floorMod(String.valueOf(timestamp).length(), 10)));
+        return datetimeOf(timestamp, (long)Math.pow(10, String.valueOf(timestamp).length() - 10));
     }
 
     public final static Clock clock_Default = Clock.systemDefaultZone();

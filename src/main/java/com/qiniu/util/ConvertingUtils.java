@@ -175,7 +175,7 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileInfo.fsize); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.datetimeOf(fileInfo.putTime).toString()); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileInfo.putTime); break;
                 case "mime":
@@ -283,7 +283,7 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileItem.size); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.lastModified)); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.datetimeOf(fileItem.lastModified).toString()); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileItem.lastModified); break;
                 case "mime":
@@ -399,7 +399,7 @@ public final class ConvertingUtils {
                 case "key": pair.put(indexMap.get(index), fileInfo.key); break;
                 case "etag": if (fileInfo.etag != null) pair.put(indexMap.get(index), fileInfo.etag); break;
                 case "size": pair.put(indexMap.get(index), fileInfo.length); break;
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.timestamp)); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.datetimeOf(fileInfo.timestamp).toString()); break;
                 case "timestamp": pair.put(indexMap.get(index), fileInfo.timestamp); break;
                 case "mime": if (fileInfo.mime != null) pair.put(indexMap.get(index), fileInfo.mime); break;
                 default: throw new IOException("local FileInfo doesn't have field: " + index);
@@ -433,7 +433,7 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, fileInfo.fsize); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "datetime": pair.put(field, DatetimeUtils.datetimeOf(fileInfo.putTime).toString()); break;
                 case "timestamp":
                 case "putTime": pair.put(field, fileInfo.putTime); break;
                 case "mime":
@@ -534,7 +534,7 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, fileItem.size); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(fileItem.lastModified)); break;
+                case "datetime": pair.put(field, DatetimeUtils.datetimeOf(fileItem.lastModified).toString()); break;
                 case "timestamp":
                 case "putTime": pair.put(field, fileItem.lastModified); break;
                 case "mime":
@@ -657,7 +657,7 @@ public final class ConvertingUtils {
                 case "key": pair.put(field, fileInfo.key); break;
                 case "etag": if (fileInfo.etag != null) pair.put(field, fileInfo.etag); break;
                 case "size": pair.put(field, fileInfo.length); break;
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(fileInfo.timestamp, 10000000)); break;
+                case "datetime": pair.put(field, DatetimeUtils.datetimeOf(fileInfo.timestamp).toString()); break;
                 case "timestamp": pair.put(field, fileInfo.timestamp); break;
                 case "mime": if (fileInfo.mime != null) pair.put(field, fileInfo.mime); break;
                 default: throw new IOException("local fileInfo doesn't have field: " + field);

@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public abstract class FileContainer<E, W, T> extends DatasourceActor implements IDataSource<ILocalFileLister<E, File>, IResultOutput<W>, T> {
 
     protected String path;
+    protected boolean keepDir;
     protected String transferPath = null;
     protected int leftTrimSize = 0;
     protected String realPath;
@@ -26,12 +27,12 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 //    protected List<ILocalFileLister<E, File>> listerList = new ArrayList<>(threads);
     protected ConcurrentMap<String, ILocalFileLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
 
-    public FileContainer(String path, Map<String, Map<String, String>> directoriesMap, List<String> antiDirectories,
+    public FileContainer(String path, Map<String, Map<String, String>> directoriesMap, List<String> antiDirectories, boolean keepDir,
                          Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
         super(unitLen, threads);
         this.path = path;
-        this.antiDirectories = antiDirectories;
-        if (antiDirectories != null && antiDirectories.size() > 0) hasAntiDirectories = true;
+        this.keepDir = keepDir;
+        setAntiDirectories(antiDirectories);
         setTransferPathAndLeftTrimSize();
         setDirectoriesAndMap(directoriesMap);
         setIndexMapWithDefault(indexMap);
@@ -41,17 +42,19 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         setSaveOptions(true, "result", "tab", "\t", null);
     }
 
-    private void setIndexMapWithDefault(Map<String, String> indexMap) throws IOException {
-        if (indexMap == null || indexMap.size() == 0) {
-            if (this.indexMap == null) this.indexMap = new HashMap<>();
-            for (String fileInfoField : ConvertingUtils.defaultFileInfos) {
-                this.indexMap.put(fileInfoField, fileInfoField);
+    private void setAntiDirectories(List<String> antiDirectories) {
+        if (antiDirectories != null && antiDirectories.size() > 0) {
+            hasAntiDirectories = true;
+            this.antiDirectories = antiDirectories.stream().sorted().collect(Collectors.toList());
+            int size = this.antiDirectories.size();
+            Iterator<String> iterator = this.antiDirectories.iterator();
+            String temp = iterator.next();
+            while (iterator.hasNext() && size > 0) {
+                size--;
+                String prefix = iterator.next();
+                if (prefix.startsWith(temp)) iterator.remove();
+                else temp = prefix;
             }
-        } else {
-            for (String s : indexMap.keySet()) {
-                if (s == null || "".equals(s)) throw new IOException("the index can not be empty in " + indexMap);
-            }
-            this.indexMap = indexMap;
         }
     }
 
@@ -90,7 +93,9 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             this.directoriesMap.putAll(directoriesMap);
             directories = new ArrayList<>();
             int size = this.directoriesMap.size();
-            Iterator<String> iterator = this.directoriesMap.keySet().stream().sorted().collect(Collectors.toList()).iterator();
+            Iterator<String> iterator = this.directoriesMap.keySet().stream()
+                    .map(directory -> directory = directory.split("-\\|\\|-")[0])
+                    .sorted().collect(Collectors.toList()).iterator();
             String temp = iterator.next();
             File tempFile;
             Map<String, String> value = directoriesMap.get(temp);
@@ -99,7 +104,8 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 throw new IOException("directories can not contains empty item");
             } else {
                 tempFile = new File(temp);
-                if (tempFile.exists() && tempFile.isDirectory()) directories.add(tempFile);
+                if (!tempFile.exists()) tempFile = new File(realPath, temp);
+                if (tempFile.isDirectory()) directories.add(tempFile);
             }
             while (iterator.hasNext() && size > 0) {
                 size--;
@@ -108,6 +114,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     throw new IOException("directories can not contains empty item");
                 } else {
                     File file = new File(directory);
+                    if (!file.exists()) file = new File(realPath, directory);
                     if (file.isDirectory()) {
                         if (tempFile.isDirectory()) {
                             if (file.getPath().startsWith(tempFile.getPath())) {
@@ -130,9 +137,25 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                             value = directoriesMap.get(temp);
                         }
 
+                    } else {
+                        throw new IOException(directory + " is not valid directory.");
                     }
                 }
             }
+        }
+    }
+
+    private void setIndexMapWithDefault(Map<String, String> indexMap) throws IOException {
+        if (indexMap == null || indexMap.size() == 0) {
+            if (this.indexMap == null) this.indexMap = new HashMap<>();
+            for (String fileInfoField : ConvertingUtils.defaultFileInfos) {
+                this.indexMap.put(fileInfoField, fileInfoField);
+            }
+        } else {
+            for (String s : indexMap.keySet()) {
+                if (s == null || "".equals(s)) throw new IOException("the index can not be empty in " + indexMap);
+            }
+            this.indexMap = indexMap;
         }
     }
 
@@ -319,6 +342,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     private List<ILocalFileLister<E, File>> checkListerInPool(int cValue, int tiny) {
         int count = 0;
         ILocalFileLister<E, File> iLister;
+        boolean notCheck = true;
         List<ILocalFileLister<E, File>> list = new ArrayList<>(listerMap.values());
         Iterator<ILocalFileLister<E, File>> iterator = list.iterator();
         String directory;
@@ -326,6 +350,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         Map<String, String> endMap;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
+                notCheck = false;
                 while (iterator.hasNext()) {
                     iLister = iterator.next();
                     if(!iLister.hasNext()) iterator.remove();
@@ -353,16 +378,14 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             sleep(1000);
             count++;
         }
-        return list;
+        if (notCheck) return new ArrayList<>();
+        else return list;
     }
 
     private void directoriesListing() {
         while (directories != null && directories.size() > 0) {
-            directories = directories.parallelStream()
-                    .map(this::directoriesFromLister)
-                    .filter(Objects::nonNull)
-                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; })
-                    .orElse(null);
+            directories = directories.parallelStream().map(this::directoriesFromLister).filter(Objects::nonNull)
+                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
         }
         executorPool.shutdown();
         if (threads > 1) {
@@ -370,13 +393,14 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 30 ? threads / 10 :
                     threads >= 10 ? 3 : 1;
             List<ILocalFileLister<E, File>> list = checkListerInPool(cValue, tiny);
-            list.parallelStream().forEach(lister -> recordListerByDirectory(lister.getName() + "-||-0"));
             while (list.size() > 0) {
+                list.parallelStream().forEach(lister -> recordListerByDirectory(lister.getName() + "-||-0"));
                 int multiple = threads / list.size();
                 int maxIndex = multiple - 1;
                 executorPool = Executors.newFixedThreadPool(threads);
                 listerMap.clear();
                 list.parallelStream().forEach(lister -> {
+                    if (lister.getRemainedFiles() == null) return;
                     int remainedSize = lister.getRemainedFiles().size();
                     if (remainedSize < multiple) {
                         if (remainedSize > 0) {
@@ -431,24 +455,23 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             } else {
                 fileInfoLister = getLister(realPath);
             }
-            if (fileInfoLister.getDirectories() != null && fileInfoLister.getDirectories().size() > 0) {
-                if (hasAntiDirectories) {
-                    directories = fileInfoLister.getDirectories().parallelStream().filter(this::checkDirectory)
-                            .peek(directory -> recordListerByDirectory(directory.getPath())).collect(Collectors.toList());
-                } else {
-                    directories = fileInfoLister.getDirectories();
-                    directories.parallelStream().forEach(directory -> recordListerByDirectory(directory.getPath()));
-                }
-            }
+            directories = fileInfoLister.getDirectories();
         }
         try {
-            if (fileInfoLister != null && !fileInfoLister.hasNext()) {
-                recorder.remove(fileInfoLister.getName());
-                fileInfoLister.close();
-            }
             if (directories == null || directories.size() == 0) {
-                listing(fileInfoLister);
+                if (fileInfoLister.hasNext()) {
+                    listing(fileInfoLister);
+                } else {
+                    recorder.remove(fileInfoLister.getName());
+                    fileInfoLister.close();
+                }
             } else {
+                if (hasAntiDirectories) {
+                    directories = directories.parallelStream().filter(this::checkDirectory)
+                            .peek(directory -> recordListerByDirectory(directory.getPath())).collect(Collectors.toList());
+                } else {
+                    directories.parallelStream().forEach(directory -> recordListerByDirectory(directory.getPath()));
+                }
                 executorPool = Executors.newFixedThreadPool(threads);
                 if (fileInfoLister != null) processNodeLister(fileInfoLister);
                 directoriesListing();

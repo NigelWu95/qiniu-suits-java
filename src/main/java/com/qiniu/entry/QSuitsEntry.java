@@ -290,8 +290,9 @@ public class QSuitsEntry {
         String path = commonParams.getPath();
         Map<String, Map<String, String>> directoriesMap = commonParams.getPathConfigMap();
         List<String> antiDirectories = commonParams.getAntiDirectories();
+        boolean keepDir = commonParams.getKeepDir();
         DefaultFileContainer defaultFileContainer = new DefaultFileContainer(path, directoriesMap, antiDirectories,
-                indexMap, null, unitLen, threads);
+                keepDir, indexMap, null, unitLen, threads);
         defaultFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         defaultFileContainer.setRetryTimes(retryTimes);
         return defaultFileContainer;

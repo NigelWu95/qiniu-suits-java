@@ -22,7 +22,7 @@ public class UploadFileTest {
             UploadFile uploadFile = new UploadFile(accessKey, secretKey, new Configuration(), bucket, null, null,
                     true, true, null, null, 3600, null, null, true);
             String result = uploadFile.processLine(new HashMap<String, String>(){{
-                put("path", "/Users/wubingheng/Downloads/append_test.go");
+                put("filepath", "/Users/wubingheng/Downloads/");
 //                put("filepath", "/Users/wubingheng/Downloads/append_test.go");
 //                put("key", "/Users/wubingheng/Downloads/append_test.go");
             }});

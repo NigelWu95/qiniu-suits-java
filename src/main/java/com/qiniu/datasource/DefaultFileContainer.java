@@ -14,9 +14,9 @@ import java.util.*;
 public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter, Map<String, String>> {
 
     public DefaultFileContainer(String path, Map<String, Map<String, String>> directoriesMap,
-                                List<String> antiDirectories, Map<String, String> indexMap,
+                                List<String> antiDirectories, boolean keepDir, Map<String, String> indexMap,
                                 List<String> fields, int unitLen, int threads) throws IOException {
-        super(path, directoriesMap, antiDirectories, indexMap, fields, unitLen, threads);
+        super(path, directoriesMap, antiDirectories, keepDir, indexMap, fields, unitLen, threads);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
 
     @Override
     protected ILocalFileLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
-        return new FileInfoLister(directory, indexMap, false, transferPath, leftTrimSize, start, end, unitLen);
+        return new FileInfoLister(directory, indexMap, keepDir, transferPath, leftTrimSize, start, end, unitLen);
     }
 
     @Override
