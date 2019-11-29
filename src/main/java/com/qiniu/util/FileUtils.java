@@ -225,17 +225,4 @@ public final class FileUtils {
             }
         }
     }
-
-    public static boolean checkKeyFilesInPath(String path, String key) {
-        File file = new File(path);
-        File[] files = file.listFiles();
-        if (files != null && files.length > 0) {
-            for (File file1 : files) {
-                if (file1.getName().startsWith(key) && file1.length() > 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 }

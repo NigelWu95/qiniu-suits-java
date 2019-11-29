@@ -227,7 +227,7 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
             }
             executorPool.shutdown();
             while (!executorPool.isTerminated()) sleep(2000);
-            rootLogger.info("{} finished.", info);
+            rootLogger.info("{} finished, results in {}.", info, savePath);
             endAction();
         } catch (Throwable e) {
             executorPool.shutdownNow();

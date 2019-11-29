@@ -198,19 +198,6 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         return getLister(directory, start, end, unitLen);
     }
 
-    private ILocalFileLister<E, File> generateLister(String name, List<E> fileInfoList) throws IOException {
-        Map<String, String> map = directoriesMap.get(name);
-        String start;
-        String end;
-        if (map == null) {
-            start = end = null;
-        } else {
-            start = map.get("start");
-            end = map.get("end");
-        }
-        return getLister(name, fileInfoList, start, end, unitLen);
-    }
-
     public void export(ILocalFileLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
@@ -365,9 +352,6 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                         if (endMap == null) endMap = new HashMap<>();
                         endMap.put("start", start);
                         rootLogger.info("directory: {}, nextFilepath: {}, endMap: {}\n", directory, start, endMap);
-                        // 如果 truncate 时的 start 已经为空说明已经列举完成了
-                        if (start == null || start.isEmpty()) continue;
-                        directoriesMap.put(directory, endMap);
                     }
                 } else if (list.size() <= cValue) {
                     count = 900;
@@ -405,7 +389,8 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     if (remainedSize < multiple) {
                         if (remainedSize > 0) {
                             try {
-                                ILocalFileLister<E, File> sLister = generateLister(lister.getName() + "-||-0", lister.getRemainedFiles());
+                                ILocalFileLister<E, File> sLister = getLister(lister.getName() + "-||-0",
+                                        lister.getRemainedFiles(), null, null, unitLen);
                                 listerMap.put(sLister.getName(), sLister);
                                 executorPool.execute(() -> listing(lister));
                             } catch (IOException e) {
@@ -476,7 +461,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 if (fileInfoLister != null) processNodeLister(fileInfoLister);
                 directoriesListing();
             }
-            rootLogger.info("{} finished.", info);
+            rootLogger.info("{} finished, results in {}.", info, savePath);
             endAction();
         } catch (Throwable e) {
             stopped = true;

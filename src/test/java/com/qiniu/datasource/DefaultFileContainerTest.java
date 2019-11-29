@@ -15,7 +15,7 @@ public class DefaultFileContainerTest {
         }};
         try {
             DefaultFileContainer defaultFileContainer = new DefaultFileContainer(path, null, null,
-                    indexMap, null, 10, 10);
+                    true, indexMap, null, 10, 10);
             defaultFileContainer.setSaveOptions(true, "../result", "tab", "\t", null);
             defaultFileContainer.export();
         } catch (Exception e) {

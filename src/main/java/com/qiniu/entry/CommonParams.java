@@ -13,6 +13,7 @@ import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -175,6 +176,7 @@ public class CommonParams {
         } else {
             setParse();
             setSeparator();
+            setKeepDir();
             addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
             rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
             String files = entryParam.getValue("files", null);
@@ -389,7 +391,8 @@ public class CommonParams {
         }
     }
 
-    private void setKeepDir(String keepDir) throws IOException {
+    private void setKeepDir() throws IOException {
+        String keepDir = entryParam.getValue("keep-dir", "false");
         ParamsUtils.checked(keepDir, "keep-dir", "(true|false)");
         this.keepDir = Boolean.valueOf(keepDir);
     }
@@ -1139,9 +1142,24 @@ public class CommonParams {
                 path.substring(0, path.length() - 1) : path) + "-result" : bucket);
         if (CloudApiUtils.isFileSource(source) && FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
             throw new IOException("the save-path can not be same as path.");
-        } else if (FileUtils.checkKeyFilesInPath(savePath, source)) {
-            if (!savePath.contains(bucket) || pathConfigMap == null || pathConfigMap.size() <= 0) {
-                throw new IOException("please change the savePath, because there are last listed files.");
+        } else {
+            File file = new File(savePath);
+            File[] files = file.listFiles();
+            boolean isOk = false;
+            if (files != null && files.length > 0) {
+                for (File file1 : files) {
+                    if (file1.getName().startsWith(source) && file1.length() > 0) {
+                        isOk = true;
+                        break;
+                    }
+                }
+                if (isOk) {
+                    if (pathConfigMap == null || pathConfigMap.size() <= 0) {
+                        throw new IOException("please change the save-path, because there are last listed files, for not cover them.");
+                    }
+                } else {
+                    throw new IOException("please change save-path because it's not empty.");
+                }
             }
         }
     }

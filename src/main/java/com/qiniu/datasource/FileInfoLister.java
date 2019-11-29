@@ -195,7 +195,7 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
 
     @Override
     public List<FileInfo> getRemainedFiles() {
-        if (iterator == null) fileInfoList.clear();
+        if (iterator == null) return null;
         return fileInfoList;
     }
 

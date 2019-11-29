@@ -648,7 +648,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 if (startLister != null) processNodeLister(startLister);
                 prefixesListing();
             }
-            rootLogger.info("{} finished.", info);
+            rootLogger.info("{} finished, results in {}.", info, savePath);
             endAction();
         } catch (Throwable e) {
 //            executorPool.shutdownNow(); // 执行中的 sleep(), wait() 操作会抛出 InterruptedException
