@@ -39,6 +39,8 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
         IStringFormat<FileInfo> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
+        } else if ("yaml".equals(saveFormat)) {
+            stringFormatter = line -> ConvertingUtils.toPair(line, fields, initPathSize);
         } else {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }

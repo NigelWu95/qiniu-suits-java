@@ -19,6 +19,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     protected String transferPath = null;
     protected int leftTrimSize = 0;
     protected String realPath;
+    protected int initPathSize;
     protected List<String> antiDirectories;
     protected boolean hasAntiDirectories = false;
     protected Map<String, Map<String, String>> directoriesMap;
@@ -82,6 +83,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         if (realPath.endsWith(FileUtils.pathSeparator)) {
             realPath = realPath.substring(0, realPath.length() - 1);
         }
+        initPathSize = realPath.split(FileUtils.pathSeparator).length;
     }
 
     private void setDirectoriesAndMap(Map<String, Map<String, String>> directoriesMap) throws IOException {

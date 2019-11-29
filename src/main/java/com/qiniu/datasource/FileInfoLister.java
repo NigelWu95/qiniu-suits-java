@@ -63,26 +63,16 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         fileInfoList = new ArrayList<>(fs.length);
         directories = new ArrayList<>(fs.length);
         if (keepDir) {
-            FileInfo fileInfo;
-            for(File f : fs) {
-                if (f.isHidden()) continue;
-                if (f.isDirectory()) {
-                    directories.add(f);
-                    fileInfo = new FileInfo(f, transferPath, leftTrimSize);
-                    fileInfo.filepath = String.format("%s%s", fileInfo.filepath, FileUtils.pathSeparator);
-                } else {
-                    fileInfo = new FileInfo(f, transferPath, leftTrimSize);
-                }
-                fileInfoList.add(fileInfo);
-            }
-        } else {
-            for (File f : fs) {
-                if (f.isHidden()) continue;
-                if (f.isDirectory()) {
-                    directories.add(f);
-                } else {
-                    fileInfoList.add(new FileInfo(f, transferPath, leftTrimSize));
-                }
+            FileInfo fileInfo = new FileInfo(file, transferPath, leftTrimSize);
+            fileInfo.filepath = String.format("%s%s", fileInfo.filepath, FileUtils.pathSeparator);
+            fileInfoList.add(fileInfo);
+        }
+        for (File f : fs) {
+            if (f.isHidden()) continue;
+            if (f.isDirectory()) {
+                directories.add(f);
+            } else {
+                fileInfoList.add(new FileInfo(f, transferPath, leftTrimSize));
             }
         }
         if (directories.size() == 0) directories = null;
@@ -168,7 +158,7 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
                 currents.add(iterator.next());
                 iterator.remove();
             }
-            lastFilePath = null;
+            if (!iterator.hasNext()) lastFilePath = null;
         }
     }
 

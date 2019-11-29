@@ -84,6 +84,7 @@ public class CommonParams {
         add("csv");
         add("tab");
         add("json");
+        add("yaml");
     }};
 
     private void accountInit() throws IOException {
@@ -197,7 +198,9 @@ public class CommonParams {
         setSavePath();
         saveTag = entryParam.getValue("save-tag", "").trim();
         saveFormat = entryParam.getValue("save-format", "tab").trim();
-        ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
+        if (!lineFormats.contains(saveFormat)) {
+            throw new IOException("unsupported format: \"" + saveFormat + "\", please set the it in: " + lineFormats);
+        }
         setSaveSeparator();
         setRmFields();
         setPfopConfigs();
@@ -910,19 +913,20 @@ public class CommonParams {
         String indexes = entryParam.getValue("indexes", "").trim();
         if (isSelfUpload || "file".equals(parse)) { // 自上传和导出文件信息都是 local source，需要定义单独的默认 keys
             if (isStorageSource) throw new IOException("self upload only support local file source.");
-//            if (!indexes.startsWith("pre-")) {
-//                throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
-//            } else {
-                fieldsMode = 1;
-//                keys.add("filepath");
-                keys.add("key");
-                keys.add("etag");
-                keys.add("size");
-                keys.add("datetime");
-                keys.add("mime");
-                keys.add("parent");
-//            }
-            if ("".equals(indexes)) indexes = "key,-1,size,datetime";
+            fieldsMode = 1; // file 的 parse 方式，字段类型为 field，所以顺序无所谓，mime 和 etag 涉及计算，所以将优先级放在后面
+            keys.add("key");
+            keys.add("size");
+            keys.add("datetime");
+            keys.add("parent");
+            keys.add("mime");
+            keys.add("etag");
+            if ("".equals(indexes)) {
+                saveFormat = entryParam.getValue("save-format", "tab").trim();
+                if ("yaml".equals(saveFormat)) indexes = "pre-4";
+                else indexes = "pre-3";
+            } else if (!indexes.startsWith("pre-")) {
+                throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
+            }
         } else { // 存储数据源的 keys 定义
             keys.addAll(ConvertingUtils.defaultFileFields);
             if ("upyun".equals(source)) {
