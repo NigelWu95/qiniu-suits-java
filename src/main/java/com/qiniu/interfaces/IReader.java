@@ -7,11 +7,9 @@ public interface IReader<T> {
 
     String getName();
 
-    T getRealReader();
+    List<T> readLines() throws IOException;
 
-    List<String> readLines() throws IOException;
-
-    String lastLine();
+    String currentEndLine();
 
     long count();
 

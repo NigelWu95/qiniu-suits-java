@@ -9,7 +9,7 @@ import java.util.*;
 public class FileSaveMapper implements IResultOutput<BufferedWriter> {
 
     private Map<String, BufferedWriter> writerMap = new HashMap<>();
-    private String savePath = null;
+    private String savePath;
     private String prefix = "";
     private String suffix = "";
     private String fileExt = ".txt";

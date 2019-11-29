@@ -4,7 +4,7 @@ import com.google.gson.*;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.*;
@@ -13,7 +13,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class QiniuLister implements ILister<FileInfo> {
+public class QiniuLister implements IStorageLister<FileInfo> {
 
     private BucketManager bucketManager;
     private final String bucket;
@@ -39,18 +39,8 @@ public class QiniuLister implements ILister<FileInfo> {
     }
 
     @Override
-    public String getBucket() {
-        return bucket;
-    }
-
-    @Override
     public String getPrefix() {
         return prefix;
-    }
-
-    @Override
-    public void setMarker(String marker) {
-        this.marker = "".equals(marker) ? null : marker;
     }
 
     @Override
@@ -74,11 +64,6 @@ public class QiniuLister implements ILister<FileInfo> {
     @Override
     public void setLimit(int limit) {
         this.limit = limit;
-    }
-
-    @Override
-    public int getLimit() {
-        return limit;
     }
 
     private List<FileInfo> getListResult(String prefix, String marker, int limit) throws IOException {

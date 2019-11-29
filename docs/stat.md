@@ -28,4 +28,4 @@ indexes=
 ```
 
 ## 备注
-stat 操作是 file 源下的操作，从 every line of file 的 key-index 索引获取文件名，当使用 file 源且 parse=tab/csv 时下标必须为整数。
+stat 操作是 file 源下的操作，从 every line of file 的 key 索引（indexes 参数的第一个索引值，默认为 0）获取文件名，当使用 file 源且 parse=tab/csv 时下标必须为整数。

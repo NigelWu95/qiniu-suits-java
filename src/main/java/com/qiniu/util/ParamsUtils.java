@@ -161,7 +161,7 @@ public class ParamsUtils {
 
     public static void checked(String param, String name, String conditionReg) throws IOException {
         if (param == null || !param.matches(conditionReg)) {
-            throw new IOException("no correct \"" + name + "\", please set the it conform to regex: " + conditionReg);
+            throw new IOException("no correct \"" + name + "\", please set it conform to regex: " + conditionReg);
         }
     }
 }

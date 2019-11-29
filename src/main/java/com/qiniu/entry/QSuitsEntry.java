@@ -257,8 +257,8 @@ public class QSuitsEntry {
         } else if ("baidu".equals(source)) {
             return getBaiduBosContainer();
         } else if ("local".equals(source)) {
-            if (commonParams.isSelfUpload()) return getFilepathContainer();
-            else return getLocalFileContainer();
+            if (commonParams.isSelfUpload() || "file".equals(commonParams.getParse())) return getDefaultFileContainer();
+            else return getTextFileContainer();
         } else {
             throw new IOException("no such datasource: " + source);
         }
@@ -272,37 +272,35 @@ public class QSuitsEntry {
         return new InputSource(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
     }
 
-    public LocalFileContainer getLocalFileContainer() throws IOException {
+    public TextFileContainer getTextFileContainer() throws IOException {
         String filePath = commonParams.getPath();
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
         String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        Map<String, String> linesMap = commonParams.getLinesMap();
-        LocalFileContainer localFileContainer = new LocalFileContainer(filePath, parse, separator, addKeyPrefix,
+        Map<String, Map<String, String>> linesMap = commonParams.getPathConfigMap();
+        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, addKeyPrefix,
                 rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
-        localFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
-        localFileContainer.setRetryTimes(retryTimes);
-        return localFileContainer;
+        textFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
+        textFileContainer.setRetryTimes(retryTimes);
+        return textFileContainer;
     }
 
-    public FilepathContainer getFilepathContainer() throws IOException {
-        String filePath = commonParams.getPath();
-        String parse = commonParams.getParse();
-        String separator = commonParams.getSeparator();
-        String addKeyPrefix = commonParams.getAddKeyPrefix();
-        String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        Map<String, String> linesMap = commonParams.getLinesMap();
-        FilepathContainer filepathContainer = new FilepathContainer(filePath, parse, separator, addKeyPrefix,
-                rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
-        filepathContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
-        filepathContainer.setRetryTimes(retryTimes);
-        return filepathContainer;
+    public DefaultFileContainer getDefaultFileContainer() throws IOException {
+        String path = commonParams.getPath();
+        Map<String, Map<String, String>> directoriesMap = commonParams.getPathConfigMap();
+        List<String> antiDirectories = commonParams.getAntiDirectories();
+        boolean keepDir = commonParams.getKeepDir();
+        DefaultFileContainer defaultFileContainer = new DefaultFileContainer(path, directoriesMap, antiDirectories,
+                keepDir, indexMap, null, unitLen, threads);
+        defaultFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
+        defaultFileContainer.setRetryTimes(retryTimes);
+        return defaultFileContainer;
     }
 
     public QiniuQosContainer getQiniuQosContainer() throws IOException {
         if (qiniuConfig == null) qiniuConfig = getDefaultQiniuConfig();
-        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPathConfigMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -317,7 +315,7 @@ public class QSuitsEntry {
         String secretId = commonParams.getTencentSecretId();
         String secretKey = commonParams.getTencentSecretKey();
         if (tenClientConfig == null) tenClientConfig = getDefaultTenClientConfig();
-        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPathConfigMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -340,7 +338,7 @@ public class QSuitsEntry {
             endPoint = "http://" + regionName + ".aliyuncs.com";
         }
         if (aliClientConfig == null) aliClientConfig = getDefaultAliClientConfig();
-        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPathConfigMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -355,7 +353,7 @@ public class QSuitsEntry {
         String username = commonParams.getUpyunUsername();
         String password = commonParams.getUpyunPassword();
         if (upYunConfig == null) upYunConfig = getDefaultUpYunConfig();
-        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPathConfigMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
 //        boolean prefixLeft = commonParams.getPrefixLeft();
 //        boolean prefixRight = commonParams.getPrefixRight();
@@ -371,7 +369,7 @@ public class QSuitsEntry {
         String s3AccessId = commonParams.getS3AccessId();
         String s3SecretKey = commonParams.getS3SecretKey();
         if (s3ClientConfig == null) s3ClientConfig = getDefaultS3ClientConfig();
-        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPathConfigMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -389,7 +387,7 @@ public class QSuitsEntry {
         String accessId = commonParams.getHuaweiAccessId();
         String secretKey = commonParams.getHuaweiSecretKey();
         if (obsConfiguration == null) obsConfiguration = getDefaultObsConfiguration();
-        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPathConfigMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -413,7 +411,7 @@ public class QSuitsEntry {
         String accessId = commonParams.getBaiduAccessId();
         String secretKey = commonParams.getBaiduSecretKey();
         if (bosClientConfiguration == null) bosClientConfiguration = getDefaultBosClientConfiguration();
-        Map<String, Map<String, String>> prefixesMap = commonParams.getPrefixesMap();
+        Map<String, Map<String, String>> prefixesMap = commonParams.getPathConfigMap();
         List<String> antiPrefixes = commonParams.getAntiPrefixes();
         boolean prefixLeft = commonParams.getPrefixLeft();
         boolean prefixRight = commonParams.getPrefixRight();
@@ -440,7 +438,7 @@ public class QSuitsEntry {
             ParamsUtils.checked(strictError, "f-strict-error", "(true|false)");
             List<String> fields = ConvertingUtils.getOrderedFields(indexMap, rmFields);
             FilterProcess<Map<String, String>> filterProcessor;
-            if ("true".equals(strictError)) {
+            if ("true".equals(strictError) || processor == null) {
                 filterProcessor = new FilterProcess<Map<String, String>>(baseFilter, seniorFilter, savePath) {
                     @Override
                     protected ITypeConvert<Map<String, String>, String> newPersistConverter() throws IOException {
@@ -648,8 +646,9 @@ public class QSuitsEntry {
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new QueryAvinfo(getQiniuConfig(), protocol, domain, urlIndex)
-                : new QueryAvinfo(getQiniuConfig(), protocol, domain, urlIndex, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new QueryAvinfo(configuration, protocol, domain, urlIndex)
+                : new QueryAvinfo(configuration, protocol, domain, urlIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopCommand(Map<String, String> indexMap, boolean single) throws IOException {
@@ -658,12 +657,15 @@ public class QSuitsEntry {
         ParamsUtils.checked(duration, "duration", "(true|false)");
         String size = entryParam.getValue("size", "false").trim();
         ParamsUtils.checked(size, "size", "(true|false)");
+        String combine = entryParam.getValue("combine", "true").trim();
+        ParamsUtils.checked(size, "combine", "(true|false)");
         String configJson = entryParam.getValue("pfop-config", "").trim();
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
-        return single ? new PfopCommand(getQiniuConfig(), avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
-                configJson, pfopConfigs)
-                : new PfopCommand(getQiniuConfig(), avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size), configJson,
-                pfopConfigs, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new PfopCommand(configuration, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
+                Boolean.valueOf(combine), configJson, pfopConfigs)
+                : new PfopCommand(configuration, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
+                Boolean.valueOf(combine), configJson, pfopConfigs, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop(Map<String, String> indexMap, boolean single) throws IOException {
@@ -686,8 +688,9 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         ParamsUtils.checked(protocol, "protocol", "https?");
         String pIdIndex = indexMap.containsValue("id") ? "id" : null;
-        return single ? new QueryPfopResult(getQiniuConfig(), protocol, pIdIndex)
-                : new QueryPfopResult(getQiniuConfig(), protocol, pIdIndex, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new QueryPfopResult(configuration, protocol, pIdIndex)
+                : new QueryPfopResult(configuration, protocol, pIdIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQueryHash(Map<String, String> indexMap, boolean single) throws IOException {
@@ -697,8 +700,9 @@ public class QSuitsEntry {
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String algorithm = entryParam.getValue("algorithm", "md5").trim();
         ParamsUtils.checked(algorithm, "algorithm", "(md5|sha1)");
-        return single ? new QueryHash(getQiniuConfig(), protocol, domain, urlIndex, algorithm)
-                : new QueryHash(getQiniuConfig(), protocol, domain, urlIndex, algorithm, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new QueryHash(configuration, protocol, domain, urlIndex, algorithm)
+                : new QueryHash(configuration, protocol, domain, urlIndex, algorithm, savePath);
     }
 
     private ILineProcess<Map<String, String>> getStatFile(boolean single) throws IOException {
@@ -728,8 +732,9 @@ public class QSuitsEntry {
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new ExportTS(getQiniuConfig(), protocol, domain, urlIndex)
-                : new ExportTS(getQiniuConfig(), protocol, domain, urlIndex, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new ExportTS(configuration, protocol, domain, urlIndex)
+                : new ExportTS(configuration, protocol, domain, urlIndex, savePath);
     }
 
     private Map<String, String> getQueriesMap() {

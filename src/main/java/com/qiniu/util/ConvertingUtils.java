@@ -6,6 +6,7 @@ import com.baidubce.services.bos.model.BosObjectSummary;
 import com.google.gson.*;
 import com.obs.services.model.ObsObject;
 import com.qcloud.cos.model.COSObjectSummary;
+import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.interfaces.KeyValuePair;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.storage.model.FileInfo;
@@ -89,7 +90,20 @@ public final class ConvertingUtils {
         add(defaultOwnerField);
     }};
 
+    // 为了保证字段按照设置的顺序来读取，故使用 ArrayList
+    final static public List<String> defaultFileInfos = new ArrayList<String>(){{
+        add("parent");
+        add("filepath");
+        add("key");
+        add(defaultEtagField);
+        add(defaultSizeField);
+        add(defaultDatetimeField);
+        add(defaultMimeField);
+    }};
+
     final static public List<String> fileFields = new ArrayList<String>(){{
+        add("parent");
+        add("filepath");
         add("key");
         addAll(etagFields);
         addAll(sizeFields);
@@ -162,7 +176,7 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileInfo.fsize); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.datetimeOf(fileInfo.putTime).toString()); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileInfo.putTime); break;
                 case "mime":
@@ -270,7 +284,7 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(indexMap.get(index), fileItem.size); break;
                 case "lastModified":
-                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.stringOf(fileItem.lastModified)); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.datetimeOf(fileItem.lastModified).toString()); break;
                 case "timestamp":
                 case "putTime": pair.put(indexMap.get(index), fileItem.lastModified); break;
                 case "mime":
@@ -376,6 +390,26 @@ public final class ConvertingUtils {
         return toPair(parsed, indexMap, pair);
     }
 
+    public static <T> T toPair(com.qiniu.model.local.FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
+        for (String index : indexMap.keySet()) {
+            switch (index) {
+                case "parent": if (fileInfo.parentPath != null) pair.put(indexMap.get(index), fileInfo.parentPath); break;
+                case "filepath": pair.put(indexMap.get(index), fileInfo.filepath); break;
+                case "key": pair.put(indexMap.get(index), fileInfo.key); break;
+                case "etag": if (fileInfo.etag != null) pair.put(indexMap.get(index), fileInfo.etag); break;
+                case "size": pair.put(indexMap.get(index), fileInfo.length); break;
+                case "datetime": pair.put(indexMap.get(index), DatetimeUtils.datetimeOf(fileInfo.timestamp).toString()); break;
+                case "timestamp": pair.put(indexMap.get(index), fileInfo.timestamp); break;
+                case "mime": if (fileInfo.mime != null) pair.put(indexMap.get(index), fileInfo.mime); break;
+                default: throw new IOException("local FileInfo doesn't have field: " + index);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
     public static <T> T toPair(String line, String separator, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (line == null) throw new IOException("empty string line.");
@@ -400,7 +434,7 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, fileInfo.fsize); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(fileInfo.putTime, 10000000)); break;
+                case "datetime": pair.put(field, DatetimeUtils.datetimeOf(fileInfo.putTime).toString()); break;
                 case "timestamp":
                 case "putTime": pair.put(field, fileInfo.putTime); break;
                 case "mime":
@@ -501,7 +535,7 @@ public final class ConvertingUtils {
                 case "size":
                 case "fsize": pair.put(field, fileItem.size); break;
                 case "lastModified":
-                case "datetime": pair.put(field, DatetimeUtils.stringOf(fileItem.lastModified)); break;
+                case "datetime": pair.put(field, DatetimeUtils.datetimeOf(fileItem.lastModified).toString()); break;
                 case "timestamp":
                 case "putTime": pair.put(field, fileItem.lastModified); break;
                 case "mime":
@@ -613,5 +647,54 @@ public final class ConvertingUtils {
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
         return pair.getProtoEntity();
+    }
+
+    public static <T> T toPair(com.qiniu.model.local.FileInfo fileInfo, List<String> fields, KeyValuePair<String, T> pair) throws IOException {
+        if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
+        for (String field : fields) {
+            switch (field) {
+                case "parent": if (fileInfo.parentPath != null) pair.put(field, fileInfo.parentPath); break;
+                case "filepath": pair.put(field, fileInfo.filepath); break;
+                case "key": pair.put(field, fileInfo.key); break;
+                case "etag": if (fileInfo.etag != null) pair.put(field, fileInfo.etag); break;
+                case "size": pair.put(field, fileInfo.length); break;
+                case "datetime": pair.put(field, DatetimeUtils.datetimeOf(fileInfo.timestamp).toString()); break;
+                case "timestamp": pair.put(field, fileInfo.timestamp); break;
+                case "mime": if (fileInfo.mime != null) pair.put(field, fileInfo.mime); break;
+                default: throw new IOException("local fileInfo doesn't have field: " + field);
+            }
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
+    public static String toStringWithIndent(com.qiniu.model.local.FileInfo fileInfo, List<String> fields, int initPathSize) throws IOException {
+        if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
+        KeyValuePair<String, String> pair = new StringBuilderPair("\t");
+        if (fileInfo.parentPath != null) {
+            int num = fileInfo.parentPath.split(FileUtils.pathSeparator).length - initPathSize;
+            for (String field : fields) {
+                switch (field) {
+//                    case "parent": break;
+                    case "parent": pair.put(field, fileInfo.parentPath); break;
+//                    case "filepath": pair.put(field, fileInfo.filepath); break;
+                    case "filepath": StringBuilder builder = new StringBuilder();
+                        for (int i = 0; i < num; i++) builder.append("\t");
+                        builder.append(fileInfo.filepath.replace(fileInfo.parentPath, "").substring(1));
+                        pair.put(field, builder.toString()); break;
+                    case "key": pair.put(field, fileInfo.key); break;
+                    case "etag": if (fileInfo.etag != null) pair.put(field, fileInfo.etag); break;
+                    case "size": pair.put(field, fileInfo.length); break;
+                    case "datetime": pair.put(field, DatetimeUtils.datetimeOf(fileInfo.timestamp).toString()); break;
+                    case "timestamp": pair.put(field, fileInfo.timestamp); break;
+                    case "mime": if (fileInfo.mime != null) pair.put(field, fileInfo.mime); break;
+                    default: throw new IOException("local fileInfo doesn't have field: " + field);
+                }
+            }
+            if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+            return pair.getProtoEntity();
+        } else {
+            throw new IOException("no parent path to parse.");
+        }
     }
 }

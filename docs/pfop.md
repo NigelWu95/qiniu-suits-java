@@ -44,11 +44,15 @@ pfop-config=
   "pfop":[
     {
       "cmd":"avthumb/mp4/s/1280x720/autoscale/1",
-      "saveas":"bucket:$(key)F720.mp4"
+      "saveas":"bucket:$(name)_F720.mp4"
+    },
+    {
+      "cmd":"avthumb/mp4/s/720x480/autoscale/1",
+      "saveas":"bucket:480p-$(key)"
     },
     {
       "cmd":"avsmart/mp4",
-      "saveas":"bucket:$(key)-avsmart.mp4"
+      "saveas":"bucket:$(name)-avsmart.mp4"
     }
   ]
 }
@@ -63,9 +67,9 @@ pfop-config=
 
 ### 关于 saveas  
 ##### 魔法变量  
-`$(name)` 表示完整的原始文件名（如 a.jpg/a.png 的 $(name) 分别为为 a.jpg/a.png）  
-`$(key)` 表示去除后缀的原始文件名（如 a.jpg/a.png/a 的 $(key) 均为 a）  
+`$(name)` 表示去除后缀的原始文件名（如 a.jpg/a.png/a 的 $(name) 均为 a）  
 `$(ext)` 表示文件名的后缀部分（如 a.jpg/b.jpg 的 $(ext) 均为 jpg，c 的 $(ext) 为空字符串）  
+`$(key)` 表示完整的原始文件名（如 a.jpg/a.png 的 $(key) 分别为为 a.jpg/a.png）  
 ##### 格式拼接  
 格式需要遵循 `<bucket>:<key>`，允许只有 `<bucket>`，此时表示由七牛自动生成文件名，但是不允许缺少 `<bucket>`，且不允许以 `:` 开头或结尾的格式。  
 

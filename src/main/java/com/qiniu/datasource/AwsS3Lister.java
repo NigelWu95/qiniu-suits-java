@@ -7,12 +7,12 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.util.List;
 
-public class AwsS3Lister implements ILister<S3ObjectSummary> {
+public class AwsS3Lister implements IStorageLister<S3ObjectSummary> {
 
     private AmazonS3 s3Client;
     private ListObjectsV2Request listObjectsRequest;
@@ -37,18 +37,8 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     }
 
     @Override
-    public String getBucket() {
-        return listObjectsRequest.getBucketName();
-    }
-
-    @Override
     public String getPrefix() {
         return listObjectsRequest.getPrefix();
-    }
-
-    @Override
-    public void setMarker(String marker) {
-        listObjectsRequest.setContinuationToken("".equals(marker) ? null : marker);
     }
 
     @Override
@@ -72,11 +62,6 @@ public class AwsS3Lister implements ILister<S3ObjectSummary> {
     @Override
     public void setLimit(int limit) {
         listObjectsRequest.withMaxKeys(limit);
-    }
-
-    @Override
-    public int getLimit() {
-        return listObjectsRequest.getMaxKeys();
     }
 
     private void checkedListWithEnd() {

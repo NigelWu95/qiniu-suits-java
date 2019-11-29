@@ -7,12 +7,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocalFileReaderTest {
+public class TextFileReaderTest {
 
     @Test
     public void testInit() {
         try {
-            LocalFileReader localFileReader = new LocalFileReader(new File("../ test/test.txt"), null, 10);
+            TextFileReader textFileReader = new TextFileReader(new File("../ test/test.txt"), null, 10);
         } catch (IOException e) {
             e.printStackTrace();
         }

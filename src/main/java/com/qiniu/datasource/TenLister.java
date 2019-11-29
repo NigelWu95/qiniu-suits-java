@@ -7,12 +7,12 @@ import com.qcloud.cos.model.COSObjectSummary;
 import com.qcloud.cos.model.ListObjectsRequest;
 import com.qcloud.cos.model.ObjectListing;
 import com.qiniu.common.SuitsException;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.util.CloudApiUtils;
 
 import java.util.List;
 
-public class TenLister implements ILister<COSObjectSummary> {
+public class TenLister implements IStorageLister<COSObjectSummary> {
 
     private COSClient cosClient;
     private ListObjectsRequest listObjectsRequest;
@@ -35,18 +35,11 @@ public class TenLister implements ILister<COSObjectSummary> {
     }
 
     @Override
-    public String getBucket() {
-        return listObjectsRequest.getBucketName();
-    }
-
     public String getPrefix() {
         return listObjectsRequest.getPrefix();
     }
 
-    public void setMarker(String marker) {
-        listObjectsRequest.setMarker("".equals(marker) ? null : marker);
-    }
-
+    @Override
     public String getMarker() {
         return listObjectsRequest.getMarker();
     }
@@ -67,11 +60,6 @@ public class TenLister implements ILister<COSObjectSummary> {
     @Override
     public void setLimit(int limit) {
         listObjectsRequest.setMaxKeys(limit);
-    }
-
-    @Override
-    public int getLimit() {
-        return listObjectsRequest.getMaxKeys();
     }
 
     private void checkedListWithEnd() {

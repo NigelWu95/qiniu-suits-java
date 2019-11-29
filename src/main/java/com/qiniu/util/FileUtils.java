@@ -131,7 +131,7 @@ public final class FileUtils {
         for (int i = 0; i < items.length - 1; i++) {
             shortName.append(items[i]).append(".");
         }
-        return new String[]{shortName.toString().substring(0, shortName.length() - 1), items[items.length - 1]};
+        return new String[]{shortName.substring(0, shortName.length() - 1), items[items.length - 1]};
     }
 
     public static List<File> getFiles(File directory, boolean checkText) throws IOException {
@@ -224,18 +224,5 @@ public final class FileUtils {
                 raf = null;
             }
         }
-    }
-
-    public static boolean checkKeyFilesInPath(String path, String key) {
-        File file = new File(path);
-        File[] files = file.listFiles();
-        if (files != null && files.length > 0) {
-            for (File file1 : files) {
-                if (file1.getName().startsWith(key) && file1.length() > 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

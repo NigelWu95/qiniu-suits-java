@@ -1,41 +1,23 @@
 package com.qiniu.datasource;
 
 import com.google.gson.JsonObject;
-import com.qiniu.common.JsonRecorder;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.interfaces.IDataSource;
 import com.qiniu.interfaces.ILineProcess;
-import com.qiniu.interfaces.ILister;
+import com.qiniu.interfaces.IStorageLister;
 import com.qiniu.interfaces.ITypeConvert;
-import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sun.misc.*;
 
-import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.Timer;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.qiniu.entry.CommonParams.lineFormats;
-
-public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILister<E>, IResultOutput<W>, T> {
-
-    static final File errorLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.ERROR));
-    private static final File infoLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.QSUITS), LogUtils.INFO));
-    private static final File procedureLogFile = new File(String.join(".", LogUtils.getLogPath(LogUtils.PROCEDURE), LogUtils.LOG_EXT));
-    static final Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    static final Logger errorLogger = LoggerFactory.getLogger(LogUtils.ERROR);
-    private static final Logger infoLogger = LoggerFactory.getLogger(LogUtils.INFO);
-    private static final Logger procedureLogger = LoggerFactory.getLogger(LogUtils.PROCEDURE);
+public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor implements IDataSource<IStorageLister<E>, IResultOutput<W>, T> {
 
     protected String bucket;
     protected List<String> antiPrefixes;
@@ -44,90 +26,50 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
     protected List<String> prefixes;
     protected boolean prefixLeft;
     protected boolean prefixRight;
-    protected int unitLen;
-    protected int threads;
-    protected int retryTimes = 5;
-    protected boolean saveTotal;
-    protected String savePath;
-    protected String saveFormat;
-    protected String saveSeparator;
-    protected List<String> rmFields;
-    protected Map<String, String> indexMap;
-    protected List<String> fields;
-    protected ExecutorService executorPool; // 线程池
     protected ILineProcess<T> processor; // 定义的资源处理器
-    protected List<String> originPrefixList = new ArrayList<>();
+    protected List<String> originPrefixList;
     static String firstPoint;
     private String lastPoint;
     private ConcurrentMap<String, Map<String, String>> prefixAndEndedMap = new ConcurrentHashMap<>(100);
-    private ConcurrentMap<String, IResultOutput<W>> saverMap = new ConcurrentHashMap<>(threads);
-    private ConcurrentMap<String, ILineProcess<T>> processorMap = new ConcurrentHashMap<>(threads);
-    private boolean stopped;
 
     public CloudStorageContainer(String bucket, Map<String, Map<String, String>> prefixesMap, List<String> antiPrefixes,
                                  boolean prefixLeft, boolean prefixRight, Map<String, String> indexMap, List<String> fields,
                                  int unitLen, int threads) throws IOException {
+        super(unitLen, threads);
         this.bucket = bucket;
         this.prefixLeft = prefixLeft;
         this.prefixRight = prefixRight;
         // 先设置 antiPrefixes 后再设置 prefixes，因为可能需要从 prefixes 中去除 antiPrefixes 含有的元素
-        this.antiPrefixes = antiPrefixes;
-        if (antiPrefixes != null && antiPrefixes.size() > 0) hasAntiPrefixes = true;
+        setAntiPrefixes(antiPrefixes);
         setPrefixesAndMap(prefixesMap);
-        this.unitLen = unitLen;
-        this.threads = threads;
-        // default save parameters
-        this.saveTotal = true; // 默认全记录保存
-        this.savePath = "result";
-        this.saveFormat = "tab";
-        this.saveSeparator = "\t";
         setIndexMapWithDefault(indexMap);
-        if (fields == null || fields.size() == 0) {
-            this.fields = ConvertingUtils.getOrderedFields(this.indexMap, rmFields);
-        }
-        else this.fields = fields;
+        if (fields != null && fields.size() > 0) this.fields = fields;
+        else this.fields = ConvertingUtils.getOrderedFields(this.indexMap, null);
+        // default save parameters，默认全记录保存
+        setSaveOptions(true, "result", "tab", "\t", null);
         // 由于目前指定包含 "|" 字符的前缀列举会导致超时，因此先将该字符及其 ASCII 顺序之前的 "{" 和之后的（"|}~"）统一去掉，从而优化列举的超
         // 时问题，简化前缀参数的设置，也避免为了兼容该字符去修改代码算法
-        originPrefixList.addAll(Arrays.asList(("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN").split("")));
-        originPrefixList.addAll(Arrays.asList(("OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")));
+        originPrefixList = Arrays.asList(
+                (" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz").split("")
+        );
         firstPoint = originPrefixList.get(0);
         lastPoint = originPrefixList.get(originPrefixList.size() - 1);
     }
 
-    // 不调用则各参数使用默认值
-    public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields)
-            throws IOException {
-        this.saveTotal = saveTotal;
-        this.savePath = savePath;
-        this.saveFormat = format;
-        if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
-        this.saveSeparator = separator;
-        this.rmFields = rmFields;
-        if (rmFields != null && rmFields.size() > 0) {
-            this.fields = ConvertingUtils.getFields(fields, rmFields);
-        }
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
-    }
-
-    private void setIndexMapWithDefault(Map<String, String> indexMap) throws IOException {
-        if (indexMap == null || indexMap.size() == 0) {
-            if (this.indexMap == null) this.indexMap = new HashMap<>();
-            for (String fileInfoField : ConvertingUtils.defaultFileFields) {
-                this.indexMap.put(fileInfoField, fileInfoField);
+    private void setAntiPrefixes(List<String> antiPrefixes) {
+        if (antiPrefixes != null && antiPrefixes.size() > 0) {
+            hasAntiPrefixes = true;
+            this.antiPrefixes = antiPrefixes.stream().sorted().collect(Collectors.toList());
+            int size = this.antiPrefixes.size();
+            Iterator<String> iterator = this.antiPrefixes.iterator();
+            String temp = iterator.next();
+            while (iterator.hasNext() && size > 0) {
+                size--;
+                String prefix = iterator.next();
+                if (prefix.startsWith(temp)) iterator.remove();
+                else temp = prefix;
             }
-        } else {
-            for (String s : indexMap.keySet()) {
-                if (s == null || "".equals(s)) throw new IOException("the index can not be empty in " + indexMap);
-            }
-            this.indexMap = indexMap;
         }
-    }
-
-    public void setProcessor(ILineProcess<T> processor) {
-        this.processor = processor;
     }
 
     private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
@@ -135,9 +77,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             this.prefixesMap = new HashMap<>(threads);
             prefixLeft = true;
             prefixRight = true;
-            if (hasAntiPrefixes) prefixes = originPrefixList.stream().sorted().collect(Collectors.toList());
+            if (hasAntiPrefixes && !"upyun".equals(getSourceName())) prefixes = originPrefixList;
         } else {
-            if (prefixesMap.containsKey(null)) throw new IOException("");
+            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
             this.prefixesMap = new HashMap<>(threads);
             this.prefixesMap.putAll(prefixesMap);
             prefixes = prefixesMap.keySet().stream().sorted().collect(Collectors.toList());
@@ -165,7 +107,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                         iterator.remove();
                         this.prefixesMap.remove(prefix);
                     } else if (end.compareTo(prefix) >= 0) {
-                        throw new IOException(temp + "'s end can not be more larger than " + prefix + " in " + prefixesMap);
+                        throw new IOException(temp + "'s end can not be larger than " + prefix + " in " + prefixesMap);
                     }
                 } else {
                     temp = prefix;
@@ -174,11 +116,41 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }
         if (hasAntiPrefixes && prefixes != null && prefixes.size() > 0) {
-            String lastAntiPrefix = antiPrefixes.stream().max(Comparator.naturalOrder()).orElse(null);
-            if (prefixRight && lastAntiPrefix != null && lastAntiPrefix.compareTo(prefixes.get(prefixes.size() - 1)) <= 0) {
-                throw new IOException("max anti-prefix can not be same as or more larger than max prefix.");
+            antiPrefixes.sort(Comparator.naturalOrder());
+            if (firstPoint.compareTo(antiPrefixes.get(0)) > 0) {
+                throw new IOException("min anti-prefix can not be smaller than prefix: " + firstPoint);
+            }
+            String firstPrefix = prefixes.get(0);
+            if (prefixLeft && firstPrefix.compareTo(antiPrefixes.get(0)) >= 0) {
+                throw new IOException("with prefix-left, min anti-prefix can not be smaller than min prefix: " + firstPrefix);
+            }
+            String lastAntiPrefix = antiPrefixes.get(antiPrefixes.size() - 1);
+            if (lastPoint.compareTo(lastAntiPrefix) < 0) {
+                throw new IOException("max anti-prefix can not be larger than prefix： " + lastPoint);
+            }
+            String lastPrefix = prefixes.get(prefixes.size() - 1);
+            if (prefixRight && lastPrefix.compareTo(lastAntiPrefix) <= 0) {
+                throw new IOException("with prefix-right, max anti-prefix can not be same as or larger than max prefix： " + lastPoint);
             }
         }
+    }
+
+    private void setIndexMapWithDefault(Map<String, String> indexMap) throws IOException {
+        if (indexMap == null || indexMap.size() == 0) {
+            if (this.indexMap == null) this.indexMap = new HashMap<>();
+            for (String fileInfoField : ConvertingUtils.defaultFileFields) {
+                this.indexMap.put(fileInfoField, fileInfoField);
+            }
+        } else {
+            for (String s : indexMap.keySet()) {
+                if (s == null || "".equals(s)) throw new IOException("the index can not be empty in " + indexMap);
+            }
+            this.indexMap = indexMap;
+        }
+    }
+
+    public void setProcessor(ILineProcess<T> processor) {
+        this.processor = processor;
     }
 
     private synchronized void insertIntoPrefixesMap(String prefix, Map<String, String> markerAndEnd) {
@@ -191,22 +163,20 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * @return 检验结果，true 表示 prefix 有效不需要剔除
      */
     boolean checkPrefix(String prefix) {
-        if (prefix == null) return false;
-        if (hasAntiPrefixes) {
+//        if (prefix == null) return false;
+//        if (hasAntiPrefixes) {
             for (String antiPrefix : antiPrefixes) {
                 if (prefix.startsWith(antiPrefix)) return false;
             }
             return true;
-        } else {
-            return true;
-        }
+//        } else {
+//            return true;
+//        }
     }
 
     protected abstract ITypeConvert<E, T> getNewConverter();
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
-
-    private JsonRecorder recorder = new JsonRecorder();
 
     void recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
@@ -221,7 +191,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(ILister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+    public void export(IStorageLister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
@@ -291,7 +261,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
      * @param lister 列举对象
      */
-    void listing(ILister<E> lister) {
+    void listing(IStorageLister<E> lister) {
         // 持久化结果标识信息
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
@@ -333,13 +303,13 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    protected abstract ILister<E> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException;
+    protected abstract IStorageLister<E> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException;
 
-    ILister<E> generateLister(String prefix) throws SuitsException {
+    IStorageLister<E> generateLister(String prefix) throws SuitsException {
         return generateLister(prefix, 0);
     }
 
-    private ILister<E> generateLister(String prefix, int limit) throws SuitsException {
+    private IStorageLister<E> generateLister(String prefix, int limit) throws SuitsException {
         limit = limit > 0 ? limit : unitLen;
         int retry = retryTimes;
         Map<String, String> map = prefixesMap.get(prefix);
@@ -364,7 +334,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private List<String> moreValidPrefixes(ILister<E> lister, boolean doFutureCheck) {
+    private String moreValidPrefixes(IStorageLister<E> lister, boolean doFutureCheck) {
         boolean next;
         try {
             next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
@@ -407,18 +377,11 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 return moreValidPrefixes(lister, true);
             }
         }
-        if (point != null) {
-            String finalPoint = point;
-            return originPrefixList.stream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
-                    .map(prefix -> lister.getPrefix() + prefix).filter(this::checkPrefix)
-                    .peek(this::recordListerByPrefix).collect(Collectors.toList());
-        } else {
-            return null;
-        }
+        return point;
     }
 
-    private List<ILister<E>> filteredListerByPrefixes(Stream<String> prefixesStream) {
-        List<ILister<E>> prefixesLister = prefixesStream.map(prefix -> {
+    private List<IStorageLister<E>> filteredListerByPrefixes(Stream<String> prefixesStream) {
+        List<IStorageLister<E>> prefixesLister = prefixesStream.map(prefix -> {
             try {
                 return generateLister(prefix);
             } catch (SuitsException e) {
@@ -436,7 +399,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }).collect(Collectors.toList());
         if (prefixesLister.size() > 0) {
-            ILister<E> lastLister = prefixesLister.stream().max(Comparator.comparing(ILister::getPrefix)).get();
+            IStorageLister<E> lastLister = prefixesLister.stream().max(Comparator.comparing(IStorageLister::getPrefix)).get();
             Map<String, String> map = prefixesMap.get(lastLister.getPrefix());
             if (map == null) {
                 prefixAndEndedMap.put(lastLister.getPrefix(), new HashMap<>());
@@ -444,9 +407,9 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 prefixAndEndedMap.put(lastLister.getPrefix(), map);
             }
         }
-        Iterator<ILister<E>> it = prefixesLister.iterator();
+        Iterator<IStorageLister<E>> it = prefixesLister.iterator();
         while (it.hasNext()) {
-            ILister<E> nLister = it.next();
+            IStorageLister<E> nLister = it.next();
             if(!nLister.hasNext() || (nLister.getEndPrefix() != null && !"".equals(nLister.getEndPrefix()))) {
                 executorPool.execute(() -> listing(nLister));
                 it.remove();
@@ -455,7 +418,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         return prefixesLister;
     }
 
-    private void processNodeLister(ILister<E> lister) {
+    private void processNodeLister(IStorageLister<E> lister) {
         if (lister.currents().size() > 0 || lister.hasNext()) {
             executorPool.execute(() -> listing(lister));
         } else {
@@ -464,32 +427,41 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
         }
     }
 
-    private List<ILister<E>> computeToNextLevel(List<ILister<E>> listerList) {
-        return listerList.parallelStream().map(lister -> {
-            List<String> nextPrefixes = moreValidPrefixes(lister, true);
-            processNodeLister(lister);
-            if (nextPrefixes != null) {
-                return filteredListerByPrefixes(nextPrefixes.stream());
-            } else {
-                return null;
-            }
-        }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
-    }
-
-    void sleep(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException ignored) {
-            int i = 0;
-            while (i < millis) i++;
+    private List<IStorageLister<E>> computeToNextLevel(List<IStorageLister<E>> listerList) {
+        if (hasAntiPrefixes) {
+            return listerList.parallelStream().map(lister -> {
+                List<String> nextPrefixes = null;
+                String finalPoint = moreValidPrefixes(lister, true);
+                if (finalPoint != null) {
+                    nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
+                            .map(prefix -> lister.getPrefix() + prefix).filter(this::checkPrefix)
+                            .peek(this::recordListerByPrefix).collect(Collectors.toList());
+                }
+                processNodeLister(lister);
+                if (nextPrefixes != null) return filteredListerByPrefixes(nextPrefixes.stream());
+                else return null;
+            }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
+        } else {
+            return listerList.parallelStream().map(lister -> {
+                List<String> nextPrefixes = null;
+                String finalPoint = moreValidPrefixes(lister, true);
+                if (finalPoint != null) {
+                    nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
+                            .map(prefix -> lister.getPrefix() + prefix)
+                            .peek(this::recordListerByPrefix).collect(Collectors.toList());
+                }
+                processNodeLister(lister);
+                if (nextPrefixes != null) return filteredListerByPrefixes(nextPrefixes.stream());
+                else return null;
+            }).filter(Objects::nonNull).reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
         }
     }
 
-    private List<String> checkListerInPool(List<ILister<E>> listerList, int cValue, int tiny) {
+    private List<String> checkListerInPool(List<IStorageLister<E>> listerList, int cValue, int tiny) {
         List<String> extremePrefixes = null;
         int count = 0;
-        ILister<E> iLister;
-        Iterator<ILister<E>> iterator;
+        IStorageLister<E> iLister;
+        Iterator<IStorageLister<E>> iterator;
         String prefix;
         String nextMarker;
         String start;
@@ -508,7 +480,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 }
                 if (listerList.size() > 0 && listerList.size() <= tiny) {
                     rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...\n", listerList.size(), cValue);
-                    for (ILister<E> lister : listerList) {
+                    for (IStorageLister<E> lister : listerList) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         prefix = lister.getPrefix();
                         nextMarker = lister.truncate();
@@ -557,7 +529,7 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
 //            recorder.remove(prefix);
             start = prefixMap.get("start");
-            // 由于优先使用 marker 原则，为了 start 生效则将可能的 marker 删除
+            // 由于 marker 优先原则，为了 start 生效则将可能的 marker 删除
             if (start != null && !"".equals(start)) {
                 prefixMap.remove("marker");
             } else {
@@ -574,106 +546,28 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             }
         }
         prefixesMap.putAll(prefixAndEndedMap);
-        phraseLastPrefixes = prefixAndEndedMap.keySet().stream().sorted().collect(Collectors.toList());
-        for (String phraseLastPrefix : phraseLastPrefixes) recordListerByPrefix(phraseLastPrefix);
+        phraseLastPrefixes = prefixAndEndedMap.keySet().stream().sorted()
+                .peek(this::recordListerByPrefix).collect(Collectors.toList());
         return phraseLastPrefixes;
     }
 
-    void endAction() throws IOException {
-        ILineProcess<T> processor;
-        for (Map.Entry<String, IResultOutput<W>> saverEntry : saverMap.entrySet()) {
-            saverEntry.getValue().closeWriters();
-            processor = processorMap.get(saverEntry.getKey());
-            if (processor != null) processor.cancel();
+    private void prefixesListing() {
+        List<IStorageLister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
+        while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
+            prefixesMap.clear();
+            listerList = computeToNextLevel(listerList);
         }
-        String record = recorder.toString();
-        if (recorder.size() > 0) {
-            String path = new File(savePath).getCanonicalPath();
-            FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
-            saveMapper.setAppend(false);
-            saveMapper.setFileExt(".json");
-//        if (path.endsWith("/")) path = path.substring(0, path.length() - 1);
-            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-prefixes";
-            saveMapper.addWriter(fileName);
-            saveMapper.writeToKey(fileName, record, true);
-            saveMapper.closeWriters();
-            rootLogger.info("please check the prefixes breakpoint in {}.json, " +
-                            "it can be used for one more time listing remained objects.", fileName);
+        if (listerList != null && listerList.size() > 0) {
+            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
         }
-        procedureLogger.info(record);
-    }
-
-    void showdownHook() {
-        SignalHandler handler = signal -> {
-            try {
-//                executorPool.shutdownNow();
-                stopped = true; // 使用该语句使线程池中的任务退出循环可能比直接 shutdownNow() 要好
-                endAction();
-            } catch (IOException e) {
-                rootLogger.error("showdown error", e);
-            }
-            System.exit(0);
-        };
-        try { // 设置 INT 信号 (Ctrl + C 中断执行) 交给指定的信号处理器处理，废掉系统自带的功能
-            Signal.handle(new Signal("INT"), handler); } catch (Exception ignored) {}
-        try { Signal.handle(new Signal("TERM"), handler); } catch (Exception ignored) {}
-        try { Signal.handle(new Signal("USR1"), handler); } catch (Exception ignored) {}
-        try { Signal.handle(new Signal("USR2"), handler); } catch (Exception ignored) {}
-        // 以下几种信号实际上不能被处理
-//        try { Signal.handle(new Signal("QUIT"), handler); } catch (Exception ignored) {}
-//        try { Signal.handle(new Signal("KILL"), handler); } catch (Exception ignored) {}
-//        try { Signal.handle(new Signal("STOP"), handler); } catch (Exception ignored) {}
-    }
-
-    /**
-     * 根据当前参数值创建多线程执行数据源导出工作
-     */
-    public void export() throws Exception {
-        String info = processor == null ?
-                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket) :
-                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket, "and", processor.getProcessName());
-        rootLogger.info("{} running...", info);
-        rootLogger.info("order\tprefix\tquantity");
-        showdownHook();
-        ILister<E> startLister = null;
-        if (prefixes == null || prefixes.size() == 0) {
-            startLister = generateLister("", 1);
-            if (threads > 1) {
-                prefixes = moreValidPrefixes(startLister, false);
-                if (prefixes == null) threads = 1;
-            }
-            if (threads <= 1) {
-                listing(startLister);
-                rootLogger.info("{} finished.", info);
-                endAction();
-                return;
-            }
-        } else {
-            if (prefixLeft && prefixes.get(0).compareTo("") > 0) {
-                insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
-                startLister = generateLister("", 1);
-            }
-            prefixes = prefixes.parallelStream().filter(this::checkPrefix).peek(this::recordListerByPrefix)
-                    .collect(Collectors.toList());
-        }
-        executorPool = Executors.newFixedThreadPool(threads);
-        try {
-            if (startLister != null) processNodeLister(startLister);
-            List<ILister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
-            while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
-                prefixesMap.clear();
-                listerList = computeToNextLevel(listerList);
-            }
-            if (listerList != null && listerList.size() > 0) {
-                listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
-            }
-            executorPool.shutdown();
-            int cValue = threads < 10 ? 3 : threads / 2;
-            int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 50 ? threads / 10 :
+        executorPool.shutdown();
+        if (threads > 1) {
+            int cValue = threads >= 10 ? threads / 2 : 3;
+            int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 30 ? threads / 10 :
                     threads >= 10 ? 3 : 1;
             List<String> extremePrefixes = checkListerInPool(listerList, cValue, tiny);
             while (extremePrefixes != null && extremePrefixes.size() > 0) {
-                for (String prefix : extremePrefixes) recordListerByPrefix(prefix);
+                extremePrefixes.parallelStream().forEach(this::recordListerByPrefix);
                 executorPool = Executors.newFixedThreadPool(threads);
                 listerList = filteredListerByPrefixes(extremePrefixes.parallelStream());
                 while (listerList != null && listerList.size() > 0 && listerList.size() <= threads) {
@@ -686,17 +580,75 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
                 executorPool.shutdown();
                 extremePrefixes = checkListerInPool(listerList, cValue, tiny);
             }
-            List<String> phraseLastPrefixes = lastEndedPrefixes();
-            if (phraseLastPrefixes.size() > 0) {
-                executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
-                listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
-                listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
-                executorPool.shutdown();
+        } else {
+            while (!executorPool.isTerminated()) sleep(2000);
+        }
+        List<String> phraseLastPrefixes = lastEndedPrefixes();
+        if (phraseLastPrefixes.size() > 0) {
+            executorPool = Executors.newFixedThreadPool(phraseLastPrefixes.size());
+            listerList = filteredListerByPrefixes(phraseLastPrefixes.parallelStream());
+            listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
+            executorPool.shutdown();
+        }
+        while (!executorPool.isTerminated()) sleep(2000);
+    }
+
+    /**
+     * 根据当前参数值创建多线程执行数据源导出工作
+     */
+    @Override
+    public void export() throws Exception {
+        String info = processor == null ? String.join(" ", "list objects from", getSourceName(), "bucket:", bucket) :
+                String.join(" ", "list objects from", getSourceName(), "bucket:", bucket, "and", processor.getProcessName());
+        rootLogger.info("{} running...", info);
+        rootLogger.info("order\tprefix\tquantity");
+        showdownHook();
+        IStorageLister<E> startLister = null;
+        // 在初始化时即做检查，hasAntiPrefixes 的情况下 prefixes 不可能为空，所以在 prefixes 为空时，hasAntiPrefixes 一定为 false
+        if (prefixes == null || prefixes.size() == 0) {
+            recordListerByPrefix("");
+            startLister = generateLister("", 1);
+            startLister.setLimit(unitLen);
+            if (threads > 1) {
+                String finalPoint = moreValidPrefixes(startLister, false);
+                if (finalPoint != null) {
+                    IStorageLister<E> lister = startLister;
+                    prefixes = originPrefixList.parallelStream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
+                            .map(prefix -> lister.getPrefix() + prefix).collect(Collectors.toList());
+                }
             }
-            while (!executorPool.isTerminated()) {
-                sleep(2000);
+        } else {
+            if (prefixLeft || "".equals(prefixes.get(0))) {
+                recordListerByPrefix("");
+                if ("".equals(prefixes.get(0))) prefixes.remove(0);
+                insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
+                startLister = generateLister("", 1);
+                startLister.setLimit(unitLen);
+                prefixesMap.remove("");
             }
-            rootLogger.info("{} finished.", info);
+        }
+        try {
+            if (!hasAntiPrefixes && (prefixes == null || prefixes.size() == 0)) {
+                if (startLister.currents().size() > 0 || startLister.hasNext()) {
+                    listing(startLister);
+                } else {
+                    recorder.remove(startLister.getPrefix());
+                    startLister.close();
+                }
+            } else {
+                if (hasAntiPrefixes) {
+                    if (prefixes != null) {
+                        prefixes = prefixes.parallelStream().filter(this::checkPrefix)
+                                .peek(this::recordListerByPrefix).collect(Collectors.toList());
+                    }
+                } else {
+                    prefixes.parallelStream().forEach(this::recordListerByPrefix);
+                }
+                executorPool = Executors.newFixedThreadPool(threads);
+                if (startLister != null) processNodeLister(startLister);
+                prefixesListing();
+            }
+            rootLogger.info("{} finished, results in {}.", info, savePath);
             endAction();
         } catch (Throwable e) {
 //            executorPool.shutdownNow(); // 执行中的 sleep(), wait() 操作会抛出 InterruptedException
@@ -704,45 +656,6 @@ public abstract class CloudStorageContainer<E, W, T> implements IDataSource<ILis
             rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);
-        }
-    }
-
-    private final Object object = new Object();
-    private LocalDateTime pauseDateTime = LocalDateTime.MAX;
-
-    public void export(LocalDateTime startTime, long pauseDelay, long duration) throws Exception {
-        if (startTime != null) {
-            Clock clock = Clock.systemDefaultZone();
-            LocalDateTime now = LocalDateTime.now(clock);
-            if (startTime.minusWeeks(1).isAfter(now)) {
-                throw new Exception("startTime is not allowed to exceed next week");
-            }
-            while (now.isBefore(startTime)) {
-                System.out.printf("\r%s", LocalDateTime.now(clock).toString().substring(0, 19));
-                sleep(1000);
-                now = LocalDateTime.now(clock);
-            }
-        }
-        if (duration <= 0 || pauseDelay < 0) {
-            export();
-        } else if (duration > 84600 || duration < 1800) {
-            throw new Exception("duration can not be bigger than 23.5 hours or smaller than 0.5 hours.");
-        } else {
-            pauseDateTime = LocalDateTime.now().plusSeconds(pauseDelay);
-            Timer timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    synchronized (object) {
-                        object.notifyAll();
-                    }
-                    pauseDateTime = LocalDateTime.now().plusSeconds(86400 - duration);
-//                    pauseDateTime = LocalDateTime.now().plusSeconds(20 - duration);
-                }
-            }, (pauseDelay + duration) * 1000, 86400000);
-//            }, (pauseDelay + duration) * 1000, 20000);
-            export();
-            timer.cancel();
         }
     }
 }

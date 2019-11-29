@@ -144,8 +144,13 @@ public class UploadFile extends Base<Map<String, String>> {
         }
         key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
         line.put("key", key);
-        return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(filepath, key, auth.uploadToken(bucket, key, expires, policy),
-                params, null, checkCrc)));
+        if (filepath.endsWith(FileUtils.pathSeparator)) {
+            return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(new byte[]{}, key, auth.uploadToken(bucket, key, expires, policy),
+                    params, null, checkCrc)));
+        } else {
+            return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(filepath, key, auth.uploadToken(bucket, key, expires, policy),
+                    params, null, checkCrc)));
+        }
     }
 
     @Override
