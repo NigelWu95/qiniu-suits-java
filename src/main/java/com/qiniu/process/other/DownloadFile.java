@@ -7,6 +7,7 @@ import com.qiniu.util.RequestUtils;
 import com.qiniu.util.StringMap;
 import com.qiniu.util.URLUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
@@ -21,36 +22,34 @@ public class DownloadFile extends Base<Map<String, String>> {
     private boolean preDown;
     private String addPrefix;
     private String rmPrefix;
+    private String downPath;
     private Configuration configuration;
     private HttpDownloader downloader;
 
     public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
-                        int[] range, String suffixOrQuery, boolean preDown, String addPrefix, String rmPrefix, String savePath,
-                        int saveIndex) throws IOException {
+                        int[] range, String suffixOrQuery, String addPrefix, String rmPrefix,
+                        String downPath, String savePath, int saveIndex) throws IOException {
         super("download", "", "", null, savePath, saveIndex);
-        set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, preDown, addPrefix, rmPrefix);
+        set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix, downPath);
         downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);
     }
 
     public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
-                        int[] range, String suffixOrQuery, String downPath, String addPrefix, String rmPrefix) throws IOException {
+                        int[] range, String suffixOrQuery, String addPrefix, String rmPrefix, String downPath) throws IOException {
         super("download", "", "", null);
-        // 用来做只做文件 download 不记录结果的构造方法，downPath 为空时则表示预热方式下载
-        if (downPath == null || "".equals(downPath)) preDown = true;
-        else this.savePath = FileUtils.convertToRealPath(downPath);
-        set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, preDown, addPrefix, rmPrefix);
+        set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix, downPath);
         downloader = configuration == null ? new HttpDownloader() : new HttpDownloader(configuration);
     }
 
     public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
-                        int[] range, String suffixOrQuery, boolean preDown, String addPrefix, String rmPrefix, String savePath)
-            throws IOException {
-        this(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, preDown, addPrefix, rmPrefix, savePath,
-                0);
+                        int[] range, String suffixOrQuery, String addPrefix, String rmPrefix,
+                        String downPath, String savePath) throws IOException {
+        this(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix,
+                downPath, savePath, 0);
     }
 
     private void set(Configuration configuration, String protocol, String domain, String urlIndex, String host,
-                     int[] range, String suffixOrQuery, boolean preDown, String addPrefix, String rmPrefix) throws IOException {
+                     int[] range, String suffixOrQuery, String addPrefix, String rmPrefix, String downPath) throws IOException {
         this.configuration = configuration;
         if (urlIndex == null || "".equals(urlIndex)) {
             this.urlIndex = "url";
@@ -70,13 +69,22 @@ public class DownloadFile extends Base<Map<String, String>> {
         }
         if (range != null && range.length > 0) {
             if (headers == null) headers = new StringMap();
-            headers.put("Range", range[0] + "-" + (range.length > 1 ? range[1] : ""));
+            headers.put("Range", new StringBuilder("bytes=").append(range[0]).append("-").append(range.length > 1 ? range[1] : ""));
         }
         this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
         useQuery = !"".equals(this.suffixOrQuery);
-        this.preDown = preDown;
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
+        this.downPath = downPath;
+        // downPath 为空时则表示预热方式下载
+        if (downPath == null || "".equals(downPath)) {
+            this.preDown = true;
+        } else {
+            File file = new File(downPath);
+            if (file.exists() && !file.isDirectory()) {
+                throw new IOException("please change down-path because it's existed file.");
+            }
+        }
     }
 
     public DownloadFile clone() throws CloneNotSupportedException {
@@ -113,15 +121,10 @@ public class DownloadFile extends Base<Map<String, String>> {
             downloader.download(url, headers);
             return String.join("\t", key, url);
         } else {
-            String filename = String.join(FileUtils.pathSeparator, (fileSaveMapper == null ? savePath : fileSaveMapper.getSavePath()), key);
+            String filename = String.join(FileUtils.pathSeparator, downPath, key);
             downloader.download(url, filename, headers);
             return String.join("\t", key, url, filename);
         }
-    }
-
-    @Override
-    protected void parseSingleResult(Map<String, String> line, String result) throws IOException {
-        if (preDown) fileSaveMapper.writeSuccess(result, false);
     }
 
     @Override

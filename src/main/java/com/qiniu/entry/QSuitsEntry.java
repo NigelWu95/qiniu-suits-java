@@ -890,7 +890,7 @@ public class QSuitsEntry {
         ParamsUtils.checked(preDown, "pre-down", "(true|false)");
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        String timeout = entryParam.getValue("download-timeout", null);
+        String timeout = entryParam.getValue("down-timeout", null);
         Configuration configuration = null;
         if (timeout != null) {
             configuration = new Configuration();
@@ -898,10 +898,19 @@ public class QSuitsEntry {
             configuration.writeTimeout = getQiniuConfig().writeTimeout;
             configuration.readTimeout = Integer.valueOf(timeout);
         }
-        return single ? new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, "true".equals(preDown)
-                ? null : savePath, addPrefix, rmPrefix)
-                : new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, Boolean.valueOf(preDown),
-                addPrefix, rmPrefix, savePath);
+        String downloadPath = entryParam.getValue("down-path", "").trim();
+        if (Boolean.valueOf(preDown)) {
+            downloadPath = null;
+        } else if (downloadPath.equals(savePath)) {
+            throw new IOException("please change save-path or down-path, because them should not be equal.");
+        } else if ("".equals(downloadPath)) {
+            if (single) downloadPath = ".";
+            else throw new IOException("please set down-path");
+        }
+        return single ? new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, addPrefix,
+                rmPrefix, downloadPath)
+                : new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, addPrefix, rmPrefix,
+                downloadPath, savePath);
     }
 
     private ILineProcess<Map<String, String>> getImageCensor(Map<String, String> indexMap, boolean single, boolean useQuery)

@@ -241,7 +241,7 @@ public class CommonParams {
                 indexMap.put("toKey", "toKey");
                 mapLine.put("toKey", entryParam.getValue("to-key", ""));
                 break;
-            case "download": savePath = entryParam.getValue("save-path", ".");
+            case "download":
             case "asyncfetch":
             case "avinfo":
             case "qhash":
