@@ -668,14 +668,15 @@ public final class ConvertingUtils {
         return pair.getProtoEntity();
     }
 
-    public static String toPair(com.qiniu.model.local.FileInfo fileInfo, List<String> fields, int initPathSize) throws IOException {
+    public static String toStringWithIndent(com.qiniu.model.local.FileInfo fileInfo, List<String> fields, int initPathSize) throws IOException {
         if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
         KeyValuePair<String, String> pair = new StringBuilderPair("\t");
         if (fileInfo.parentPath != null) {
             int num = fileInfo.parentPath.split(FileUtils.pathSeparator).length - initPathSize;
             for (String field : fields) {
                 switch (field) {
-                    case "parent": break;
+//                    case "parent": break;
+                    case "parent": pair.put(field, fileInfo.parentPath); break;
 //                    case "filepath": pair.put(field, fileInfo.filepath); break;
                     case "filepath": StringBuilder builder = new StringBuilder();
                         for (int i = 0; i < num; i++) builder.append("\t");
