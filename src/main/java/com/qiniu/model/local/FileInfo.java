@@ -30,7 +30,7 @@ public class FileInfo implements Comparable {
         if (leftTrimSize == 0) key = filepath;
         else key = transferPath + filepath.substring(leftTrimSize);
         length = file.length();
-        timestamp = file.lastModified();
+//        timestamp = file.lastModified();
 //        mime = FileUtils.contentType(file);
 //        etag = Etag.file(file);
     }
@@ -46,6 +46,11 @@ public class FileInfo implements Comparable {
 
     public FileInfo withEtag() throws IOException {
         etag = Etag.file(file);
+        return this;
+    }
+
+    public FileInfo withDatetime() {
+        timestamp = file.lastModified();
         return this;
     }
 

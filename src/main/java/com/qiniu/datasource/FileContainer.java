@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public abstract class FileContainer<E, W, T> extends DatasourceActor implements IDataSource<ILocalFileLister<E, File>, IResultOutput<W>, T> {
@@ -309,68 +311,49 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-//    private List<File> directoriesFromLister(File directory) {
-//        try {
-//            ILocalFileLister<E, File> lister = generateLister(directory);
-//            processNodeLister(lister);
-//            if (lister.getDirectories() == null || lister.getDirectories().size() <= 0) {
-//                return null;
-//            } else if (hasAntiDirectories) {
-//                return lister.getDirectories().stream().filter(this::checkDirectory)
-//                        .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList());
-//            } else {
-//                for (File dir : lister.getDirectories()) recordListerByDirectory(dir.getPath());
-//                return lister.getDirectories();
-//            }
-//        } catch (IOException e) {
-//            try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-//            errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
-//            return null;
-//        }
-//    }
+    private Lock lock = new ReentrantLock();
 
     private void listForNextIteratively(List<File> directories) throws Exception {
-        List<Future<ILocalFileLister<E, File>>> futures = directories.parallelStream()
-                .map(directory -> executorPool.submit(() -> {
-                    try {
-                        ILocalFileLister<E, File> lister = generateLister(directory);
-                        if (lister.getDirectories() != null && lister.getDirectories().size() > 0) {
+        List<Future<ILocalFileLister<E, File>>> futures = new ArrayList<>();
+        List<File> nextDirectories = new ArrayList<>();
+        Future<ILocalFileLister<E, File>> future;
+        for (File directory : directories) {
+            future = executorPool.submit(() -> {
+                try {
+                    return generateLister(directory);
+                } catch (IOException e) {
+                    try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                    errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
+                    return null;
+                }
+            });
+            if (future.isDone() && lock.tryLock()) {
+                try {
+                    ILocalFileLister<E, File> futureLister = future.get();
+                    if (futureLister != null) {
+                        if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
                             if (hasAntiDirectories) {
-                                lister.getDirectories().parallelStream().filter(this::checkDirectory)
-                                        .forEach(dir -> recordListerByDirectory(dir.getPath()));
+                                nextDirectories.addAll(futureLister.getDirectories().parallelStream().filter(this::checkDirectory)
+                                        .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList()));
                             } else {
-                                lister.getDirectories().parallelStream()
-                                        .forEach(dir -> recordListerByDirectory(dir.getPath()));
+                                futureLister.getDirectories().parallelStream().forEach(dir -> recordListerByDirectory(dir.getPath()));
+                                nextDirectories.addAll(futureLister.getDirectories());
                             }
                         }
-                        return lister;
-                    } catch (IOException e) {
-                        try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-                        errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
-                        return null;
+                        processNodeLister(futureLister);
                     }
-                }))
-                .collect(Collectors.toList());
-        Iterator<Future<ILocalFileLister<E, File>>> iterator;
-        Future<ILocalFileLister<E, File>> future;
-        ILocalFileLister<E, File> tempLister;
-        while (futures.size() > 0) {
-            iterator = futures.iterator();
-            while (iterator.hasNext()) {
-                future = iterator.next();
-                if (future.isDone()) {
-                    tempLister = future.get();
-                    if (tempLister != null) {
-                        processNodeLister(tempLister);
-                        if (tempLister.getDirectories() != null && tempLister.getDirectories().size() > 0) {
-                            listForNextIteratively(tempLister.getDirectories());
-                        }
-                    }
-                    iterator.remove();
+                } catch (Exception e) {
+                    try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                    errorLogger.error("excute lister failed", e);
+                }finally {
+                    lock.unlock();
                 }
+            } else {
+                futures.add(future);
             }
         }
-//        List<File> nextDirectories = new ArrayList<>();
+        Iterator<Future<ILocalFileLister<E, File>>> iterator;
+        ILocalFileLister<E, File> tempLister;
 //        while (futures.size() > 0) {
 //            iterator = futures.iterator();
 //            while (iterator.hasNext()) {
@@ -378,16 +361,39 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 //                if (future.isDone()) {
 //                    tempLister = future.get();
 //                    if (tempLister != null) {
+//                        processNodeLister(tempLister);
 //                        if (tempLister.getDirectories() != null && tempLister.getDirectories().size() > 0) {
-//                            nextDirectories.addAll(tempLister.getDirectories());
+//                            listForNextIteratively(tempLister.getDirectories());
 //                        }
-//                        if (tempLister.hasNext()) processNodeLister(tempLister);
 //                    }
 //                    iterator.remove();
 //                }
 //            }
 //        }
-//        if (nextDirectories.size() > 0) listForNextIteratively(nextDirectories);
+//        List<File> nextDirectories = new ArrayList<>();
+        while (futures.size() > 0) {
+            iterator = futures.iterator();
+            while (iterator.hasNext()) {
+                future = iterator.next();
+                if (future.isDone()) {
+                    tempLister = future.get();
+                    if (tempLister != null) {
+                        if (tempLister.getDirectories() != null && tempLister.getDirectories().size() > 0) {
+                            if (hasAntiDirectories) {
+                                nextDirectories.addAll(tempLister.getDirectories().parallelStream().filter(this::checkDirectory)
+                                        .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList()));
+                            } else {
+                                tempLister.getDirectories().parallelStream().forEach(dir -> recordListerByDirectory(dir.getPath()));
+                                nextDirectories.addAll(tempLister.getDirectories());
+                            }
+                        }
+                        processNodeLister(tempLister);
+                    }
+                    iterator.remove();
+                }
+            }
+        }
+        if (nextDirectories.size() > 0) listForNextIteratively(nextDirectories);
     }
 
     private List<ILocalFileLister<E, File>> checkListerInPool(int cValue, int tiny) {

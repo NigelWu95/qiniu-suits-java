@@ -669,30 +669,33 @@ public final class ConvertingUtils {
     }
 
     public static String toStringWithIndent(com.qiniu.model.local.FileInfo fileInfo, List<String> fields, int initPathSize) throws IOException {
-        if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
-        KeyValuePair<String, String> pair = new StringBuilderPair("\t");
+        if (fileInfo == null || fileInfo.filepath == null) throw new IOException("empty fileInfo or empty path.");
+        StringBuilder builder = new StringBuilder();
         if (fileInfo.parentPath != null) {
             int num = fileInfo.parentPath.split(FileUtils.pathSeparator).length - initPathSize;
-            for (String field : fields) {
+            String field;
+            for (int i = 0; i < fields.size(); i++) {
+                field = fields.get(i);
                 switch (field) {
 //                    case "parent": break;
-                    case "parent": pair.put(field, fileInfo.parentPath); break;
+                    case "parent": if (i != 0) throw new IOException("parent must as first field");
+                        else builder.append(fileInfo.parentPath).append("-||-"); break;
 //                    case "filepath": pair.put(field, fileInfo.filepath); break;
-                    case "filepath": StringBuilder builder = new StringBuilder();
-                        for (int i = 0; i < num; i++) builder.append("\t");
-                        builder.append(fileInfo.filepath.replace(fileInfo.parentPath, "").substring(1));
-                        pair.put(field, builder.toString()); break;
-                    case "key": pair.put(field, fileInfo.key); break;
-                    case "etag": if (fileInfo.etag != null) pair.put(field, fileInfo.etag); break;
-                    case "size": pair.put(field, fileInfo.length); break;
-                    case "datetime": pair.put(field, DatetimeUtils.datetimeOf(fileInfo.timestamp).toString()); break;
-                    case "timestamp": pair.put(field, fileInfo.timestamp); break;
-                    case "mime": if (fileInfo.mime != null) pair.put(field, fileInfo.mime); break;
+                    case "filepath": StringBuilder stringBuilder = new StringBuilder();
+                        for (int j = 0; j < num; j++) stringBuilder.append("\t");
+                        stringBuilder.append(fileInfo.filepath.replace(fileInfo.parentPath, "").substring(1));
+                        builder.append(stringBuilder.toString()).append("\t"); break;
+                    case "key": if (fileInfo.key != null) builder.append(fileInfo.key).append("\t"); break;
+                    case "etag": if (fileInfo.etag != null) builder.append(fileInfo.etag).append("\t"); break;
+                    case "size": builder.append(fileInfo.length).append("\t"); break;
+                    case "datetime": builder.append(DatetimeUtils.datetimeOf(fileInfo.timestamp).toString()).append("\t"); break;
+                    case "timestamp": builder.append(fileInfo.timestamp).append("\t"); break;
+                    case "mime": if (fileInfo.mime != null) builder.append(fileInfo.mime).append("\t"); break;
                     default: throw new IOException("local fileInfo doesn't have field: " + field);
                 }
             }
-            if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
-            return pair.getProtoEntity();
+            if (builder.length() == 0) throw new IOException("empty result string.");
+            return builder.toString();
         } else {
             throw new IOException("no parent path to parse.");
         }

@@ -5,6 +5,7 @@ import com.qiniu.model.local.FileInfo;
 import com.qiniu.util.FileUtils;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,41 +25,24 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     private String truncated;
     private long count;
 
-    private Stream<FileInfo> checkFileInfoList(String startPrefix) throws IOException {
+    public FileInfoLister(File file, boolean keepDir, boolean withEtag, boolean withDatetime, boolean withMime,
+                          boolean withParent, String transferPath, int leftTrimSize, String startPrefix, String endPrefix,
+                          int limit) throws IOException {
+        if (file == null) throw new IOException("input file is null.");
+        this.name = file.getPath();
+        FileFilter fileFilter;
         if ((startPrefix == null || "".equals(startPrefix)) && (endPrefix == null || "".equals(endPrefix))) {
-            return fileInfoList.stream();
+            fileFilter = null;
         } else if (startPrefix == null || "".equals(startPrefix)) {
-            return fileInfoList.stream().filter(fileInfo -> fileInfo.filepath.compareTo(endPrefix) <= 0);
+            fileFilter = pathname -> pathname.getPath().compareTo(endPrefix) <= 0;
         } else if (endPrefix == null || "".equals(endPrefix)) {
-            return fileInfoList.stream().filter(fileInfo -> fileInfo.filepath.compareTo(startPrefix) > 0);
+            fileFilter = pathname -> pathname.getPath().compareTo(startPrefix) > 0;
         } else if (startPrefix.compareTo(endPrefix) >= 0) {
             throw new IOException("start filename can not be larger than end filename prefix.");
         } else {
-            return fileInfoList.stream().filter(fileInfo ->
-                    fileInfo.filepath.compareTo(startPrefix) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0);
+            fileFilter = pathname -> pathname.getPath().compareTo(startPrefix) > 0 && pathname.getPath().compareTo(endPrefix) <= 0;
         }
-    }
-
-    private List<FileInfo> withExtraInfo(Stream<FileInfo> stream, boolean withEtag, boolean withMime, boolean withParent) {
-        if (withEtag) {
-            stream = stream.map(fileInfo -> { try { return fileInfo.withEtag(); } catch (IOException e) {
-                fileInfo.etag = e.getMessage().replace("\n", ","); return fileInfo; }});
-        }
-        if (withMime) {
-            stream = stream.map(fileInfo -> { try { return fileInfo.withMime(); } catch (IOException e) {
-                fileInfo.mime = e.getMessage().replace("\n", ","); return fileInfo; }});
-        }
-        if (withParent) {
-            stream = stream.map(FileInfo::withParent);
-        }
-        return stream.sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
-    }
-
-    public FileInfoLister(File file, Map<String, String> indexMap, boolean keepDir, String transferPath, int leftTrimSize,
-                          String startPrefix, String endPrefix, int limit) throws IOException {
-        if (file == null || indexMap == null) throw new IOException("input file or indexMap is null.");
-        this.name = file.getPath();
-        File[] fs = file.listFiles();
+        File[] fs = fileFilter == null ? file.listFiles() : file.listFiles(fileFilter);
         if (fs == null) throw new IOException("input file is not valid directory: " + file.getPath());
         fileInfoList = new ArrayList<>(fs.length);
         if (keepDir) {
@@ -77,8 +61,16 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         }
         this.limit = limit;
         this.endPrefix = endPrefix;
-        fileInfoList = withExtraInfo(checkFileInfoList(startPrefix), indexMap.containsKey("etag"),
-                indexMap.containsKey("mime"), indexMap.containsKey("parent"));
+        if (withEtag) {
+            fileInfoList.forEach(fileInfo -> { try { fileInfo = fileInfo.withEtag(); } catch (IOException e) {
+                fileInfo.etag = e.getMessage().replace("\n", ","); }});
+        }
+        if (withDatetime) fileInfoList.forEach(FileInfo::withDatetime);
+        if (withMime) {
+            fileInfoList.forEach(fileInfo -> { try { fileInfo = fileInfo.withMime(); } catch (IOException e) {
+                fileInfo.mime = e.getMessage().replace("\n", ","); }});
+        }
+        if (withParent) fileInfoList.forEach(FileInfo::withParent);
         currents = new ArrayList<>();
         iterator = fileInfoList.iterator();
         count = fileInfoList.size();
@@ -97,9 +89,20 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         this.fileInfoList = fileInfoList;
         this.limit = limit;
         this.endPrefix = endPrefix;
-        this.fileInfoList = checkFileInfoList(startPrefix)
-                .sorted(Comparator.comparing(fileInfo -> fileInfo.filepath))
-                .collect(Collectors.toList());
+        Stream<FileInfo> stream;
+        if ((startPrefix == null || "".equals(startPrefix)) && (endPrefix == null || "".equals(endPrefix))) {
+            stream = fileInfoList.stream();
+        } else if (startPrefix == null || "".equals(startPrefix)) {
+            stream = fileInfoList.stream().filter(fileInfo -> fileInfo.filepath.compareTo(endPrefix) <= 0);
+        } else if (endPrefix == null || "".equals(endPrefix)) {
+            stream = fileInfoList.stream().filter(fileInfo -> fileInfo.filepath.compareTo(startPrefix) > 0);
+        } else if (startPrefix.compareTo(endPrefix) >= 0) {
+            throw new IOException("start filename can not be larger than end filename prefix.");
+        } else {
+            stream = fileInfoList.stream().filter(fileInfo ->
+                    fileInfo.filepath.compareTo(startPrefix) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0);
+        }
+        this.fileInfoList = stream.sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
         currents = new ArrayList<>();
         iterator = this.fileInfoList.iterator();
         count = this.fileInfoList.size();
