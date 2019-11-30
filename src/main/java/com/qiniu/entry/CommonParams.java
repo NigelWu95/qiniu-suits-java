@@ -1143,7 +1143,8 @@ public class CommonParams {
 
     private void setSavePath() throws IOException {
         savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith(FileUtils.pathSeparator) ?
-                path.substring(0, path.length() - 1) : path) + "-result" : bucket);
+                path.substring(0, path.length() - 1).substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) :
+                path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1)) + "-result" : bucket);
         if (CloudApiUtils.isFileSource(source) && FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
             throw new IOException("the save-path can not be same as path.");
         } else {

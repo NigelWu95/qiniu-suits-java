@@ -94,7 +94,7 @@ public class UpLister implements IStorageLister<FileItem> {
                             prefix + "/" + object.get("name").getAsString();
                     if ("folder".equals(attribute)) {
                         if (directories == null) {
-                            directories = new ArrayList<>();
+                            directories = new ArrayList<>(limit / 2);
                             directories.add(totalName);
                         } else {
                             directories.add(totalName);

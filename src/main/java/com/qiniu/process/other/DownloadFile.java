@@ -123,7 +123,7 @@ public class DownloadFile extends Base<Map<String, String>> {
         } else {
             String filename = String.join(FileUtils.pathSeparator, downPath, key);
             downloader.download(url, filename, headers);
-            return String.join("\t", key, url, filename);
+            return String.join("\t", filename, url);
         }
     }
 

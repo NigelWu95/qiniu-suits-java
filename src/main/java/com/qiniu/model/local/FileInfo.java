@@ -17,6 +17,8 @@ public class FileInfo implements Comparable {
     public String mime;
     public String etag;
 
+    public FileInfo() {}
+
     public FileInfo(File file, String transferPath, int leftTrimSize) throws IOException {
         try {
 //            parentPath = file.getParent();

@@ -91,7 +91,7 @@ public abstract class DatasourceActor {
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             saveMapper.setAppend(false);
             saveMapper.setFileExt(".json");
-            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
+            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1);
             saveMapper.addWriter(fileName);
             saveMapper.writeToKey(fileName, record, true);
             saveMapper.closeWriters();

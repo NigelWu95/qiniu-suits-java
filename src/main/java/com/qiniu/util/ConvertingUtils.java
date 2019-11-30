@@ -91,7 +91,7 @@ public final class ConvertingUtils {
     }};
 
     // 为了保证字段按照设置的顺序来读取，故使用 ArrayList
-    final static public List<String> defaultFileInfos = new ArrayList<String>(){{
+    final static public List<String> localFileInfoFields = new ArrayList<String>(){{
         add("parent");
         add("filepath");
         add("key");
@@ -390,6 +390,20 @@ public final class ConvertingUtils {
         return toPair(parsed, indexMap, pair);
     }
 
+    public static <T> T toPair(String line, String separator, Map<String, String> indexMap, KeyValuePair<String, T> pair)
+            throws IOException {
+        if (line == null) throw new IOException("empty string line.");
+        String[] items = line.split(separator);
+        int position;
+        for (String index : indexMap.keySet()) {
+            position = Integer.valueOf(index);
+            if (items.length > position) pair.put(indexMap.get(index), items[position]);
+            else throw new IOException("the index: " + index + " can't be found in " + line);
+        }
+        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+        return pair.getProtoEntity();
+    }
+
     public static <T> T toPair(com.qiniu.model.local.FileInfo fileInfo, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (fileInfo == null || (fileInfo.filepath == null && fileInfo.key == null)) throw new IOException("empty fileInfo or empty path and key.");
@@ -405,20 +419,6 @@ public final class ConvertingUtils {
                 case "mime": if (fileInfo.mime != null) pair.put(indexMap.get(index), fileInfo.mime); break;
                 default: throw new IOException("local FileInfo doesn't have field: " + index);
             }
-        }
-        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
-        return pair.getProtoEntity();
-    }
-
-    public static <T> T toPair(String line, String separator, Map<String, String> indexMap, KeyValuePair<String, T> pair)
-            throws IOException {
-        if (line == null) throw new IOException("empty string line.");
-        String[] items = line.split(separator);
-        int position;
-        for (String index : indexMap.keySet()) {
-            position = Integer.valueOf(index);
-            if (items.length > position) pair.put(indexMap.get(index), items[position]);
-            else throw new IOException("the index: " + index + " can't be found in " + line);
         }
         if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
         return pair.getProtoEntity();
@@ -697,4 +697,50 @@ public final class ConvertingUtils {
             throw new IOException("no parent path to parse.");
         }
     }
+
+//    public static String toStringWithIndent(JsonObject json, Map<String, String> indexMap) throws IOException {
+//        if (json == null) throw new IOException("empty JsonObject.");
+//        String field;
+//        JsonElement jsonElement;
+//        KeyValuePair<String, String> pair = new StringBuilderPair("\t");
+//        for (String index : indexMap.keySet()) {
+//            jsonElement = json.get(index);
+//            if (jsonElement == null || jsonElement instanceof JsonNull) {
+//                if (!allFieldsSet.contains(index)) throw new IOException("the index: " + index + " can't be found in " + json);
+//            } else {
+//                field = indexMap.get(index);
+//                int num = fileInfo.parentPath.split(FileUtils.pathSeparator).length - initPathSize;
+//                if ("key".equals(indexMap.get(index))) {
+//                    StringBuilder builder = new StringBuilder();
+//                    for (int i = 0; i < num; i++) builder.append("\t");
+//                    builder.append(fileInfo.filepath.replace(fileInfo.parentPath, "").substring(1));
+//                    pair.put(field, builder.toString());
+//                } else {
+//                    pair.put(field, JsonUtils.toString(jsonElement));
+//                }
+//            }
+//        }
+//        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+//        return pair.getProtoEntity();
+//    }
+//
+//    public static com.qiniu.model.local.FileInfo toPair(String line, Map<String, String> indexMap) throws IOException {
+//        if (line == null) throw new IOException("empty json line.");
+//        JsonObject parsed = new JsonParser().parse(line).getAsJsonObject();
+//        return toPair(parsed, indexMap, pair);
+//    }
+//
+//    public static com.qiniu.model.local.FileInfo toPair(String line, String separator, Map<String, String> indexMap)
+//            throws IOException {
+//        if (line == null) throw new IOException("empty string line.");
+//        String[] items = line.split(separator);
+//        int position;
+//        for (String index : indexMap.keySet()) {
+//            position = Integer.valueOf(index);
+//            if (items.length > position) pair.put(indexMap.get(index), items[position]);
+//            else throw new IOException("the index: " + index + " can't be found in " + line);
+//        }
+//        if (pair.size() == 0) throw new IOException("empty result keyValuePair.");
+//        return pair.getProtoEntity();
+//    }
 }
