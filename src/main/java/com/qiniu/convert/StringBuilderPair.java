@@ -19,6 +19,12 @@ public class StringBuilderPair implements KeyValuePair<String, String> {
     }
 
     @Override
+    public void put(String key, Boolean value) {
+        stringBuilder.append(separator).append(value);
+        size++;
+    }
+
+    @Override
     public void put(String key, Integer value) {
         stringBuilder.append(separator).append(value);
         size++;

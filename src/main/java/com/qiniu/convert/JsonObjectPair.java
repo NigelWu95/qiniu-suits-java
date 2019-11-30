@@ -13,6 +13,11 @@ public class JsonObjectPair implements KeyValuePair<String, JsonObject> {
     }
 
     @Override
+    public void put(String key, Boolean value) {
+        jsonObject.addProperty(key, value);
+    }
+
+    @Override
     public void put(String key, Integer value) {
         jsonObject.addProperty(key, value);
     }

@@ -15,6 +15,11 @@ public class StringMapPair implements KeyValuePair<String, Map<String, String>> 
     }
 
     @Override
+    public void put(String key, Boolean value) {
+        stringMap.put(key, String.valueOf(value));
+    }
+
+    @Override
     public void put(String key, Integer value) {
         stringMap.put(key, String.valueOf(value));
     }
