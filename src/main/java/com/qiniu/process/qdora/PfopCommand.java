@@ -114,7 +114,7 @@ public class PfopCommand extends Base<Map<String, String>> {
             if (combine) fops.append(fopCmd);
             else fops.append(key).append("\t").append(fopCmd);
             if (hasDuration) fops.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
-            if (hasSize) fops.append("\t").append(Long.valueOf(avinfo.getFormat().size));
+            if (hasSize) fops.append("\t").append(Long.parseLong(avinfo.getFormat().size));
             resultList.add(fops.toString());
             fops.delete(0, fops.length());
         }

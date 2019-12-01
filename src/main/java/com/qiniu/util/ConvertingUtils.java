@@ -334,7 +334,7 @@ public final class ConvertingUtils {
                 JsonPrimitive primitive = jsonElement.getAsJsonPrimitive();
                 if (primitive.isBoolean()) pair.put(indexMap.get(index), JsonUtils.fromJson(jsonElement, Boolean.class));
                 else if (primitive.isNumber()) pair.put(indexMap.get(index), JsonUtils.fromJson(jsonElement, Long.class));
-                else pair.put(indexMap.get(index), String.valueOf(jsonElement));
+                else pair.put(indexMap.get(index), jsonElement.toString());
             } else {
                 try {
                     pair.put(indexMap.get(index), JsonUtils.toString(jsonElement));
@@ -545,8 +545,8 @@ public final class ConvertingUtils {
         for (String field : fields) {
             value = line.get(field);
             if (value != null) {
-                if (longFields.contains(field)) pair.put(field, Long.valueOf(value));
-                else if (intFields.contains(field)) pair.put(field, Integer.valueOf(value));
+                if (longFields.contains(field)) pair.put(field, Long.parseLong(value));
+                else if (intFields.contains(field)) pair.put(field, Integer.parseInt(value));
                 else pair.put(field, value);
             } else {
                 pair.put(field, KeyValuePair.EMPTY);

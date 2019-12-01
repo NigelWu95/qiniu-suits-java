@@ -320,9 +320,9 @@ public class CommonParams {
     }
 
     private void setTimeout() {
-        connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60").trim());
-        readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120").trim());
-        requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
+        connectTimeout = Integer.parseInt(entryParam.getValue("connect-timeout", "60").trim());
+        readTimeout = Integer.parseInt(entryParam.getValue("read-timeout", "120").trim());
+        requestTimeout = Integer.parseInt(entryParam.getValue("request-timeout", "60").trim());
     }
 
     private void setSource() throws IOException {
@@ -397,7 +397,7 @@ public class CommonParams {
     private void setKeepDir() throws IOException {
         String keepDir = entryParam.getValue("keep-dir", "false");
         ParamsUtils.checked(keepDir, "keep-dir", "(true|false)");
-        this.keepDir = Boolean.valueOf(keepDir);
+        this.keepDir = Boolean.parseBoolean(keepDir);
     }
 
     private void setQiniuAuthKey() throws IOException {
@@ -721,12 +721,12 @@ public class CommonParams {
 
     private void setPrefixLeft(String prefixLeft) throws IOException {
         ParamsUtils.checked(prefixLeft, "prefix-left", "(true|false)");
-        this.prefixLeft = Boolean.valueOf(prefixLeft);
+        this.prefixLeft = Boolean.parseBoolean(prefixLeft);
     }
 
     private void setPrefixRight(String prefixRight) throws IOException {
         ParamsUtils.checked(prefixRight, "prefix-right", "(true|false)");
-        this.prefixRight = Boolean.valueOf(prefixRight);
+        this.prefixRight = Boolean.parseBoolean(prefixRight);
     }
 
     public String[] splitDateScale(String dateScale) throws IOException {
@@ -827,7 +827,7 @@ public class CommonParams {
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
         ParamsUtils.checked(checkRewrite, "f-check-rewrite", "(true|false)");
         try {
-            seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
+            seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.parseBoolean(checkRewrite)) {
                 @Override
                 protected String valueFrom(Map<String, String> item, String key) {
                     return item.get(key);
@@ -862,7 +862,7 @@ public class CommonParams {
         if (indexes.startsWith("pre-")) {
             String num = indexes.substring(4);
             if (num.matches("\\d+")) {
-                int number = Integer.valueOf(num);
+                int number = Integer.parseInt(num);
                 if (number < 0) {
                     throw new IOException("pre size can not be smaller than zero.");
                 } else if (keys.size() >= number) {
@@ -1085,16 +1085,21 @@ public class CommonParams {
 
     private void setUnitLen(String unitLen) throws IOException {
         if (unitLen.startsWith("-")) {
-            if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
-            else unitLen = "1000";
+            if (isSelfUpload) this.unitLen = 20;
+            if ("qiniu".equals(source) || "local".equals(source)) this.unitLen = 10000;
+            else this.unitLen = 1000;
+        } else {
+            ParamsUtils.checked(unitLen, "unit-len", "\\d+");
+            this.unitLen = Integer.parseInt(unitLen);
+            if (isSelfUpload && this.unitLen > 100) {
+                throw new IOException("file upload shouldn't has too big unit-len, suggest setting unit-len smaller than 100.");
+            }
         }
-        ParamsUtils.checked(unitLen, "unit-len", "\\d+");
-        this.unitLen = Integer.valueOf(unitLen);
     }
 
     private void setThreads(String threads) throws IOException {
         ParamsUtils.checked(threads, "threads", "[1-9]\\d*");
-        this.threads = Integer.valueOf(threads);
+        this.threads = Integer.parseInt(threads);
     }
 
     private void setBatchSize(String batchSize) throws IOException {
@@ -1106,12 +1111,12 @@ public class CommonParams {
             }
         }
         ParamsUtils.checked(batchSize, "batch-size", "\\d+");
-        this.batchSize = Integer.valueOf(batchSize);
+        this.batchSize = Integer.parseInt(batchSize);
     }
 
     private void setRetryTimes(String retryTimes) throws IOException {
         ParamsUtils.checked(retryTimes, "retry-times", "\\d+");
-        this.retryTimes = Integer.valueOf(retryTimes);
+        this.retryTimes = Integer.parseInt(retryTimes);
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
@@ -1138,7 +1143,7 @@ public class CommonParams {
             }
         }
         ParamsUtils.checked(saveTotal, "save-total", "(true|false)");
-        this.saveTotal = Boolean.valueOf(saveTotal);
+        this.saveTotal = Boolean.parseBoolean(saveTotal);
     }
 
     private void setSavePath() throws IOException {
@@ -1208,7 +1213,7 @@ public class CommonParams {
                     jsonArray.add(scales[0]);
                     jsonArray.add(scales[1]);
                 } else {
-                    jsonArray.add(Integer.valueOf(scales[0]));
+                    jsonArray.add(Integer.parseInt(scales[0]));
                     jsonArray.add(Integer.MAX_VALUE);
                 }
                 pfopJson.add("scale", jsonArray);
@@ -1225,12 +1230,12 @@ public class CommonParams {
         String delay = entryParam.getValue("pause-delay", null);
         if (startTime != null) {
             ParamsUtils.checked(delay, "pause-delay", "\\d+");
-            pauseDelay = Long.valueOf(delay);
+            pauseDelay = Long.parseLong(delay);
         }
         String duration = entryParam.getValue("pause-duration", null);
         if (startTime != null) {
             ParamsUtils.checked(duration, "pause-duration", "\\d+");
-            pauseDuration = Long.valueOf(duration);
+            pauseDuration = Long.parseLong(duration);
         }
     }
 
