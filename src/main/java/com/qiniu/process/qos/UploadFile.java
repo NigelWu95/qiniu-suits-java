@@ -1,10 +1,6 @@
 package com.qiniu.process.qos;
 
-import com.google.gson.JsonObject;
-import com.qiniu.common.QiniuException;
-import com.qiniu.http.Response;
 import com.qiniu.process.Base;
-import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.persistent.FileRecorder;
@@ -28,12 +24,10 @@ public class UploadFile extends Base<Map<String, String>> {
     private StringMap policy;
     private Configuration configuration;
     private UploadManager uploadManager;
-    private boolean statCheck;
-    private BucketManager bucketManager;
 
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
-                      StringMap policy, StringMap params, boolean checkCrc, boolean statCheck, String savePath, int saveIndex)
+                      StringMap policy, StringMap params, boolean checkCrc, String savePath, int saveIndex)
             throws IOException {
         super("qupload", accessKey, secretKey, null, savePath, saveIndex);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
@@ -44,13 +38,12 @@ public class UploadFile extends Base<Map<String, String>> {
         } else {
             uploadManager = new UploadManager(configuration.clone());
         }
-        set(configuration, bucket, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params,
-                checkCrc, statCheck);
+        set(configuration, bucket, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params, checkCrc);
     }
 
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
-                      StringMap policy, StringMap params, boolean checkCrc, boolean statCheck) throws IOException {
+                      StringMap policy, StringMap params, boolean checkCrc) throws IOException {
         super("qupload", accessKey, secretKey, null);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         auth = Auth.create(accessKey, secretKey);
@@ -61,19 +54,18 @@ public class UploadFile extends Base<Map<String, String>> {
             uploadManager = new UploadManager(configuration.clone());
         }
         set(configuration, bucket, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params,
-                checkCrc, statCheck);
+                checkCrc);
     }
 
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
-                      StringMap policy, StringMap params, boolean checkCrc, boolean statCheck, String savePath) throws IOException {
+                      StringMap policy, StringMap params, boolean checkCrc, String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, pathIndex, parentPath, record, keepPath, addPrefix, rmPrefix,
-                expires, policy, params, checkCrc, statCheck, savePath, 0);
+                expires, policy, params, checkCrc, savePath, 0);
     }
 
     private void set(Configuration configuration, String bucket, String pathIndex, String parentPath, boolean keepPath,
-                     String addPrefix, String rmPrefix, long expires, StringMap policy, StringMap params, boolean checkCrc,
-                     boolean statCheck) {
+                     String addPrefix, String rmPrefix, long expires, StringMap policy, StringMap params, boolean checkCrc) {
         this.configuration = configuration;
         this.bucket = bucket;
         if (pathIndex == null || "".equals(pathIndex)) this.pathIndex = "filepath";
@@ -89,8 +81,6 @@ public class UploadFile extends Base<Map<String, String>> {
         this.policy = policy;
         this.params = params;
         this.checkCrc = checkCrc;
-        this.statCheck = statCheck;
-        if (statCheck) bucketManager = new BucketManager(auth, configuration.clone());
     }
 
     public UploadFile clone() throws CloneNotSupportedException {
@@ -99,7 +89,6 @@ public class UploadFile extends Base<Map<String, String>> {
         try {
             uploadFile.uploadManager = recorder == null ? new UploadManager(configuration.clone()) :
                     new UploadManager(configuration.clone(), new FileRecorder(recorder));
-            if (statCheck) uploadFile.bucketManager = new BucketManager(auth, configuration.clone());
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
@@ -155,15 +144,6 @@ public class UploadFile extends Base<Map<String, String>> {
         }
         key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
         line.put("key", key);
-        if (statCheck) {
-            try {
-                Response response = bucketManager.statResponse(bucket, key);
-                JsonObject statJson = JsonUtils.toJsonObject(response.bodyString());
-                statJson.addProperty("key", key);
-                response.close();
-                return String.join("\t", filepath, statJson.toString());
-            } catch (QiniuException ignored) {}
-        }
         if (filepath.endsWith(FileUtils.pathSeparator)) {
             return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(new byte[]{}, key, auth.uploadToken(bucket, key, expires, policy),
                     params, null, checkCrc)));

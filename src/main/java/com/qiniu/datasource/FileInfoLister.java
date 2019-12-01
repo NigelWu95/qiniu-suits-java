@@ -44,7 +44,8 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         }
         File[] fs = fileFilter == null ? file.listFiles() : file.listFiles(fileFilter);
         if (fs == null) throw new IOException("input file is not valid directory: " + file.getPath());
-        fileInfoList = new ArrayList<>(fs.length);
+        int initSize = fs.length > 10 ? (int)(fs.length * 0.7) : fs.length;
+        fileInfoList = new ArrayList<>(initSize);
         if (keepDir) {
             FileInfo fileInfo = new FileInfo(file, transferPath, leftTrimSize);
             fileInfo.filepath = String.format("%s%s", fileInfo.filepath, FileUtils.pathSeparator);
@@ -53,7 +54,7 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         for (File f : fs) {
             if (f.isHidden()) continue;
             if (f.isDirectory()) {
-                if (directories == null) directories = new ArrayList<>(fs.length / 2);
+                if (directories == null) directories = new ArrayList<>(initSize);
                 directories.add(f);
             } else {
                 fileInfoList.add(new FileInfo(f, transferPath, leftTrimSize));
@@ -80,7 +81,9 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
 //            currents.add(last);
 //        }
         lastFilePath = "";
+        fileFilter = null;
         file = null;
+        fs = null;
     }
 
     public FileInfoLister(String name, List<FileInfo> fileInfoList, String startPrefix, String endPrefix, int limit) throws IOException {

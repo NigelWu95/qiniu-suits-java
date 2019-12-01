@@ -978,17 +978,17 @@ public class QSuitsEntry {
         String crc = entryParam.getValue("crc", "false").trim();
         ParamsUtils.checked(crc, "crc", "(true|false)");
         boolean checkCrc = Boolean.parseBoolean(crc);
-        String check = entryParam.getValue("check", "false").trim();
-        ParamsUtils.checked(check, "check", "(true|false)");
-        boolean statCheck = Boolean.parseBoolean(check);
-        return single ? new UploadFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pathIndex, parentPath,
-                record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc, statCheck) :
-                new UploadFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pathIndex, parentPath,
-                        record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc, statCheck, savePath);
+        Configuration configuration = getQiniuConfig();
+        String threshold = entryParam.getValue("threshold", "0").trim();
+        ParamsUtils.checked(threshold, "threshold", "\\d+");
+        if (Integer.parseInt(threshold) > Constants.BLOCK_SIZE) configuration.putThreshold = Integer.parseInt(threshold);
+        return single ? new UploadFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, pathIndex, parentPath,
+                record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc) :
+                new UploadFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, pathIndex, parentPath,
+                        record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getChangeMime(Map<String, String> indexMap, boolean single)
-            throws IOException {
+    private ILineProcess<Map<String, String>> getChangeMime(Map<String, String> indexMap, boolean single) throws IOException {
         String mimeIndex = indexMap.containsValue("mime") ? "mime" : null;
         String mimeType = entryParam.getValue("mime", null);
         if (mimeType != null) mimeType = mimeType.trim();
