@@ -628,7 +628,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(COSObjectSummary cosObject, List<String> fields) throws IOException {
@@ -659,7 +659,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(OSSObjectSummary ossObject, List<String> fields) throws IOException {
@@ -690,7 +690,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(S3ObjectSummary s3Object, List<String> fields) throws IOException {
@@ -721,7 +721,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(FileItem fileItem, List<String> fields) throws IOException {
@@ -747,7 +747,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(ObsObject obsObject, List<String> fields) throws IOException {
@@ -791,7 +791,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(BosObjectSummary bosObject, List<String> fields) throws IOException {
@@ -822,7 +822,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(Map<String, String> line, List<String> fields) throws IOException {
@@ -847,7 +847,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(com.qiniu.model.local.FileInfo fileInfo, List<String> fields, int initPathSize) throws IOException {
@@ -873,7 +873,7 @@ public final class ConvertingUtils {
                 }
             }
             if (builder.length() == 0) throw new IOException("empty result string.");
-            return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+            return parentPath.append(builder.deleteCharAt(builder.length() - 1 - 1)).toString();
         } else {
             throw new IOException("no parent path to parse.");
         }
@@ -902,7 +902,7 @@ public final class ConvertingUtils {
             }
         }
         if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length())).toString();
+        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
     }
 
     public static String toStringWithIndent(String line, List<String> fields) throws IOException {

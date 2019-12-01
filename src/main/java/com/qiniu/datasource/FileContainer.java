@@ -243,6 +243,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             }
             if (hasNext) {
                 jsonObject.addProperty("end", lister.getEndPrefix());
+                jsonObject.addProperty("start", lister.currentEndFilepath());
                 try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
                 procedureLogger.info("{}: {}", lister.getName(), jsonObject);
             }
@@ -344,12 +345,16 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 if (tempLister != null) {
                     if (tempLister.getDirectories() != null && tempLister.getDirectories().size() > 0) {
                         if (hasAntiDirectories) {
-                            nextDirectories.addAll(tempLister.getDirectories().parallelStream().filter(this::checkDirectory)
-                                    .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList()));
+                            nextDirectories.addAll(tempLister.getDirectories().parallelStream()
+                                    .filter(this::checkDirectory)
+                                    .peek(dir -> recordListerByDirectory(dir.getPath()))
+                                    .collect(Collectors.toList()));
                         } else {
-                            tempLister.getDirectories().parallelStream().forEach(dir -> recordListerByDirectory(dir.getPath()));
+                            tempLister.getDirectories().parallelStream().forEach(dir ->
+                                    recordListerByDirectory(dir.getPath()));
                             nextDirectories.addAll(tempLister.getDirectories());
                         }
+                        tempLister.getDirectories().clear();
                     }
                     processNodeLister(tempLister);
                 }
@@ -357,16 +362,20 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 iterator.remove();
             }
         }
+        iterator = null;
+        future = null;
+        tempLister = null;
         return nextDirectories;
     }
 
     private Lock lock = new ReentrantLock();
     private AtomicInteger integer = new AtomicInteger(threads);
 
-    private void listForNextIteratively(List<File> directories) throws Exception {
+    private List<File> listForNextIteratively(List<File> directories) throws Exception {
         List<Future<ILocalFileLister<E, File>>> futures = new ArrayList<>();
         List<File> nextDirectories = new ArrayList<>();
         Future<ILocalFileLister<E, File>> future;
+        List<File> tempDirectories;
         for (File directory : directories) {
             if (integer.get() < threads) {
                 future = executorPool.submit(() -> {
@@ -384,12 +393,16 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                         if (futureLister != null) {
                             if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
                                 if (hasAntiDirectories) {
-                                    nextDirectories.addAll(futureLister.getDirectories().parallelStream().filter(this::checkDirectory)
-                                            .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList()));
+                                    nextDirectories.addAll(futureLister.getDirectories().parallelStream()
+                                            .filter(this::checkDirectory)
+                                            .peek(dir -> recordListerByDirectory(dir.getPath()))
+                                            .collect(Collectors.toList()));
                                 } else {
-                                    futureLister.getDirectories().parallelStream().forEach(dir -> recordListerByDirectory(dir.getPath()));
+                                    futureLister.getDirectories().parallelStream().forEach(dir ->
+                                            recordListerByDirectory(dir.getPath()));
                                     nextDirectories.addAll(futureLister.getDirectories());
                                 }
+                                futureLister.getDirectories().clear();
                             }
                             processNodeLister(futureLister);
                         }
@@ -409,12 +422,16 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     ILocalFileLister<E, File> futureLister = generateLister(directory);
                     if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
                         if (hasAntiDirectories) {
-                            nextDirectories.addAll(futureLister.getDirectories().parallelStream().filter(this::checkDirectory)
-                                    .peek(dir -> recordListerByDirectory(dir.getPath())).collect(Collectors.toList()));
+                            nextDirectories.addAll(futureLister.getDirectories().parallelStream()
+                                    .filter(this::checkDirectory)
+                                    .peek(dir -> recordListerByDirectory(dir.getPath()))
+                                    .collect(Collectors.toList()));
                         } else {
-                            futureLister.getDirectories().parallelStream().forEach(dir -> recordListerByDirectory(dir.getPath()));
+                            futureLister.getDirectories().parallelStream().forEach(dir ->
+                                    recordListerByDirectory(dir.getPath()));
                             nextDirectories.addAll(futureLister.getDirectories());
                         }
+                        futureLister.getDirectories().clear();
                     }
                     processNodeLister(futureLister);
                 } catch (Exception e) {
@@ -424,10 +441,19 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     lock.unlock();
                 }
             }
-            nextDirectories.addAll(loopForFutures(futures));
+            tempDirectories = loopForFutures(futures);
+            nextDirectories.addAll(tempDirectories);
+            tempDirectories.clear();
         }
-        while (futures.size() > 0) nextDirectories.addAll(loopForFutures(futures));
-        if (nextDirectories.size() > 0) listForNextIteratively(nextDirectories);
+        while (futures.size() > 0) {
+            tempDirectories = loopForFutures(futures);
+            nextDirectories.addAll(loopForFutures(futures));
+            tempDirectories.clear();
+        }
+        futures = null;
+        future = null;
+        tempDirectories = null;
+        return nextDirectories;
     }
 
     private List<ILocalFileLister<E, File>> checkListerInPool(int cValue, int tiny) {
@@ -475,7 +501,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 //            directories = directories.parallelStream().map(this::directoriesFromLister).filter(Objects::nonNull)
 //                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
 //        }
-        if (directories != null && directories.size() > 0) listForNextIteratively(directories);
+        while (directories != null && directories.size() > 0) directories = listForNextIteratively(directories);
         executorPool.shutdown();
         if (threads > 1) {
             int cValue = threads >= 10 ? threads / 2 : 3;
