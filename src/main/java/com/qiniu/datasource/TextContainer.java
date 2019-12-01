@@ -172,9 +172,9 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
                 } else {
                     file = new File(filename);
                 }
-                if (!file.exists()) throw new IOException("the filename not exists: " + filename);
+                if (!file.exists()) throw new IOException(filename + " not exists.");
                 if (file.isDirectory()) {
-                    throw new IOException("the filename defined in lines map can not be directory: " + filename);
+                    throw new IOException(filename + " defined in lines map can not be directory.");
                 } else {
                     type = FileUtils.contentType(file);
                     if (type.startsWith("text") || type.equals("application/octet-stream")) {
@@ -187,8 +187,8 @@ public abstract class TextContainer<E, W, T> extends DatasourceActor implements 
                 }
             }
         } else {
-            path = FileUtils.convertToRealPath(path);
-            File sourceFile = new File(path);
+            File sourceFile = new File(FileUtils.convertToRealPath(path));
+            if (!sourceFile.exists()) throw new IOException(path + " not exists: ");
             if (sourceFile.isDirectory()) {
                 List<File> files = FileUtils.getFiles(sourceFile, true);
                 for (File file : files) {

@@ -981,7 +981,8 @@ public class QSuitsEntry {
         Configuration configuration = getQiniuConfig();
         String threshold = entryParam.getValue("threshold", "0").trim();
         ParamsUtils.checked(threshold, "threshold", "\\d+");
-        if (Integer.parseInt(threshold) > Constants.BLOCK_SIZE) configuration.putThreshold = Integer.parseInt(threshold);
+        int thresholdSize = Integer.parseInt(threshold);
+        if (thresholdSize > 4) configuration.putThreshold = thresholdSize * 1024 * 1024;
         return single ? new UploadFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, pathIndex, parentPath,
                 record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc) :
                 new UploadFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, pathIndex, parentPath,

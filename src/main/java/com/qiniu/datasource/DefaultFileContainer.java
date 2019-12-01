@@ -79,7 +79,9 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
 
     @Override
     protected ILocalFileLister<FileInfo, File> getLister(String singleFilePath) throws IOException {
-        FileInfo fileInfo = new FileInfo(new File(singleFilePath), transferPath, leftTrimSize);
+        File file = new File(singleFilePath);
+        if (!file.exists()) throw new IOException(singleFilePath + " path not found.");
+        FileInfo fileInfo = new FileInfo(file, transferPath, leftTrimSize);
         if (indexMap.containsKey("etag")) {
             try { fileInfo = fileInfo.withEtag(); } catch (IOException e) {
                 fileInfo.etag = e.getMessage().replace("\n", ","); }

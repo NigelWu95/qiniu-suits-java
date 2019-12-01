@@ -43,7 +43,7 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
             fileFilter = pathname -> pathname.getPath().compareTo(startPrefix) > 0 && pathname.getPath().compareTo(endPrefix) <= 0;
         }
         File[] fs = fileFilter == null ? file.listFiles() : file.listFiles(fileFilter);
-        if (fs == null) throw new IOException("input file is not valid directory: " + file.getPath());
+        if (fs == null) throw new IOException(file.getPath() + " is not valid directory path.");
         int initSize = fs.length > 10 ? (int)(fs.length * 0.7) : fs.length;
         fileInfoList = new ArrayList<>(initSize);
         if (keepDir) {
