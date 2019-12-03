@@ -42,6 +42,7 @@ public abstract class DatasourceActor {
     protected ConcurrentMap<String, IResultOutput> saverMap;
     protected ConcurrentMap<String, ILineProcess> processorMap;
     protected boolean stopped;
+    protected ConcurrentMap<String, String> progressMap = new ConcurrentHashMap<>();
 
     public DatasourceActor(int unitLen, int threads) {
         this.unitLen = unitLen;

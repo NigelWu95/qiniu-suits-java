@@ -68,4 +68,8 @@ public class FileInfo implements Comparable {
         parentPath = file.getParent();
         return this;
     }
+
+    public File getFile() {
+        return file;
+    }
 }

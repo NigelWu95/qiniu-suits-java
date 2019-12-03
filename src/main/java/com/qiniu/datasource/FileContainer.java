@@ -23,22 +23,23 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     protected int leftTrimSize = 0;
     protected String realPath;
     protected int initPathSize;
-    protected List<String> antiDirectories;
-    protected boolean hasAntiDirectories = false;
-    protected Map<String, Map<String, String>> directoriesMap;
+    protected List<String> antiPrefixes;
+    protected boolean hasAntiPrefixes = false;
+    protected Map<String, Map<String, String>> prefixesMap;
     protected List<File> directories;
     protected ILineProcess<T> processor; // 定义的资源处理器
 //    protected List<ILocalFileLister<E, File>> listerList = new ArrayList<>(threads);
     protected ConcurrentMap<String, ILocalFileLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
+    private ILocalFileLister<E, File> startFileInfoLister = null;
 
-    public FileContainer(String path, Map<String, Map<String, String>> directoriesMap, List<String> antiDirectories, boolean keepDir,
+    public FileContainer(String path, Map<String, Map<String, String>> prefixesMap, List<String> antiDirectories, boolean keepDir,
                          Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
         super(unitLen, threads);
         this.path = path;
         this.keepDir = keepDir;
         setAntiDirectories(antiDirectories);
         setTransferPathAndLeftTrimSize();
-        setDirectoriesAndMap(directoriesMap);
+        setDirectoriesAndMap(prefixesMap);
         setIndexMapWithDefault(indexMap);
         if (fields != null && fields.size() > 0) this.fields = fields;
         else this.fields = ConvertingUtils.getOrderedFields(this.indexMap, null);
@@ -46,12 +47,12 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         setSaveOptions(true, "result", "tab", "\t", null);
     }
 
-    private void setAntiDirectories(List<String> antiDirectories) {
-        if (antiDirectories != null && antiDirectories.size() > 0) {
-            hasAntiDirectories = true;
-            this.antiDirectories = antiDirectories.stream().sorted().collect(Collectors.toList());
-            int size = this.antiDirectories.size();
-            Iterator<String> iterator = this.antiDirectories.iterator();
+    private void setAntiDirectories(List<String> antiPrefixes) {
+        if (antiPrefixes != null && antiPrefixes.size() > 0) {
+            hasAntiPrefixes = true;
+            this.antiPrefixes = antiPrefixes.stream().sorted().collect(Collectors.toList());
+            int size = this.antiPrefixes.size();
+            Iterator<String> iterator = this.antiPrefixes.iterator();
             String temp = iterator.next();
             while (iterator.hasNext() && size > 0) {
                 size--;
@@ -89,63 +90,62 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         initPathSize = realPath.split(FileUtils.pathSeparator).length;
     }
 
-    private void setDirectoriesAndMap(Map<String, Map<String, String>> directoriesMap) throws IOException {
-        if (directoriesMap == null || directoriesMap.size() <= 0) {
-            this.directoriesMap = new HashMap<>(threads);
+    protected abstract String getNameWithoutParent(E e);
+
+    private void setDirectoriesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
+        if (prefixesMap == null || prefixesMap.size() <= 0) {
+            this.prefixesMap = new HashMap<>(threads);
         } else {
-            if (directoriesMap.containsKey(null)) throw new IOException("can not find directory named \"null\".");
-            this.directoriesMap = new HashMap<>(threads);
-            this.directoriesMap.putAll(directoriesMap);
-            directories = new ArrayList<>();
-            int size = this.directoriesMap.size();
-            Iterator<String> iterator = this.directoriesMap.keySet().stream()
+            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
+            this.prefixesMap = new HashMap<>(threads);
+            this.prefixesMap.putAll(prefixesMap);
+            int size = this.prefixesMap.size();
+            Iterator<String> iterator = this.prefixesMap.keySet().stream()
                     .map(directory -> directory = directory.split("-\\|\\|-")[0])
                     .sorted().collect(Collectors.toList()).iterator();
+            File originFile = new File(realPath);
+            recordListerByDirectory(realPath);
+            if (originFile.isDirectory()) startFileInfoLister = generateLister(originFile);
+            else startFileInfoLister = getLister(realPath);
             String temp = iterator.next();
-            File tempFile;
-            Map<String, String> value = directoriesMap.get(temp);
+            Map<String, String> value = prefixesMap.get(temp);
             String end;
-            if (temp == null || temp.equals("")) {
-                throw new IOException("directories can not contains empty item");
-            } else {
-                tempFile = new File(temp);
-                if (!tempFile.exists()) tempFile = new File(realPath, temp);
-                if (tempFile.isDirectory()) directories.add(tempFile);
-            }
+            if (temp.equals("")) throw new IOException("file prefixes can not only be empty string(\"\")");
+            File file;
+            File tempFile = new File(temp);
             while (iterator.hasNext() && size > 0) {
                 size--;
-                String directory = iterator.next();
-                if (directory == null || directory.equals("")) {
-                    throw new IOException("directories can not contains empty item");
+                String prefix = iterator.next();
+                if (prefix == null || prefix.equals("")) {
+                    throw new IOException("file prefixes can not contains empty item");
                 } else {
-                    File file = new File(directory);
-                    if (!file.exists()) file = new File(realPath, directory);
+                    file = new File(realPath, prefix);
                     if (file.isDirectory()) {
                         if (tempFile.isDirectory()) {
-                            if (file.getPath().startsWith(tempFile.getPath())) {
+                            if (file.getPath().startsWith(tempFile.getPath() + FileUtils.pathSeparator)) {
                                 end = value == null ? null : value.get("end");
                                 if (end == null || "".equals(end)) {
                                     iterator.remove();
-                                    this.directoriesMap.remove(directory);
-                                } else if (end.compareTo(directory) >= 0) {
-                                    throw new IOException(temp + "'s end can not be more larger than " + directory + " in " + directoriesMap);
-                                } else {
-                                    directories.add(file);
+                                    this.prefixesMap.remove(prefix);
+                                } else if (end.compareTo(prefix) >= 0) {
+                                    throw new IOException(temp + "'s end can not be larger than " + prefix + " in " + prefixesMap);
                                 }
-                            } else {
-                                directories.add(file);
                             }
                         } else {
-                            directories.add(file);
                             tempFile = file;
-                            temp = directory;
-                            value = directoriesMap.get(temp);
+                            temp = prefix;
+                            value = prefixesMap.get(temp);
                         }
-
-                    } else {
-                        throw new IOException(directory + " is not valid directory.");
                     }
                 }
+            }
+            directories = startFileInfoLister.getDirectories().parallelStream()
+                    .filter(directory -> prefixesMap.keySet().stream().anyMatch(directory.getName()::startsWith))
+                    .collect(Collectors.toList());
+            if (startFileInfoLister.hasNext()) {
+                startFileInfoLister = getLister(originFile.getName(), startFileInfoLister.getRemainedFiles().parallelStream()
+                        .filter(e -> prefixesMap.keySet().stream().anyMatch(getNameWithoutParent(e)::startsWith))
+                        .collect(Collectors.toList()), null, null, unitLen);
             }
         }
     }
@@ -172,15 +172,11 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
-    private boolean checkDirectory(File directory) {
-//        if (hasAntiDirectories) {
-            for (String antiPrefix : antiDirectories) {
-                if (directory.getPath().startsWith(antiPrefix)) return false;
-            }
-            return true;
-//        } else {
-//            return true;
-//        }
+    private boolean checkPrefix(File directory) {
+        for (String antiPrefix : antiPrefixes) {
+            if (directory.getPath().startsWith(antiPrefix)) return false;
+        }
+        return true;
     }
 
     protected abstract ILocalFileLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
@@ -191,7 +187,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     protected abstract ILocalFileLister<E, File> getLister(String singleFilePath) throws IOException;
 
     private ILocalFileLister<E, File> generateLister(File directory) throws IOException {
-        Map<String, String> map = directoriesMap.get(directory.getPath());
+        Map<String, String> map = prefixesMap.get(directory.getPath());
         String start;
         String end;
         if (map == null) {
@@ -214,7 +210,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         List<String> writeList;
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
-        Map<String, String> map = directoriesMap.get(lister.getName());
+        Map<String, String> map = prefixesMap.get(lister.getName());
         JsonObject jsonObject = map == null ? new JsonObject() : JsonUtils.toJsonObject(map);
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
@@ -298,7 +294,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 
     private void recordListerByDirectory(String name) {
         String pName = name.split("-\\|\\|-")[0];
-        Map<String, String> map = directoriesMap.get(pName);
+        Map<String, String> map = prefixesMap.get(pName);
         JsonObject json = map == null ? null : JsonUtils.toJsonObject(map);
         try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
         procedureLogger.info("{}: {}", name, json);
@@ -344,9 +340,9 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 tempLister = future.get();
                 if (tempLister != null) {
                     if (tempLister.getDirectories() != null && tempLister.getDirectories().size() > 0) {
-                        if (hasAntiDirectories) {
+                        if (hasAntiPrefixes) {
                             nextDirectories.addAll(tempLister.getDirectories().parallelStream()
-                                    .filter(this::checkDirectory)
+                                    .filter(this::checkPrefix)
                                     .peek(dir -> recordListerByDirectory(dir.getPath()))
                                     .collect(Collectors.toList()));
                         } else {
@@ -383,7 +379,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                         return generateLister(directory);
                     } catch (IOException e) {
                         try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-                        errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
+                        errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), prefixesMap.get(directory.getPath()), e);
                         return null;
                     }
                 });
@@ -392,9 +388,9 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                         ILocalFileLister<E, File> futureLister = future.get();
                         if (futureLister != null) {
                             if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
-                                if (hasAntiDirectories) {
+                                if (hasAntiPrefixes) {
                                     nextDirectories.addAll(futureLister.getDirectories().parallelStream()
-                                            .filter(this::checkDirectory)
+                                            .filter(this::checkPrefix)
                                             .peek(dir -> recordListerByDirectory(dir.getPath()))
                                             .collect(Collectors.toList()));
                                 } else {
@@ -421,9 +417,9 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 try {
                     ILocalFileLister<E, File> futureLister = generateLister(directory);
                     if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
-                        if (hasAntiDirectories) {
+                        if (hasAntiPrefixes) {
                             nextDirectories.addAll(futureLister.getDirectories().parallelStream()
-                                    .filter(this::checkDirectory)
+                                    .filter(this::checkPrefix)
                                     .peek(dir -> recordListerByDirectory(dir.getPath()))
                                     .collect(Collectors.toList()));
                         } else {
@@ -436,7 +432,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     processNodeLister(futureLister);
                 } catch (Exception e) {
                     try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-                    errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
+                    errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), prefixesMap.get(directory.getPath()), e);
                 } finally {
                     lock.unlock();
                 }
@@ -453,6 +449,8 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         futures = null;
         future = null;
         tempDirectories = null;
+        directories.clear();
+        directories = null;
         return nextDirectories;
     }
 
@@ -478,7 +476,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         directory = lister.getName();
                         start = lister.truncate();
-                        endMap = directoriesMap.get(directory);
+                        endMap = prefixesMap.get(directory);
                         if (endMap == null) endMap = new HashMap<>();
                         endMap.put("start", start);
                         rootLogger.info("directory: {}, nextFilepath: {}, endMap: {}\n", directory, start, endMap);
@@ -527,7 +525,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                             } catch (IOException e) {
                                 try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                                 errorLogger.error("generate lister failed by {}\t{}", lister.getName(),
-                                        directoriesMap.get(lister.getName()), e);
+                                        prefixesMap.get(lister.getName()), e);
                             }
                         }
                         return;
@@ -544,7 +542,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                             errorLogger.error("generate lister failed by {}\t{}",
                                     String.join("-||-", lister.getName(), String.valueOf(i)),
-                                    directoriesMap.get(lister.getName()), e);
+                                    prefixesMap.get(lister.getName()), e);
                         }
                     }
                 });
@@ -562,33 +560,24 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
-        ILocalFileLister<E, File> fileInfoLister = null;
-        if (directories == null || directories.size() == 0) {
-            File file = new File(realPath);
-            if (file.isDirectory()) {
-                recordListerByDirectory(realPath);
-                fileInfoLister = generateLister(file);
-            } else {
-                fileInfoLister = getLister(realPath);
-            }
-            directories = fileInfoLister.getDirectories();
-        }
         try {
             if (directories == null || directories.size() == 0) {
-                if (fileInfoLister.hasNext()) {
-                    listing(fileInfoLister);
-                } else {
-                    fileInfoLister.close();
+                if (startFileInfoLister != null) {
+                    if (startFileInfoLister.hasNext()) {
+                        listing(startFileInfoLister);
+                    } else {
+                        startFileInfoLister.close();
+                    }
                 }
             } else {
-                if (hasAntiDirectories) {
-                    directories = directories.parallelStream().filter(this::checkDirectory)
+                if (hasAntiPrefixes) {
+                    directories = directories.parallelStream().filter(this::checkPrefix)
                             .peek(directory -> recordListerByDirectory(directory.getPath())).collect(Collectors.toList());
                 } else {
                     directories.parallelStream().forEach(directory -> recordListerByDirectory(directory.getPath()));
                 }
                 executorPool = Executors.newFixedThreadPool(threads);
-                if (fileInfoLister != null) processNodeLister(fileInfoLister);
+                if (startFileInfoLister != null) processNodeLister(startFileInfoLister);
                 directoriesListing();
             }
             rootLogger.info("{} finished, results in {}.", info, savePath);

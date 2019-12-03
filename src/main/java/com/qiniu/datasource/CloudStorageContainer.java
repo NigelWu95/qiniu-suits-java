@@ -181,7 +181,9 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
     void recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
         try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-        procedureLogger.info(recorder.put(prefix, json));
+        String record = JsonUtils.toString(json);
+        procedureLogger.info(record);
+        progressMap.put(prefix, record);
     }
 
     /**

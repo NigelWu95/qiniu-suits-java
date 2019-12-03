@@ -29,6 +29,11 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
     }
 
     @Override
+    protected String getNameWithoutParent(FileInfo fileInfo) {
+        return fileInfo.getFile().getName();
+    }
+
+    @Override
     public String getSourceName() {
         return "file";
     }

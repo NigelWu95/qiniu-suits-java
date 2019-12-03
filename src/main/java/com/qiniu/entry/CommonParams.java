@@ -602,7 +602,7 @@ public class CommonParams {
             if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
             else bucket = entryParam.getValue("bucket", bucket).trim();
         }
-        if ("qupload".equals(process) && entryParam.getValue("parse", null) == null && !"terminal".equals(source)) {
+        if ("qupload".equals(process) && "file".equals(entryParam.getValue("parse", "file")) && !"terminal".equals(source)) {
             isSelfUpload = true;
             String prefixes = entryParam.getValue("directories", null);
             setPathConfigMap(entryParam.getValue("directory-config", ""), prefixes, false, true);
