@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.*;
@@ -95,6 +96,13 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     }
 
     protected abstract String getNameWithoutParent(E e);
+
+    private void recordListerByDirectory(String name) {
+        String pName = name.split("-\\|\\|-")[0];
+        Map<String, String> map = prefixesMap.get(pName);
+        String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
+        recordLister(name, record);
+    }
 
     private void setDirectoriesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
         if (prefixesMap == null || prefixesMap.size() <= 0) {
@@ -223,8 +231,10 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         List<String> writeList;
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
+        String record;
         Map<String, String> map = prefixesMap.get(lister.getName());
-        JsonObject jsonObject = map == null ? new JsonObject() : JsonUtils.toJsonObject(map);
+        JsonObject json = map != null ? JsonUtils.toJsonObject(map) :
+                (hasNext ? new JsonObject() : JsonNull.INSTANCE.getAsJsonObject());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
             if (stopped) break;
@@ -251,10 +261,11 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 }
             }
             if (hasNext) {
-                jsonObject.addProperty("end", lister.getEndPrefix());
-                jsonObject.addProperty("start", lister.currentEndFilepath());
+                json.addProperty("start", lister.currentEndFilepath());
                 try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-                procedureLogger.info("{}: {}", lister.getName(), jsonObject);
+                record = json.toString();
+                procedureLogger.info("{}:{}", lister.getName(), record);
+                progressMap.put(lister.getName(), record);
             }
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
@@ -295,6 +306,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 saver = null; // let gc work
             }
             saverMap.remove(orderStr);
+            processorMap.remove(orderStr);
             if (lineProcessor != null) {
                 lineProcessor.closeResource();
                 lineProcessor = null;
@@ -303,14 +315,6 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             lister.close();
             listerMap.remove(lister.getName());
         }
-    }
-
-    private void recordListerByDirectory(String name) {
-        String pName = name.split("-\\|\\|-")[0];
-        Map<String, String> map = prefixesMap.get(pName);
-        JsonObject json = map == null ? null : JsonUtils.toJsonObject(map);
-        try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-        procedureLogger.info("{}: {}", name, json);
     }
 
     private void processNodeLister(ILocalFileLister<E, File> lister) {

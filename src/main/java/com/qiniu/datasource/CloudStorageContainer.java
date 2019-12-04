@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
@@ -22,7 +23,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
     protected String bucket;
     protected List<String> antiPrefixes;
     protected boolean hasAntiPrefixes = false;
-    protected Map<String, Map<String, String>> prefixesMap;
+    protected ConcurrentMap<String, Map<String, String>> prefixesMap;
     protected List<String> prefixes;
     protected boolean prefixLeft;
     protected boolean prefixRight;
@@ -74,13 +75,13 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
 
     private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
         if (prefixesMap == null || prefixesMap.size() <= 0) {
-            this.prefixesMap = new HashMap<>(threads);
+            this.prefixesMap = new ConcurrentHashMap<>(threads);
             prefixLeft = true;
             prefixRight = true;
             if (hasAntiPrefixes && !"upyun".equals(getSourceName())) prefixes = originPrefixList;
         } else {
             if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
-            this.prefixesMap = new HashMap<>(threads);
+            this.prefixesMap = new ConcurrentHashMap<>(threads);
             this.prefixesMap.putAll(prefixesMap);
             prefixes = prefixesMap.keySet().stream().sorted().collect(Collectors.toList());
             int size = prefixes.size();
@@ -153,10 +154,6 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         this.processor = processor;
     }
 
-    private synchronized void insertIntoPrefixesMap(String prefix, Map<String, String> markerAndEnd) {
-        prefixesMap.put(prefix, markerAndEnd);
-    }
-
     /**
      * 检验 prefix 是否有效，在 antiPrefixes 前缀列表中或者为空均无效
      * @param prefix 待检验的 prefix
@@ -178,14 +175,6 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
-    void recordListerByPrefix(String prefix) {
-        JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
-        try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-        String record = json == null ? "" : json.toString();
-        procedureLogger.info(record);
-        progressMap.put(prefix, record);
-    }
-
     /**
      * 执行列举操作，直到当前的 lister 列举结束，并使用 processor 对象执行处理过程
      * @param lister 已经初始化的 lister 对象
@@ -205,7 +194,10 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
         int retry;
+        String record;
         Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
+        JsonObject json = map != null ? JsonUtils.toJsonObject(map) :
+                (hasNext ? new JsonObject() : JsonNull.INSTANCE.getAsJsonObject());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
             if (stopped) break;
@@ -232,11 +224,11 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 }
             }
             if (hasNext) {
-                JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
                 json.addProperty("marker", lister.getMarker());
-                json.addProperty("end", lister.getEndPrefix());
                 try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-                procedureLogger.info(recorder.put(lister.getPrefix(), json));
+                record = json.toString();
+                procedureLogger.info("{}:{}", lister.getPrefix(), record);
+                progressMap.put(lister.getPrefix(), record);
             }
             if (map != null) map.put("start", lister.currentEndKey());
             if (stopped) break;
@@ -278,14 +270,14 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);
-            recorder.remove(lister.getPrefix()); // 只有 export 成功情况下才移除 record
+            progressMap.remove(lister.getPrefix()); // 只有 export 成功情况下才移除 record
         } catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-            errorLogger.error("{}: {}, {}", lister.getPrefix(), recorder.getJson(lister.getPrefix()), e.error(), e);
+            errorLogger.error("{}: {}, {}", lister.getPrefix(), progressMap.get(lister.getPrefix()), e.error(), e);
             if (e.response != null) e.response.close();
         } catch (Throwable e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-            errorLogger.error("{}: {}", lister.getPrefix(), recorder.getJson(lister.getPrefix()), e);
+            errorLogger.error("{}: {}", lister.getPrefix(), progressMap.get(lister.getPrefix()), e);
         } finally {
             try { FileUtils.createIfNotExists(infoLogFile); } catch (IOException ignored) {}
             infoLogger.info("{}\t{}\t{}", orderStr, lister.getPrefix(), lister.count());
@@ -294,8 +286,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 saver = null; // let gc work
             }
             saverMap.remove(orderStr);
-            // 实际上 processorMap 记录的 key 和 saverMap 的是一致的，只要 saverMap 中做了移除说明已经正常处理完任务，最后直接根据
-            // saverMap 的 keySet 来 check 即可
+            processorMap.remove(orderStr);
             if (lineProcessor != null) {
                 lineProcessor.closeResource();
                 lineProcessor = null;
@@ -364,9 +355,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                         lister.setEndPrefix(startPrefix + firstPoint);
                         lister.setLimit(2);
                     } else {
-                        insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
-                            put("marker", lister.getMarker());
-                        }});
+                        prefixesMap.put(startPrefix + point, new HashMap<String, String>(){{ put("marker", lister.getMarker()); }});
                         lister.setEndPrefix(endKey);
                     }
                 } else {
@@ -395,7 +384,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             if (generated == null) return false;
             else if (generated.currents().size() > 0 || generated.hasNext()) return true;
             else {
-                recorder.remove(generated.getPrefix());
+                progressMap.remove(generated.getPrefix());
                 generated.close();
                 return false;
             }
@@ -424,9 +413,15 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         if (lister.currents().size() > 0 || lister.hasNext()) {
             executorPool.execute(() -> listing(lister));
         } else {
-            recorder.remove(lister.getPrefix());
+            progressMap.remove(lister.getPrefix());
             lister.close();
         }
+    }
+
+    void recordListerByPrefix(String prefix) {
+        Map<String, String> map = prefixesMap.get(prefix);
+        String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
+        recordLister(prefix, record);
     }
 
     private List<IStorageLister<E>> computeToNextLevel(List<IStorageLister<E>> listerList) {
@@ -501,7 +496,8 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                         if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                         extremePrefixes.add(prefix);
                         prefixMap.put("marker", nextMarker);
-                        insertIntoPrefixesMap(prefix, prefixMap);
+                        prefixesMap.put(prefix, prefixMap);
+
                     }
                 } else if (listerList.size() <= cValue) {
                     count = 900;
@@ -623,7 +619,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             if (prefixLeft || "".equals(prefixes.get(0))) {
                 recordListerByPrefix("");
                 if ("".equals(prefixes.get(0))) prefixes.remove(0);
-                insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
+                prefixesMap.put("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
                 startLister = generateLister("", 2);
                 startLister.setLimit(unitLen);
                 prefixesMap.remove("");
@@ -634,7 +630,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 if (startLister.currents().size() > 0 || startLister.hasNext()) {
                     listing(startLister);
                 } else {
-                    recorder.remove(startLister.getPrefix());
+                    progressMap.remove(startLister.getPrefix());
                     startLister.close();
                 }
             } else {

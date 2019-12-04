@@ -1,5 +1,6 @@
 package com.qiniu.datasource;
 
+import com.google.gson.JsonObject;
 import com.qiniu.common.JsonRecorder;
 import com.qiniu.interfaces.*;
 import com.qiniu.persistence.FileSaveMapper;
@@ -70,7 +71,13 @@ public abstract class DatasourceActor {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
 
-    protected JsonRecorder recorder = new JsonRecorder();
+    JsonRecorder recorder = new JsonRecorder();
+
+    void recordLister(String key, String record) {
+        try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+        procedureLogger.info("{}:{}", key, record);
+        progressMap.put(key, record);
+    }
 
     protected void sleep(long millis) {
         try {
@@ -88,14 +95,15 @@ public abstract class DatasourceActor {
             processor = processorMap.get(saverEntry.getKey());
             if (processor != null) processor.closeResource();
         }
-        String record = recorder.toString();
-        if (recorder.size() > 0) {
+        String record = ":{}";
+        if (progressMap.size() > 0) {
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             saveMapper.setAppend(false);
             saveMapper.setFileExt(".json");
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1);
             saveMapper.addWriter(fileName);
+            record = JsonUtils.toJsonObject(progressMap).toString();
             saveMapper.writeToKey(fileName, record, true);
             saveMapper.closeWriters();
             rootLogger.info("please check the lines breakpoint in {}.json, " +
