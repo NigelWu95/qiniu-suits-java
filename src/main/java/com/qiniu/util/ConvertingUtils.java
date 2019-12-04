@@ -858,8 +858,16 @@ public final class ConvertingUtils {
             int num = fileInfo.parentPath.split(FileUtils.pathSeparator).length - initPathSize;
             for (String field : fields) {
                 switch (field) {
-                    case "parent": parentPath.append(fileInfo.parentPath).append("-||-"); break;
-                    case "filepath": StringBuilder stringBuilder = new StringBuilder();
+                    case "parent":
+//                        if (fileInfo.filepath.endsWith(FileUtils.pathSeparator)) {
+//                            parentPath.append(fileInfo.parentPath).append(FileUtils.pathSeparator)
+//                                    .append(fileInfo.filepath).deleteCharAt(parentPath.length() - 1)
+//                                    .append("-||-");
+//                        } else {
+//                            parentPath.append(fileInfo.parentPath).append("-||-");
+//                        }
+                        break;
+                    case "filepath": StringBuilder stringBuilder = new StringBuilder(fileInfo.filepath).append("-||-");
                         for (int j = 0; j < num; j++) stringBuilder.append("\t");
                         stringBuilder.append(fileInfo.filepath.replace(fileInfo.parentPath, "").substring(1));
                         builder.append(stringBuilder.toString()).append("\t"); break;

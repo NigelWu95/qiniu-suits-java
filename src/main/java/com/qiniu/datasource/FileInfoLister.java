@@ -73,6 +73,7 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
         }
         if (withParent) fileInfoList.forEach(FileInfo::withParent);
         currents = new ArrayList<>();
+        fileInfoList.sort(Comparator.comparing(fileInfo -> fileInfo.filepath));
         iterator = fileInfoList.iterator();
         count = fileInfoList.size();
 //        if (iterator.hasNext()) {

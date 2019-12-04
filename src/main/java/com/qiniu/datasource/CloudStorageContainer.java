@@ -336,7 +336,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
     }
 
-    private String moreValidPrefixes(IStorageLister<E> lister, boolean doFutureCheck) {
+    private String nextPoint(IStorageLister<E> lister, boolean doFutureCheck) {
         boolean next;
         try {
             next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
@@ -376,7 +376,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                     lister.setLimit(1);
                 }
             } else {
-                return moreValidPrefixes(lister, true);
+                return nextPoint(lister, true);
             }
         }
         return point;
@@ -433,7 +433,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         if (hasAntiPrefixes) {
             return listerList.parallelStream().map(lister -> {
                 List<String> nextPrefixes = null;
-                String finalPoint = moreValidPrefixes(lister, true);
+                String finalPoint = nextPoint(lister, true);
                 if (finalPoint != null) {
                     nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
                             .map(prefix -> lister.getPrefix() + prefix).filter(this::checkPrefix)
@@ -446,7 +446,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         } else {
             return listerList.parallelStream().map(lister -> {
                 List<String> nextPrefixes = null;
-                String finalPoint = moreValidPrefixes(lister, true);
+                String finalPoint = nextPoint(lister, true);
                 if (finalPoint != null) {
                     nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
                             .map(prefix -> lister.getPrefix() + prefix)
@@ -612,7 +612,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             startLister = generateLister("", 1);
             startLister.setLimit(unitLen);
             if (threads > 1) {
-                String finalPoint = moreValidPrefixes(startLister, false);
+                String finalPoint = nextPoint(startLister, false);
                 if (finalPoint != null) {
                     IStorageLister<E> lister = startLister;
                     prefixes = originPrefixList.parallelStream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)

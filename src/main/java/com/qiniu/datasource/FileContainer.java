@@ -94,7 +94,12 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 
     private void setDirectoriesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
         if (prefixesMap == null || prefixesMap.size() <= 0) {
-            this.prefixesMap = new HashMap<>(threads);
+            this.prefixesMap = new HashMap<>();
+            File originFile = new File(realPath);
+            recordListerByDirectory(realPath);
+            if (originFile.isDirectory()) startFileInfoLister = generateLister(originFile);
+            else startFileInfoLister = getLister(realPath);
+            directories = startFileInfoLister.getDirectories();
         } else {
             if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
             this.prefixesMap = new HashMap<>(threads);
