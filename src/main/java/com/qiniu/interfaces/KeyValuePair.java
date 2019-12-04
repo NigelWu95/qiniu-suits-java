@@ -4,6 +4,8 @@ public interface KeyValuePair<K, Proto> {
 
     String EMPTY = null;
 
+    void putKey(K key, String value);
+
     void put(K key, String value);
 
     void put(K key, Boolean value);

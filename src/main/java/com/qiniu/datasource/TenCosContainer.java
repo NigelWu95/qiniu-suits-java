@@ -67,6 +67,8 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
         IStringFormat<COSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
+        } else if ("yaml".equals(saveFormat)) {
+            stringFormatter = line -> ConvertingUtils.toStringWithIndent(line, fields);
         } else {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }

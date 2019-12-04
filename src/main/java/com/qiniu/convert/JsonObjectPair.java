@@ -8,6 +8,11 @@ public class JsonObjectPair implements KeyValuePair<String, JsonObject> {
     private JsonObject jsonObject = new JsonObject();
 
     @Override
+    public void putKey(String key, String value) {
+        jsonObject.addProperty(key, value);
+    }
+
+    @Override
     public void put(String key, String value) {
         jsonObject.addProperty(key, value);
     }

@@ -108,7 +108,7 @@ public class UploadFile extends Base<Map<String, String>> {
             if (key == null || "".equals(key)) throw new IOException(pathIndex + " is not exists or empty in " + line);
             if (parentPath == null) {
                 filepath = key;
-                if (key.startsWith(FileUtils.pathSeparator)) key = key.substring(1);
+//                if (key.startsWith(FileUtils.pathSeparator)) key = key.substring(1);
             } else {
                 if (key.startsWith(FileUtils.pathSeparator)) {
                     filepath = String.join("", parentPath, key);
@@ -119,19 +119,25 @@ public class UploadFile extends Base<Map<String, String>> {
             }
             line.put(pathIndex, filepath);
         } else {
-            if (key != null) {
-                if (keepPath) {
-                    if (key.startsWith(FileUtils.pathSeparator)) key = key.substring(1);
-                } else {
-                    key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
-                }
+//            if (key != null) {
+//                if (keepPath) {
+//                    if (key.startsWith(FileUtils.pathSeparator)) key = key.substring(1);
+//                } else {
+//                    key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
+//                }
+//            } else {
+//                if (keepPath) {
+//                    if (filepath.startsWith(FileUtils.pathSeparator)) key = filepath.substring(1);
+//                    else key = filepath;
+//                } else {
+//                    key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
+//                }
+//            }
+            if (keepPath) {
+                if (key == null) key = filepath;
             } else {
-                if (keepPath) {
-                    if (filepath.startsWith(FileUtils.pathSeparator)) key = filepath.substring(1);
-                    else key = filepath;
-                } else {
-                    key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
-                }
+                if (key == null) key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
+                else key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
             }
             if (parentPath != null) {
                 if (filepath.startsWith(FileUtils.pathSeparator)) {

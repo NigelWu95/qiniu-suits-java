@@ -6,6 +6,7 @@ import com.baidubce.services.bos.model.BosObjectSummary;
 import com.google.gson.*;
 import com.obs.services.model.ObsObject;
 import com.qcloud.cos.model.COSObjectSummary;
+import com.qiniu.convert.IndentStringPair;
 import com.qiniu.interfaces.KeyValuePair;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.storage.model.FileInfo;
@@ -601,253 +602,190 @@ public final class ConvertingUtils {
 
     public static String toStringWithIndent(FileInfo fileInfo, List<String> fields) throws IOException {
         if (fileInfo == null || fileInfo.key == null) throw new IOException("empty fileInfo or key.");
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             switch (field) {
                 case "key":
                     if (fileInfo.key == null) throw new IOException("object key is empty");
-                    int num = fileInfo.key.split(FileUtils.pathSeparator).length;
-                    if (num > 1) parentPath.append(fileInfo.key, 0, fileInfo.key.lastIndexOf(FileUtils.pathSeparator));
-                    else parentPath.append("/");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                    stringBuilder.append(fileInfo.key.replace(parentPath, "").substring(1));
-                    builder.append(stringBuilder.toString()).append("\t");
-                    parentPath.append("-||-"); break;
-                case "etag": builder.append(fileInfo.hash); break;
-                case "size": builder.append(fileInfo.fsize); break;
-                case "datetime": builder.append(DatetimeUtils.datetimeOf(fileInfo.putTime).toString()); break;
-                case "timestamp": builder.append(fileInfo.putTime); break;
-                case "mime": builder.append(fileInfo.mimeType); break;
-                case "type": builder.append(fileInfo.type); break;
-                case "status": builder.append(fileInfo.status); break;
-                case "md5": if (fileInfo.md5 != null) builder.append(fileInfo.md5); break;
-                case "owner": if (fileInfo.endUser != null) builder.append(fileInfo.endUser); break;
+                    indentStringPair.putKey(field, fileInfo.key);
+                    break;
+                case "etag": indentStringPair.put(field, fileInfo.hash); break;
+                case "size": indentStringPair.put(field, fileInfo.fsize); break;
+                case "datetime": indentStringPair.put(field, DatetimeUtils.datetimeOf(fileInfo.putTime).toString()); break;
+                case "timestamp": indentStringPair.put(field, fileInfo.putTime); break;
+                case "mime": indentStringPair.put(field, fileInfo.mimeType); break;
+                case "type": indentStringPair.put(field, fileInfo.type); break;
+                case "status": indentStringPair.put(field, fileInfo.status); break;
+                case "md5": if (fileInfo.md5 != null) indentStringPair.put(field, fileInfo.md5); break;
+                case "owner": if (fileInfo.endUser != null) indentStringPair.put(field, fileInfo.endUser); break;
                 default: throw new IOException(String.format("qiniu FileInfo doesn't have field: %s, must use fields' standard name", field));
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(COSObjectSummary cosObject, List<String> fields) throws IOException {
         if (cosObject == null || cosObject.getKey() == null) throw new IOException("empty cosObjectSummary or key.");
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             switch (field) {
                 case "key": String key = cosObject.getKey();
                     if (key == null) throw new IOException("object key is empty");
-                    int num = key.split(FileUtils.pathSeparator).length;
-                    if (num > 1) parentPath.append(key, 0, key.lastIndexOf(FileUtils.pathSeparator));
-                    else parentPath.append("/");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                    stringBuilder.append(key.replace(parentPath, "").substring(1));
-                    builder.append(stringBuilder.toString()).append("\t");
-                    parentPath.append("-||-"); break;
-                case "etag": builder.append(cosObject.getETag()); break;
-                case "size": builder.append(cosObject.getSize()); break;
-                case "datetime": builder.append(cosObject.getLastModified() == null ? "" :
+                    indentStringPair.putKey(field, key); break;
+                case "etag": indentStringPair.put(field, cosObject.getETag()); break;
+                case "size": indentStringPair.put(field, cosObject.getSize()); break;
+                case "datetime": indentStringPair.put(field, cosObject.getLastModified() == null ? "" :
                         DatetimeUtils.stringOf(cosObject.getLastModified())); break;
-                case "timestamp": builder.append(cosObject.getLastModified() == null ? 0 :
+                case "timestamp": indentStringPair.put(field, cosObject.getLastModified() == null ? 0 :
                         cosObject.getLastModified().getTime()); break;
-                case "type": builder.append(cosObject.getStorageClass()); break;
-                case "owner": if (cosObject.getOwner() != null) builder.append(cosObject.getOwner().getDisplayName()); break;
+                case "type": indentStringPair.put(field, cosObject.getStorageClass()); break;
+                case "owner": if (cosObject.getOwner() != null) indentStringPair.put(field, cosObject.getOwner().getDisplayName()); break;
                 default: throw new IOException(String.format("COSObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(OSSObjectSummary ossObject, List<String> fields) throws IOException {
         if (ossObject == null || ossObject.getKey() == null) throw new IOException("empty ossObjectSummary or key.");
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             switch (field) {
                 case "key": String key = ossObject.getKey();
                     if (key == null) throw new IOException("object key is empty");
-                    int num = key.split(FileUtils.pathSeparator).length;
-                    if (num > 1) parentPath.append(key, 0, key.lastIndexOf(FileUtils.pathSeparator));
-                    else parentPath.append("/");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                    stringBuilder.append(key.replace(parentPath, "").substring(1));
-                    builder.append(stringBuilder.toString()).append("\t");
-                    parentPath.append("-||-"); break;
-                case "etag": builder.append(ossObject.getETag()); break;
-                case "size": builder.append(ossObject.getSize()); break;
-                case "datetime": builder.append(ossObject.getLastModified() == null ? "" :
+                    indentStringPair.putKey(field, key); break;
+                case "etag": indentStringPair.put(field, ossObject.getETag()); break;
+                case "size": indentStringPair.put(field, ossObject.getSize()); break;
+                case "datetime": indentStringPair.put(field, ossObject.getLastModified() == null ? "" :
                         DatetimeUtils.stringOf(ossObject.getLastModified())); break;
-                case "timestamp": builder.append(ossObject.getLastModified() == null ? 0 :
+                case "timestamp": indentStringPair.put(field, ossObject.getLastModified() == null ? 0 :
                         ossObject.getLastModified().getTime()); break;
-                case "type": builder.append(ossObject.getStorageClass()); break;
-                case "owner": if (ossObject.getOwner() != null) builder.append(ossObject.getOwner().getDisplayName()); break;
+                case "type": indentStringPair.put(field, ossObject.getStorageClass()); break;
+                case "owner": if (ossObject.getOwner() != null) indentStringPair.put(field, ossObject.getOwner().getDisplayName()); break;
                 default: throw new IOException(String.format("OSSObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(S3ObjectSummary s3Object, List<String> fields) throws IOException {
         if (s3Object == null || s3Object.getKey() == null) throw new IOException("empty s3ObjectSummary or key.");
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             switch (field) {
                 case "key": String key = s3Object.getKey();
                     if (key == null) throw new IOException("object key is empty");
-                    int num = key.split(FileUtils.pathSeparator).length;
-                    if (num > 1) parentPath.append(key, 0, key.lastIndexOf(FileUtils.pathSeparator));
-                    else parentPath.append("/");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                    stringBuilder.append(key.replace(parentPath, "").substring(1));
-                    builder.append(stringBuilder.toString()).append("\t");
-                    parentPath.append("-||-"); break;
-                case "etag": builder.append(s3Object.getETag()); break;
-                case "size": builder.append(s3Object.getSize()); break;
-                case "datetime": builder.append(s3Object.getLastModified() == null ? "" :
+                    indentStringPair.putKey(field, key); break;
+                case "etag": indentStringPair.put(field, s3Object.getETag()); break;
+                case "size": indentStringPair.put(field, s3Object.getSize()); break;
+                case "datetime": indentStringPair.put(field, s3Object.getLastModified() == null ? "" :
                         DatetimeUtils.stringOf(s3Object.getLastModified())); break;
-                case "timestamp": builder.append(s3Object.getLastModified() == null ? 0 :
+                case "timestamp": indentStringPair.put(field, s3Object.getLastModified() == null ? 0 :
                         s3Object.getLastModified().getTime()); break;
-                case "type": builder.append(s3Object.getStorageClass()); break;
-                case "owner": if (s3Object.getOwner() != null) builder.append(s3Object.getOwner().getDisplayName()); break;
+                case "type": indentStringPair.put(field, s3Object.getStorageClass()); break;
+                case "owner": if (s3Object.getOwner() != null) indentStringPair.put(field, s3Object.getOwner().getDisplayName()); break;
                 default: throw new IOException(String.format("S3Object doesn't have field: %s, must use fields' standard name", field));
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(FileItem fileItem, List<String> fields) throws IOException {
         if (fileItem == null || fileItem.key == null) throw new IOException("empty fileItem or key.");
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             switch (field) {
                 case "key": if (fileItem.key == null) throw new IOException("object key is empty");
-                    int num = fileItem.key.split(FileUtils.pathSeparator).length;
-                    if (num > 1) parentPath.append(fileItem.key, 0, fileItem.key.lastIndexOf(FileUtils.pathSeparator));
-                    else parentPath.append("/");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                    stringBuilder.append(fileItem.key.replace(parentPath, "").substring(1));
-                    builder.append(stringBuilder.toString()).append("\t");
-                    parentPath.append("-||-"); break;
-                case "size": builder.append(fileItem.size); break;
-                case "datetime": builder.append(DatetimeUtils.datetimeOf(fileItem.lastModified).toString()); break;
-                case "timestamp": builder.append(fileItem.lastModified); break;
-                case "mime": builder.append(fileItem.attribute); break;
+                    indentStringPair.putKey(field, fileItem.key); break;
+                case "size": indentStringPair.put(field, fileItem.size); break;
+                case "datetime": indentStringPair.put(field, DatetimeUtils.datetimeOf(fileItem.lastModified).toString()); break;
+                case "timestamp": indentStringPair.put(field, fileItem.lastModified); break;
+                case "mime": indentStringPair.put(field, fileItem.attribute); break;
                 default: throw new IOException(String.format("upyun FileItem doesn't have field: %s, must use fields' standard name", field));
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(ObsObject obsObject, List<String> fields) throws IOException {
         if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty fileItem or key.");
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             switch (field) {
                 case "key": String key = obsObject.getObjectKey();
                     if (key == null) throw new IOException("object key is empty");
-                    int num = key.split(FileUtils.pathSeparator).length;
-                    if (num > 1) parentPath.append(key, 0, key.lastIndexOf(FileUtils.pathSeparator));
-                    else parentPath.append("/");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                    stringBuilder.append(key.replace(parentPath, "").substring(1));
-                    builder.append(stringBuilder.toString()).append("\t");
-                    parentPath.append("-||-"); break;
+                    indentStringPair.putKey(field, key); break;
                 case "etag": String etag = obsObject.getMetadata() == null ? "" : obsObject.getMetadata().getEtag();
                     if (etag.startsWith("\"")) {
                         etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
                     }
-                    builder.append(etag); break;
-                case "size": builder.append(obsObject.getMetadata() == null ? 0 :
+                    indentStringPair.put(field, etag); break;
+                case "size": indentStringPair.put(field, obsObject.getMetadata() == null ? 0 :
                         obsObject.getMetadata().getContentLength()); break;
-                case "datetime": builder.append(obsObject.getMetadata() == null ? "" :
+                case "datetime": indentStringPair.put(field, obsObject.getMetadata() == null ? "" :
                         obsObject.getMetadata().getLastModified() == null ? "" :
                                 DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
-                case "timestamp": builder.append(obsObject.getMetadata() == null ? 0 :
+                case "timestamp": indentStringPair.put(field, obsObject.getMetadata() == null ? 0 :
                         obsObject.getMetadata().getLastModified() == null ? 0 :
                                 obsObject.getMetadata().getLastModified().getTime()); break;
-                case "mime": builder.append(obsObject.getMetadata() == null ? "" :
+                case "mime": indentStringPair.put(field, obsObject.getMetadata() == null ? "" :
                         obsObject.getMetadata().getContentType()); break;
-                case "type": builder.append(obsObject.getMetadata() == null ? "" :
+                case "type": indentStringPair.put(field, obsObject.getMetadata() == null ? "" :
                         obsObject.getMetadata().getObjectStorageClass() == null ? "" :
                                 obsObject.getMetadata().getObjectStorageClass().getCode()); break;
-                case "md5": builder.append(obsObject.getMetadata() == null ? "" :
+                case "md5": indentStringPair.put(field, obsObject.getMetadata() == null ? "" :
                         obsObject.getMetadata().getContentMd5()); break;
-                case "owner": if (obsObject.getOwner() != null) builder.append(obsObject.getOwner().getId()); break;
+                case "owner": if (obsObject.getOwner() != null) indentStringPair.put(field, obsObject.getOwner().getId()); break;
                 default: throw new IOException(String.format("ObsObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(BosObjectSummary bosObject, List<String> fields) throws IOException {
         if (bosObject == null || bosObject.getKey() == null) throw new IOException("empty bosObject or key.");
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             switch (field) {
                 case "key": String key = bosObject.getKey();
                     if (key == null) throw new IOException("object key is empty");
-                    int num = key.split(FileUtils.pathSeparator).length;
-                    if (num > 1) parentPath.append(key, 0, key.lastIndexOf(FileUtils.pathSeparator));
-                    else parentPath.append("/");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                    stringBuilder.append(key.replace(parentPath, "").substring(1));
-                    builder.append(stringBuilder.toString()).append("\t");
-                    parentPath.append("-||-"); break;
-                case "etag": builder.append(bosObject.getETag()); break;
-                case "size": builder.append(bosObject.getSize()); break;
-                case "datetime": builder.append(bosObject.getLastModified() == null ? "" :
+                    indentStringPair.putKey(field, key); break;
+                case "etag": indentStringPair.put(field, bosObject.getETag()); break;
+                case "size": indentStringPair.put(field, bosObject.getSize()); break;
+                case "datetime": indentStringPair.put(field, bosObject.getLastModified() == null ? "" :
                         DatetimeUtils.stringOf(bosObject.getLastModified())); break;
-                case "timestamp": builder.append(bosObject.getLastModified() == null ? 0 :
+                case "timestamp": indentStringPair.put(field, bosObject.getLastModified() == null ? 0 :
                         bosObject.getLastModified().getTime()); break;
-                case "type": builder.append(bosObject.getStorageClass()); break;
-                case "owner": if (bosObject.getOwner() != null) builder.append(bosObject.getOwner().getId()); break;
+                case "type": indentStringPair.put(field, bosObject.getStorageClass()); break;
+                case "owner": if (bosObject.getOwner() != null) indentStringPair.put(field, bosObject.getOwner().getId()); break;
                 default: throw new IOException(String.format("BosObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(Map<String, String> line, List<String> fields) throws IOException {
         if (line == null) throw new IOException("empty string map.");
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         String value;
         for (String field : fields) {
             value = line.get(field);
             if ("key".equals(field)) {
                 if (value == null) throw new IOException("object key is empty");
-                int num = value.split(FileUtils.pathSeparator).length;
-                if (num > 1) parentPath.append(value, 0, value.lastIndexOf(FileUtils.pathSeparator));
-                else parentPath.append("/");
-                StringBuilder stringBuilder = new StringBuilder();
-                for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                stringBuilder.append(value.replace(parentPath, "").substring(1));
-                builder.append(stringBuilder.toString()).append("\t");
-                parentPath.append("-||-");
+                indentStringPair.putKey(field, value); break;
             } else {
-                builder.append(value).append("\t");
+                indentStringPair.put(field, value);
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(com.qiniu.model.local.FileInfo fileInfo, List<String> fields, int initPathSize) throws IOException {
@@ -867,7 +805,7 @@ public final class ConvertingUtils {
 //                            parentPath.append(fileInfo.parentPath).append("-||-");
 //                        }
                         break;
-                    case "filepath": StringBuilder stringBuilder = new StringBuilder(fileInfo.filepath).append("-||-");
+                    case "filepath": StringBuilder stringBuilder = new StringBuilder(fileInfo.filepath).append("\t|");
                         for (int j = 0; j < num; j++) stringBuilder.append("\t");
                         stringBuilder.append(fileInfo.filepath.replace(fileInfo.parentPath, "").substring(1));
                         builder.append(stringBuilder.toString()).append("\t"); break;
@@ -890,27 +828,21 @@ public final class ConvertingUtils {
     public static String toStringWithIndent(JsonObject json, List<String> fields) throws IOException {
         if (json == null) throw new IOException("empty jsonObject.");
         JsonElement jsonElement;
-        StringBuilder builder = new StringBuilder();
-        StringBuilder parentPath = new StringBuilder();
+        String value;
+        IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             jsonElement = json.get(field);
             if ("key".equals(field)) {
                 String key = JsonUtils.toString(jsonElement);
                 if (key == null) throw new IOException("object key is empty");
-                int num = key.split(FileUtils.pathSeparator).length;
-                if (num > 1) parentPath.append(key, 0, key.lastIndexOf(FileUtils.pathSeparator));
-                else parentPath.append("/");
-                StringBuilder stringBuilder = new StringBuilder();
-                for (int j = 0; j < num; j++) stringBuilder.append("\t");
-                stringBuilder.append(key.replace(parentPath, "").substring(1));
-                builder.append(stringBuilder.toString()).append("\t");
-                parentPath.append("-||-");
+                indentStringPair.putKey(field, key); break;
             } else {
-                builder.append(JsonUtils.toString(jsonElement)).append("\t");
+                value = JsonUtils.toString(jsonElement);
+                indentStringPair.put(field, value);
             }
         }
-        if (builder.length() == 0) throw new IOException("empty result string.");
-        return parentPath.append(builder.deleteCharAt(builder.length() - 1)).toString();
+        if (indentStringPair.size() == 0) throw new IOException("empty indent string.");
+        return indentStringPair.getProtoEntity();
     }
 
     public static String toStringWithIndent(String line, List<String> fields) throws IOException {

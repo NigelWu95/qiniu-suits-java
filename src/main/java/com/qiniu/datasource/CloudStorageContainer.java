@@ -181,7 +181,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
     void recordListerByPrefix(String prefix) {
         JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
         try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-        String record = JsonUtils.toString(json);
+        String record = json == null ? "" : json.toString();
         procedureLogger.info(record);
         progressMap.put(prefix, record);
     }
@@ -362,7 +362,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                     } else if (point.compareTo(firstPoint) < 0) {
                         point = firstPoint;
                         lister.setEndPrefix(startPrefix + firstPoint);
-                        lister.setLimit(1);
+                        lister.setLimit(2);
                     } else {
                         insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
                             put("marker", lister.getMarker());
@@ -373,7 +373,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                     point = firstPoint;
                     // 无 next 时直接将 lister 的结束位置设置到第一个预定义前
                     lister.setEndPrefix(startPrefix + firstPoint);
-                    lister.setLimit(1);
+                    lister.setLimit(2);
                 }
             } else {
                 return nextPoint(lister, true);
@@ -609,7 +609,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         // 在初始化时即做检查，hasAntiPrefixes 的情况下 prefixes 不可能为空，所以在 prefixes 为空时，hasAntiPrefixes 一定为 false
         if (prefixes == null || prefixes.size() == 0) {
             recordListerByPrefix("");
-            startLister = generateLister("", 1);
+            startLister = generateLister("", 2);
             startLister.setLimit(unitLen);
             if (threads > 1) {
                 String finalPoint = nextPoint(startLister, false);
@@ -624,7 +624,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 recordListerByPrefix("");
                 if ("".equals(prefixes.get(0))) prefixes.remove(0);
                 insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
-                startLister = generateLister("", 1);
+                startLister = generateLister("", 2);
                 startLister.setLimit(unitLen);
                 prefixesMap.remove("");
             }

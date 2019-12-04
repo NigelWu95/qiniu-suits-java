@@ -64,6 +64,8 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
         IStringFormat<FileInfo> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
+        } else if ("yaml".equals(saveFormat)) {
+            stringFormatter = line -> ConvertingUtils.toStringWithIndent(line, fields);
         } else {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }

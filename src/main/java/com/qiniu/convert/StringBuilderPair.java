@@ -13,8 +13,14 @@ public class StringBuilderPair implements KeyValuePair<String, String> {
     }
 
     @Override
-    public void put(String key, String value) {
+    public void putKey(String key, String value) {
         stringBuilder.append(separator).append(value.replace("\n", "%0a").replace("\r", "%0d"));
+        size++;
+    }
+
+    @Override
+    public void put(String key, String value) {
+        stringBuilder.append(separator).append(value);
         size++;
     }
 

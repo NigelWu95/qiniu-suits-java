@@ -42,13 +42,15 @@ public abstract class DatasourceActor {
     protected ConcurrentMap<String, IResultOutput> saverMap;
     protected ConcurrentMap<String, ILineProcess> processorMap;
     protected boolean stopped;
-    protected ConcurrentMap<String, String> progressMap = new ConcurrentHashMap<>();
+    protected ConcurrentMap<String, String> progressMap;
 
-    public DatasourceActor(int unitLen, int threads) {
+    public DatasourceActor(int unitLen, int threads) throws IOException {
+        if (unitLen <= 1) throw new IOException("unitLen must bigger than 1.");
         this.unitLen = unitLen;
         this.threads = threads;
         saverMap = new ConcurrentHashMap<>(threads);
         processorMap = new ConcurrentHashMap<>(threads);
+        progressMap = new ConcurrentHashMap<>();
     }
 
     public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields)

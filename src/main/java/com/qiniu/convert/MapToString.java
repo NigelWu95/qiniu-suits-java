@@ -18,6 +18,8 @@ public class MapToString extends Converter<Map<String, String>, String> {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(","));
         } else if ("tab".equals(format)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(separator));
+        } else if ("yaml".equals(format)) {
+            stringFormatter = line -> ConvertingUtils.toStringWithIndent(line, fields);
         } else {
             throw new IOException("please check your format for map to string.");
         }

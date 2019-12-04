@@ -30,6 +30,10 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     protected ILineProcess<T> processor; // 定义的资源处理器
 //    protected List<ILocalFileLister<E, File>> listerList = new ArrayList<>(threads);
     protected ConcurrentMap<String, ILocalFileLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
+    protected boolean withEtag;
+    protected boolean withDatetime;
+    protected boolean withMime;
+    protected boolean withParent;
     private ILocalFileLister<E, File> startFileInfoLister = null;
 
     public FileContainer(String path, Map<String, Map<String, String>> prefixesMap, List<String> antiDirectories, boolean keepDir,
@@ -37,10 +41,10 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         super(unitLen, threads);
         this.path = path;
         this.keepDir = keepDir;
+        setIndexMapWithDefault(indexMap);
         setAntiDirectories(antiDirectories);
         setTransferPathAndLeftTrimSize();
         setDirectoriesAndMap(prefixesMap);
-        setIndexMapWithDefault(indexMap);
         if (fields != null && fields.size() > 0) this.fields = fields;
         else this.fields = ConvertingUtils.getOrderedFields(this.indexMap, null);
         // default save parameters，默认全记录保存
@@ -167,6 +171,10 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             }
             this.indexMap = indexMap;
         }
+        withEtag = this.indexMap.containsKey("etag");
+        withDatetime = this.indexMap.containsKey("datetime");
+        withMime = this.indexMap.containsKey("mime");
+        withParent = this.indexMap.containsKey("parent");
     }
 
     public void setProcessor(ILineProcess<T> processor) {

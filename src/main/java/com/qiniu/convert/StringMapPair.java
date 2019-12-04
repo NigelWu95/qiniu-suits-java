@@ -10,6 +10,11 @@ public class StringMapPair implements KeyValuePair<String, Map<String, String>> 
     private Map<String, String> stringMap = new HashMap<>();
 
     @Override
+    public void putKey(String key, String value) {
+        stringMap.put(key, value);
+    }
+
+    @Override
     public void put(String key, String value) {
         stringMap.put(key, value);
     }
