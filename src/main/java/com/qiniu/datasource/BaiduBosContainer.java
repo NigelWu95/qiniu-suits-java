@@ -17,12 +17,11 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class BaiduBosContainer extends CloudStorageContainer<BosObjectSummary, BufferedWriter, Map<String, String>> {
+public class BaiduBosContainer extends CloudStorageContainer<BosObjectSummary, Map<String, String>> {
 
 //    private String accessKeyId;
 //    private String accessKeySecret;
@@ -86,7 +85,7 @@ public class BaiduBosContainer extends CloudStorageContainer<BosObjectSummary, B
     }
 
     @Override
-    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

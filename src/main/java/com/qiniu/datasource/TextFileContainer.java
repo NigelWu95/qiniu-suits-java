@@ -14,7 +14,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public class TextFileContainer extends TextContainer<File, BufferedWriter, Map<String, String>> {
+public class TextFileContainer extends TextContainer<File, Map<String, String>> {
 
     public TextFileContainer(String filePath, String parseFormat, String separator, Map<String, Map<String, String>> urisMap,
                              List<String> antiPrefixes, String addKeyPrefix, String rmKeyPrefix, Map<String, String> indexMap,
@@ -38,7 +38,7 @@ public class TextFileContainer extends TextContainer<File, BufferedWriter, Map<S
     }
 
     @Override
-    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

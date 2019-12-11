@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor implements IDataSource<IStorageLister<E>, IResultOutput<W>, T> {
+public abstract class CloudStorageContainer<E, T> extends DatasourceActor implements IDataSource<IStorageLister<E>, IResultOutput, T> {
 
     protected String bucket;
     protected List<String> antiPrefixes;
@@ -184,7 +184,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(IStorageLister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+    public void export(IStorageLister<E> lister, IResultOutput saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
@@ -251,7 +251,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
     }
 
-    protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
+    protected abstract IResultOutput getNewResultSaver(String order) throws IOException;
 
     /**
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
@@ -261,7 +261,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         // 持久化结果标识信息
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
-        IResultOutput<W> saver = null;
+        IResultOutput saver = null;
         ILineProcess<T> lineProcessor = null;
         try {
             saver = getNewResultSaver(orderStr);

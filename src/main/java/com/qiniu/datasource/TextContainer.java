@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-public abstract class TextContainer<S, W, T> extends DatasourceActor implements IDataSource<ITextReader<S>, IResultOutput<W>, T> {
+public abstract class TextContainer<S, T> extends DatasourceActor implements IDataSource<ITextReader<S>, IResultOutput, T> {
 
     protected String path;
     protected String parse;
@@ -115,7 +115,7 @@ public abstract class TextContainer<S, W, T> extends DatasourceActor implements 
         recordLister(prefix, record);
     }
 
-    public void export(ITextReader<S> reader, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+    public void export(ITextReader<S> reader, IResultOutput saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<String, T> converter = getNewConverter();
         ITypeConvert<T, String> stringConverter = null;
         if (saveTotal) {
@@ -173,13 +173,13 @@ public abstract class TextContainer<S, W, T> extends DatasourceActor implements 
         }
     }
 
-    protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
+    protected abstract IResultOutput getNewResultSaver(String order) throws IOException;
 
     private void reading(ITextReader<S> reader) {
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
-        IResultOutput<W> saver = null;
+        IResultOutput saver = null;
         try {
             saver = getNewResultSaver(orderStr);
             saverMap.put(orderStr, saver);

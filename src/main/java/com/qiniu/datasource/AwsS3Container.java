@@ -19,12 +19,11 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.ConvertingUtils;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, BufferedWriter, Map<String, String>> {
+public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Map<String, String>> {
 
 //    private String accessKeyId;
 //    private String secretKey;
@@ -103,7 +102,7 @@ public class AwsS3Container extends CloudStorageContainer<S3ObjectSummary, Buffe
     }
 
     @Override
-    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

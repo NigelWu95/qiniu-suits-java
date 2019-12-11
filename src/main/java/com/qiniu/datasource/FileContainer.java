@@ -16,7 +16,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public abstract class FileContainer<E, W, T> extends DatasourceActor implements IDataSource<IFileLister<E, File>, IResultOutput<W>, T> {
+public abstract class FileContainer<E, T> extends DatasourceActor implements IDataSource<IFileLister<E, File>, IResultOutput, T> {
 
     protected String path;
     protected boolean keepDir;
@@ -210,7 +210,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         return getLister(directory, start, end, unitLen);
     }
 
-    public void export(IFileLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+    public void export(IFileLister<E, File> lister, IResultOutput saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
@@ -265,13 +265,13 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
+    protected abstract IResultOutput getNewResultSaver(String order) throws IOException;
 
     private void listing(IFileLister<E, File> lister) {
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
-        IResultOutput<W> saver = null;
+        IResultOutput saver = null;
         try {
             saver = getNewResultSaver(orderStr);
             saverMap.put(orderStr, saver);

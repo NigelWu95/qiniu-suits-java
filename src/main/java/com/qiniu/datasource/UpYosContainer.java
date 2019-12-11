@@ -17,7 +17,6 @@ import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.FileUtils;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -25,7 +24,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWriter, Map<String, String>> {
+public class UpYosContainer extends CloudStorageContainer<FileItem, Map<String, String>> {
 
     private String username;
     private String password;
@@ -82,7 +81,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, BufferedWrit
     }
 
     @Override
-    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

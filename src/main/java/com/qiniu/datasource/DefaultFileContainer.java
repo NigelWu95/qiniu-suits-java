@@ -6,12 +6,11 @@ import com.qiniu.model.local.FileInfo;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.util.ConvertingUtils;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter, Map<String, String>> {
+public class DefaultFileContainer extends FileContainer<FileInfo, Map<String, String>> {
 
     public DefaultFileContainer(String path, Map<String, Map<String, String>> directoriesMap,
                                 List<String> antiDirectories, boolean keepDir, Map<String, String> indexMap,
@@ -53,7 +52,7 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
     }
 
     @Override
-    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

@@ -13,9 +13,7 @@ import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Base64;
@@ -671,6 +669,20 @@ public class CommonParams {
                 break;
             default: throw new IOException("unsupported private-type: " + privateType);
         }
+    }
+
+    private Map<String, String> fromProcedureLog(String logFile) throws IOException {
+        File file = new File(logFile);
+        FileReader fileReader = new FileReader(file);
+        BufferedReader bufferedReader = new BufferedReader(fileReader);
+        Map<String, String> map = new HashMap<>();
+        int index;
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            index = line.indexOf(":{");
+            map.put(line.substring(0, index), line.substring(index));
+        }
+        return map;
     }
 
     private void setPathConfigMap(String jsonConfigPath, String subPaths, boolean withMarker, boolean withEnd) throws Exception {
