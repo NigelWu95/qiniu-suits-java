@@ -269,6 +269,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
             // 多线程情况下不要直接使用传入的 processor，因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             if (processor != null) {
                 lineProcessor = processor.clone();
+                lineProcessor.changeSaveOrder(orderStr);
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);

@@ -38,6 +38,18 @@ public class FileSaveMapper implements IResultOutput {
         for (String targetWriter : "success,error".split(",")) preAddWriter(targetWriter);
     }
 
+    public void changePrefixAndSuffix(String prefix, String suffix) {
+        if (prefix != null && !"".equals(prefix)) {
+            this.prefix = String.join("", prefix, "_");
+        }
+        if (suffix != null && !"".equals(suffix)) {
+            this.suffix = String.join("", suffix, "_");
+        }
+        if (writerMap.size() == 0) {
+            for (String targetWriter : "success,error".split(",")) preAddWriter(targetWriter);
+        }
+    }
+
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }

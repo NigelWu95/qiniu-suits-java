@@ -18,6 +18,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     private boolean strictError; // 严格错误模式，如果不匹配就抛出异常或记录错误
     private ILineProcess<T> nextProcessor;
     private String savePath;
+    protected boolean autoIncrease;
     private AtomicInteger saveIndex;
     private FileSaveMapper fileSaveMapper;
     private ITypeConvert<T, String> typeConverter;
@@ -88,6 +89,10 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this.strictError = strictError;
     }
 
+    public void setAutoIncrease(boolean autoIncrease) {
+        this.autoIncrease = autoIncrease;
+    }
+
     public void setNextProcessor(ILineProcess<T> nextProcessor) {
         this.nextProcessor = nextProcessor;
         if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_after_" + processName;
@@ -103,13 +108,23 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         if (nextProcessor != null) mapFilter.nextProcessor = nextProcessor.clone();
         if (fileSaveMapper == null) return mapFilter;
         try {
-            mapFilter.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
+            mapFilter.fileSaveMapper = autoIncrease ?
+                    new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1))) :
+                    new FileSaveMapper(savePath);
             mapFilter.fileSaveMapper.preAddWriter("not_match");
             mapFilter.typeConverter = newPersistConverter();
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return mapFilter;
+    }
+
+    public void changeSaveOrder(String order) throws IOException {
+        try {
+            this.fileSaveMapper.changePrefixAndSuffix(processName, order);
+        } catch (NullPointerException e) {
+            throw new IOException("instance without savePath can not call changeSaveOrder method.");
+        }
     }
 
     public String processLine(T line) throws IOException {

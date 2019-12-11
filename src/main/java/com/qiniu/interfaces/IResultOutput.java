@@ -4,6 +4,8 @@ import java.io.*;
 
 public interface IResultOutput {
 
+    void changePrefixAndSuffix(String prefix, String suffix);
+
     void setRetryTimes(int retryTimes);
 
     String getSavePath();

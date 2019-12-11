@@ -277,6 +277,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             saverMap.put(orderStr, saver);
             if (processor != null) {
                 lineProcessor = processor.clone();
+                lineProcessor.changeSaveOrder(orderStr);
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);

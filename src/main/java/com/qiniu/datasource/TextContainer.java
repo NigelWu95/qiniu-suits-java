@@ -185,6 +185,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
             saverMap.put(orderStr, saver);
             if (processor != null) {
                 lineProcessor = processor.clone();
+                lineProcessor.changeSaveOrder(orderStr);
                 processorMap.put(orderStr, lineProcessor);
             }
             export(reader, saver, lineProcessor);
