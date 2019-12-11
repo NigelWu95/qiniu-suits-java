@@ -2,7 +2,7 @@ package com.qiniu.interfaces;
 
 import java.util.List;
 
-public interface ILocalFileLister<E, D> extends ILister<E> {
+public interface IFileLister<E, D> extends ILister<E> {
 
     String getName();
 
@@ -10,5 +10,5 @@ public interface ILocalFileLister<E, D> extends ILister<E> {
 
     List<D> getDirectories();
 
-    List<E> getRemainedFiles();
+    List<E> getRemainedItems();
 }

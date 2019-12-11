@@ -1,7 +1,5 @@
 package com.qiniu.datasource;
 
-import com.google.gson.JsonObject;
-import com.qiniu.common.JsonRecorder;
 import com.qiniu.interfaces.*;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.util.*;
@@ -51,7 +49,7 @@ public abstract class DatasourceActor {
         this.threads = threads;
         saverMap = new ConcurrentHashMap<>(threads);
         processorMap = new ConcurrentHashMap<>(threads);
-        progressMap = new ConcurrentHashMap<>();
+        progressMap = new ConcurrentHashMap<>(threads);
     }
 
     public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields)
@@ -70,8 +68,6 @@ public abstract class DatasourceActor {
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
-
-    JsonRecorder recorder = new JsonRecorder();
 
     void recordLister(String key, String record) {
         try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}

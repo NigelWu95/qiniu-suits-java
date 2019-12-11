@@ -80,10 +80,10 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             prefixRight = true;
             if (hasAntiPrefixes && !"upyun".equals(getSourceName())) prefixes = originPrefixList;
         } else {
-            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
+            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contain null.");
             this.prefixesMap = new ConcurrentHashMap<>(threads);
             this.prefixesMap.putAll(prefixesMap);
-            prefixes = prefixesMap.keySet().stream().sorted().collect(Collectors.toList());
+            prefixes = prefixesMap.keySet().stream().sorted().distinct().collect(Collectors.toList());
             int size = prefixes.size();
             Iterator<String> iterator = prefixes.iterator();
             String temp = iterator.next();
@@ -98,12 +98,13 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                     marker = "".equals(value.get("marker")) ? null : value.get("marker");
                 }
                 if (start == null && end == null && marker == null) throw new IOException("prefixes can not only be empty string(\"\")");
+            } else {
+                end = value == null ? null : value.get("end");
             }
             while (iterator.hasNext() && size > 0) {
                 size--;
                 String prefix = iterator.next();
                 if (prefix.startsWith(temp)) {
-                    end = value == null ? null : value.get("end");
                     if (end == null || "".equals(end)) {
                         iterator.remove();
                         this.prefixesMap.remove(prefix);
@@ -113,6 +114,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 } else {
                     temp = prefix;
                     value = prefixesMap.get(temp);
+                    end = value == null ? null : value.get("end");
                 }
             }
         }
@@ -225,10 +227,10 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             }
             if (hasNext) {
                 json.addProperty("marker", lister.getMarker());
-                try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
                 record = json.toString();
-                procedureLogger.info("{}:{}", lister.getPrefix(), record);
                 progressMap.put(lister.getPrefix(), record);
+                try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+                procedureLogger.info("{}:{}", lister.getPrefix(), record);
             }
             if (map != null) map.put("start", lister.currentEndKey());
             if (stopped) break;
@@ -476,7 +478,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                     if(!iLister.hasNext()) iterator.remove();
                 }
                 if (listerList.size() > 0 && listerList.size() <= tiny) {
-                    rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...\n", listerList.size(), cValue);
+                    rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...", listerList.size(), cValue);
                     for (IStorageLister<E> lister : listerList) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         prefix = lister.getPrefix();
@@ -490,7 +492,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                             start = lister.currentEndKey();
                             if (start != null) endMap.put("start", start);
                         }
-                        rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}\n", prefix, nextMarker, endMap);
+                        rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}", prefix, nextMarker, endMap);
                         // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
                         if (nextMarker == null || nextMarker.isEmpty()) continue;
                         if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
@@ -626,7 +628,8 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             }
         }
         try {
-            if (!hasAntiPrefixes && (prefixes == null || prefixes.size() == 0)) {
+            if (prefixes == null || prefixes.size() == 0) {
+                if (hasAntiPrefixes) rootLogger.info("there are no prefixes to check anti-prefixes.");
                 if (startLister.currents().size() > 0 || startLister.hasNext()) {
                     listing(startLister);
                 } else {
@@ -635,10 +638,8 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 }
             } else {
                 if (hasAntiPrefixes) {
-                    if (prefixes != null) {
-                        prefixes = prefixes.parallelStream().filter(this::checkPrefix)
-                                .peek(this::recordListerByPrefix).collect(Collectors.toList());
-                    }
+                    prefixes = prefixes.parallelStream().filter(this::checkPrefix)
+                            .peek(this::recordListerByPrefix).collect(Collectors.toList());
                 } else {
                     prefixes.parallelStream().forEach(this::recordListerByPrefix);
                 }

@@ -2,20 +2,24 @@ package com.qiniu.datasource;
 
 import com.qiniu.convert.LineToMap;
 import com.qiniu.convert.MapToString;
-import com.qiniu.interfaces.IReader;
+import com.qiniu.interfaces.ITextReader;
 import com.qiniu.interfaces.ITypeConvert;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.interfaces.IResultOutput;
+import com.qiniu.util.FileUtils;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
-public class TextFileContainer extends TextContainer<String, BufferedWriter, Map<String, String>> {
+public class TextFileContainer extends TextContainer<File, BufferedWriter, Map<String, String>> {
 
-    public TextFileContainer(String filePath, String parseFormat, String separator, String addKeyPrefix,
-                             String rmKeyPrefix, Map<String, Map<String, String>> linesMap, Map<String, String> indexMap,
+    public TextFileContainer(String filePath, String parseFormat, String separator, Map<String, Map<String, String>> urisMap,
+                             List<String> antiPrefixes, String addKeyPrefix, String rmKeyPrefix, Map<String, String> indexMap,
                              List<String> fields, int unitLen, int threads) throws IOException {
-        super(filePath, parseFormat, separator, addKeyPrefix, rmKeyPrefix, linesMap, indexMap, fields, unitLen, threads);
+        super(filePath, parseFormat, separator, urisMap, antiPrefixes, addKeyPrefix, rmKeyPrefix, indexMap, fields, unitLen, threads);
     }
 
     @Override
@@ -39,7 +43,64 @@ public class TextFileContainer extends TextContainer<String, BufferedWriter, Map
     }
 
     @Override
-    protected IReader<String> getReader(File file, String start, int unitLen) throws IOException {
-        return new TextFileReader(file, start, unitLen);
+    protected ITextReader<File> getReader(String name, String start, int unitLen) throws IOException {
+        File file = new File(name);
+        if (!file.exists()) file = new File(path, name);
+        if (file.isDirectory()) {
+            throw new IOException(name + " is a directory, but it should be a file.");
+        } else if (file.exists()) {
+            return new TextFileReader(file, start, unitLen);
+        } else {
+            throw new IOException(name + " is not exists.");
+        }
+    }
+
+    private Lock lock = new ReentrantLock();
+
+    @Override
+    protected List<ITextReader<File>> getReaders(String path) throws IOException {
+        File file = new File(path);
+        List<File> files = new ArrayList<>();
+        List<File> directories = new ArrayList<>();
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                directories.add(file);
+                while (directories.size() > 0) {
+                    directories = directories.parallelStream().map(directory -> {
+                        File[] listFiles = directory.listFiles();
+                        if (listFiles == null) return null;
+                        List<File> fs = new ArrayList<>(listFiles.length);
+                        List<File> dirs = new ArrayList<>(listFiles.length);
+                        for (File f : listFiles) {
+                            if (f.isDirectory()) {
+                                dirs.add(f);
+                            } else {
+                                String type = FileUtils.contentType(f);
+                                if (type.startsWith("text") || type.equals("application/octet-stream")) {
+                                    fs.add(f);
+                                }
+                            }
+                        }
+                        while (!lock.tryLock());
+                        files.addAll(fs);
+                        lock.unlock();
+                        return dirs;
+                    }).filter(Objects::nonNull)
+                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(new ArrayList<>());
+                }
+            } else {
+                files.add(file);
+            }
+        } else {
+            throw new IOException("");
+        }
+        return files.parallelStream().map(file1 -> {
+            try {
+                return new TextFileReader(file, null, unitLen);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }).filter(Objects::nonNull).peek(reader -> recordListerByUri(reader.getName())).collect(Collectors.toList());
     }
 }

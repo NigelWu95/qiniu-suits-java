@@ -16,7 +16,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public abstract class FileContainer<E, W, T> extends DatasourceActor implements IDataSource<ILocalFileLister<E, File>, IResultOutput<W>, T> {
+public abstract class FileContainer<E, W, T> extends DatasourceActor implements IDataSource<IFileLister<E, File>, IResultOutput<W>, T> {
 
     protected String path;
     protected boolean keepDir;
@@ -26,33 +26,31 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     protected int initPathSize;
     protected List<String> antiPrefixes;
     protected boolean hasAntiPrefixes = false;
-    protected Map<String, Map<String, String>> prefixesMap;
+    protected Map<String, Map<String, String>> directoriesMap;
     protected List<File> directories;
     protected ILineProcess<T> processor; // 定义的资源处理器
-//    protected List<ILocalFileLister<E, File>> listerList = new ArrayList<>(threads);
-    protected ConcurrentMap<String, ILocalFileLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
+    protected ConcurrentMap<String, IFileLister<E, File>> listerMap = new ConcurrentHashMap<>(threads);
     protected boolean withEtag;
     protected boolean withDatetime;
     protected boolean withMime;
     protected boolean withParent;
-    private ILocalFileLister<E, File> startFileInfoLister = null;
 
-    public FileContainer(String path, Map<String, Map<String, String>> prefixesMap, List<String> antiDirectories, boolean keepDir,
+    public FileContainer(String path, Map<String, Map<String, String>> directoriesMap, List<String> antiPrefixes, boolean keepDir,
                          Map<String, String> indexMap, List<String> fields, int unitLen, int threads) throws IOException {
         super(unitLen, threads);
         this.path = path;
         this.keepDir = keepDir;
         setIndexMapWithDefault(indexMap);
-        setAntiDirectories(antiDirectories);
+        setAntiPrefixes(antiPrefixes);
         setTransferPathAndLeftTrimSize();
-        setDirectoriesAndMap(prefixesMap);
+        setDirectoriesAndMap(directoriesMap);
         if (fields != null && fields.size() > 0) this.fields = fields;
         else this.fields = ConvertingUtils.getOrderedFields(this.indexMap, null);
         // default save parameters，默认全记录保存
         setSaveOptions(true, "result", "tab", "\t", null);
     }
 
-    private void setAntiDirectories(List<String> antiPrefixes) {
+    private void setAntiPrefixes(List<String> antiPrefixes) {
         if (antiPrefixes != null && antiPrefixes.size() > 0) {
             hasAntiPrefixes = true;
             this.antiPrefixes = antiPrefixes.stream().sorted().collect(Collectors.toList());
@@ -74,95 +72,87 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 path.endsWith(FileUtils.pathSeparator + ".") ||
                 path.endsWith(FileUtils.pathSeparator + "..")) {
             throw new IOException("please set straight path, can not contain \"/..\" or \"/.\".");
-        } else if (path.startsWith(FileUtils.userHomeStartPath)) {
-            realPath = String.join("", FileUtils.userHome, path.substring(1));
-            transferPath = "~";
-            leftTrimSize = FileUtils.userHome.length();
         } else {
-            realPath = path;
-            if (path.startsWith(FileUtils.parentPath) || "..".equals(path)) {
-                transferPath = "";
-                leftTrimSize = 3;
-            } else if (path.startsWith(FileUtils.currentPath) || ".".equals(path)) {
-                transferPath = "";
-                leftTrimSize = 2;
+            if (path.contains("\\~")) path = path.replace("\\~", "~");
+            if (path.endsWith(FileUtils.pathSeparator)) path = path.substring(0, path.length() - 1);
+            if (path.startsWith(FileUtils.userHomeStartPath)) {
+                realPath = String.join("", FileUtils.userHome, path.substring(1));
+                transferPath = "~";
+                leftTrimSize = FileUtils.userHome.length();
+            } else {
+                if (path.startsWith(FileUtils.parentPath) || "..".equals(path)) {
+                    realPath = new File(path).getCanonicalPath();
+                    transferPath = "..";
+                    leftTrimSize = new File("..").getCanonicalPath().length();
+                } else if (path.startsWith(FileUtils.currentPath) || ".".equals(path)) {
+                    realPath = new File(path).getCanonicalPath();
+                    transferPath = ".";
+                    leftTrimSize = new File(".").getCanonicalPath().length();
+                } else {
+                    realPath = path;
+                }
             }
-        }
-        if (realPath.contains("\\~")) realPath = realPath.replace("\\~", "~");
-        if (realPath.endsWith(FileUtils.pathSeparator)) {
-            realPath = realPath.substring(0, realPath.length() - 1);
         }
         initPathSize = realPath.split(FileUtils.pathSeparator).length;
     }
 
-    protected abstract String getNameWithoutParent(E e);
-
     private void recordListerByDirectory(String name) {
         String pName = name.split("-\\|\\|-")[0];
-        Map<String, String> map = prefixesMap.get(pName);
+        Map<String, String> map = directoriesMap.get(pName);
         String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
         recordLister(name, record);
     }
 
-    private void setDirectoriesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
-        if (prefixesMap == null || prefixesMap.size() <= 0) {
-            this.prefixesMap = new HashMap<>();
-            File originFile = new File(realPath);
-            recordListerByDirectory(realPath);
-            if (originFile.isDirectory()) startFileInfoLister = generateLister(originFile);
-            else startFileInfoLister = getLister(realPath);
-            directories = startFileInfoLister.getDirectories();
+    private void setDirectoriesAndMap(Map<String, Map<String, String>> directoriesMap) throws IOException {
+        if (directoriesMap == null || directoriesMap.size() <= 0) {
+            this.directoriesMap = new HashMap<>();
         } else {
-            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
-            this.prefixesMap = new HashMap<>(threads);
-            this.prefixesMap.putAll(prefixesMap);
-            int size = this.prefixesMap.size();
-            Iterator<String> iterator = this.prefixesMap.keySet().stream()
+            if (directoriesMap.containsKey(null)) throw new IOException("prefixes map can not contain null.");
+            this.directoriesMap = new HashMap<>(threads);
+            this.directoriesMap.putAll(directoriesMap);
+            int size = this.directoriesMap.size();
+            Iterator<String> iterator = this.directoriesMap.keySet().parallelStream()
                     .map(directory -> directory = directory.split("-\\|\\|-")[0])
-                    .sorted().collect(Collectors.toList()).iterator();
-            File originFile = new File(realPath);
-            recordListerByDirectory(realPath);
-            if (originFile.isDirectory()) startFileInfoLister = generateLister(originFile);
-            else startFileInfoLister = getLister(realPath);
+                    .sorted().distinct().collect(Collectors.toList()).iterator();
             String temp = iterator.next();
-            Map<String, String> value = prefixesMap.get(temp);
-            String end;
-            if (temp.equals("")) throw new IOException("file prefixes can not only be empty string(\"\")");
-            File file;
+            Map<String, String> value = directoriesMap.get(temp);
+            String end = value == null ? null : value.get("end");
             File tempFile = new File(temp);
+            if (!tempFile.exists()) tempFile = new File(realPath, temp);
+            if (tempFile.isDirectory()) directories.add(tempFile);
+            else throw new IOException(temp + " is not valid directory.");
+            String forCheckPath = tempFile.getCanonicalPath() + FileUtils.pathSeparator;
+            File file;
             while (iterator.hasNext() && size > 0) {
                 size--;
-                String prefix = iterator.next();
-                if (prefix == null || prefix.equals("")) {
-                    throw new IOException("file prefixes can not contains empty item");
+                String directory = iterator.next();
+                if (directory == null || directory.equals("")) {
+                    throw new IOException("directories can not contain empty item.");
                 } else {
-                    file = new File(realPath, prefix);
+                    file = new File(directory);
+                    if (!file.exists()) file = new File(realPath, directory);
                     if (file.isDirectory()) {
-                        if (tempFile.isDirectory()) {
-                            if (file.getPath().startsWith(tempFile.getPath() + FileUtils.pathSeparator)) {
-                                end = value == null ? null : value.get("end");
-                                if (end == null || "".equals(end)) {
-                                    iterator.remove();
-                                    this.prefixesMap.remove(prefix);
-                                } else if (end.compareTo(prefix) >= 0) {
-                                    throw new IOException(temp + "'s end can not be larger than " + prefix + " in " + prefixesMap);
-                                }
+                        if (file.getCanonicalPath().startsWith(forCheckPath)) {
+                            if (end == null || "".equals(end)) {
+                                iterator.remove();
+                                this.directoriesMap.remove(directory);
+                            } else if (end.compareTo(directory) >= 0) {
+                                throw new IOException(temp + "'s end can not be larger than " + directory + " in " + directoriesMap);
+                            } else {
+                                directories.add(file);
                             }
                         } else {
+                            directories.add(file);
                             tempFile = file;
-                            temp = prefix;
-                            value = prefixesMap.get(temp);
+                            temp = directory;
+                            value = directoriesMap.get(temp);
+                            end = value == null ? null : value.get("end");
+                            forCheckPath = tempFile.getCanonicalPath() + FileUtils.pathSeparator;
                         }
+                    } else {
+                        throw new IOException(directory + " is not valid directory.");
                     }
                 }
-            }
-            directories = startFileInfoLister.getDirectories().parallelStream()
-                    .filter(directory -> prefixesMap.keySet().stream().anyMatch(directory.getName()::startsWith))
-                    .collect(Collectors.toList());
-            if (startFileInfoLister.hasNext()) {
-                startFileInfoLister = getLister(originFile.getName(), startFileInfoLister.getRemainedFiles().parallelStream()
-                        .filter(e -> prefixesMap.keySet().stream().anyMatch(getNameWithoutParent(e)::startsWith))
-                        .collect(Collectors.toList()), null, null, unitLen);
             }
         }
     }
@@ -200,15 +190,15 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         return true;
     }
 
-    protected abstract ILocalFileLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
+    protected abstract IFileLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
 
-    protected abstract ILocalFileLister<E, File> getLister(String name, List<E> fileInfoList, String start,
-                                                           String end, int unitLen) throws IOException;
+    protected abstract IFileLister<E, File> getLister(String name, List<E> fileInfoList, String start,
+                                                      String end, int unitLen) throws IOException;
 
-    protected abstract ILocalFileLister<E, File> getLister(String singleFilePath) throws IOException;
+    protected abstract IFileLister<E, File> getLister(String singleFilePath) throws IOException;
 
-    private ILocalFileLister<E, File> generateLister(File directory) throws IOException {
-        Map<String, String> map = prefixesMap.get(directory.getPath());
+    private IFileLister<E, File> generateLister(File directory) throws IOException {
+        Map<String, String> map = directoriesMap.get(directory.getPath());
         String start;
         String end;
         if (map == null) {
@@ -220,7 +210,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         return getLister(directory, start, end, unitLen);
     }
 
-    public void export(ILocalFileLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+    public void export(IFileLister<E, File> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
@@ -232,7 +222,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
         String record;
-        Map<String, String> map = prefixesMap.get(lister.getName());
+        Map<String, String> map = directoriesMap.get(lister.getName());
         JsonObject json = map != null ? JsonUtils.toJsonObject(map) :
                 (hasNext ? new JsonObject() : JsonNull.INSTANCE.getAsJsonObject());
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
@@ -262,10 +252,10 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             }
             if (hasNext) {
                 json.addProperty("start", lister.currentEndFilepath());
-                try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
                 record = json.toString();
-                procedureLogger.info("{}:{}", lister.getName(), record);
                 progressMap.put(lister.getName(), record);
+                try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+                procedureLogger.info("{}:{}", lister.getName(), record);
             }
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
@@ -277,7 +267,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
 
     protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
 
-    private void listing(ILocalFileLister<E, File> lister) {
+    private void listing(IFileLister<E, File> lister) {
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
@@ -290,7 +280,8 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);
-            procedureLogger.info("{}: done", lister.getName());
+//            procedureLogger.info("{}: done", lister.getName());
+            progressMap.remove(lister.getName()); // 只有 export 成功情况下才移除 record
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
             errorLogger.error("{}: {}, {}", lister.getName(), e.error(), e);
@@ -317,7 +308,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    private void processNodeLister(ILocalFileLister<E, File> lister) {
+    private void processNodeLister(IFileLister<E, File> lister) {
         if (lister.hasNext()) {
             listerMap.put(lister.getName(), lister);
             integer.incrementAndGet();
@@ -330,10 +321,10 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         }
     }
 
-    private List<File> loopForFutures(List<Future<ILocalFileLister<E, File>>> futures) throws Exception {
-        Iterator<Future<ILocalFileLister<E, File>>> iterator;
-        Future<ILocalFileLister<E, File>> future;
-        ILocalFileLister<E, File> tempLister;
+    private List<File> loopForFutures(List<Future<IFileLister<E, File>>> futures) throws Exception {
+        Iterator<Future<IFileLister<E, File>>> iterator;
+        Future<IFileLister<E, File>> future;
+        IFileLister<E, File> tempLister;
         List<File> nextDirectories = new ArrayList<>();
 //            iterator = futures.iterator();
 //            while (iterator.hasNext()) {
@@ -385,9 +376,9 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
     private AtomicInteger integer = new AtomicInteger(threads);
 
     private List<File> listForNextIteratively(List<File> directories) throws Exception {
-        List<Future<ILocalFileLister<E, File>>> futures = new ArrayList<>();
+        List<Future<IFileLister<E, File>>> futures = new ArrayList<>();
         List<File> nextDirectories = new ArrayList<>();
-        Future<ILocalFileLister<E, File>> future;
+        Future<IFileLister<E, File>> future;
         List<File> tempDirectories;
         for (File directory : directories) {
             if (integer.get() < threads) {
@@ -396,13 +387,13 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                         return generateLister(directory);
                     } catch (IOException e) {
                         try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-                        errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), prefixesMap.get(directory.getPath()), e);
+                        errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
                         return null;
                     }
                 });
                 if (future.isDone() && lock.tryLock()) {
                     try {
-                        ILocalFileLister<E, File> futureLister = future.get();
+                        IFileLister<E, File> futureLister = future.get();
                         if (futureLister != null) {
                             if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
                                 if (hasAntiPrefixes) {
@@ -432,7 +423,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             } else {
                 while (!lock.tryLock());
                 try {
-                    ILocalFileLister<E, File> futureLister = generateLister(directory);
+                    IFileLister<E, File> futureLister = generateLister(directory);
                     if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
                         if (hasAntiPrefixes) {
                             nextDirectories.addAll(futureLister.getDirectories().parallelStream()
@@ -449,7 +440,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     processNodeLister(futureLister);
                 } catch (Exception e) {
                     try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-                    errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), prefixesMap.get(directory.getPath()), e);
+                    errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
                 } finally {
                     lock.unlock();
                 }
@@ -471,12 +462,12 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         return nextDirectories;
     }
 
-    private List<ILocalFileLister<E, File>> checkListerInPool(int cValue, int tiny) {
+    private List<IFileLister<E, File>> checkListerInPool(int cValue, int tiny) {
         int count = 0;
-        ILocalFileLister<E, File> iLister;
+        IFileLister<E, File> iLister;
         boolean notCheck = true;
-        List<ILocalFileLister<E, File>> list = new ArrayList<>(listerMap.values());
-        Iterator<ILocalFileLister<E, File>> iterator = list.iterator();
+        List<IFileLister<E, File>> list = new ArrayList<>(listerMap.values());
+        Iterator<IFileLister<E, File>> iterator = list.iterator();
         String directory;
         String start;
         Map<String, String> endMap;
@@ -488,15 +479,15 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     if(!iLister.hasNext()) iterator.remove();
                 }
                 if (list.size() > 0 && list.size() <= tiny) {
-                    rootLogger.info("unfinished: {}, cValue: {}, to re-split lister list...\n", list.size(), cValue);
-                    for (ILocalFileLister<E, File> lister : list) {
+                    rootLogger.info("unfinished: {}, cValue: {}, to re-split lister list...", list.size(), cValue);
+                    for (IFileLister<E, File> lister : list) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         directory = lister.getName();
                         start = lister.truncate();
-                        endMap = prefixesMap.get(directory);
+                        endMap = directoriesMap.get(directory);
                         if (endMap == null) endMap = new HashMap<>();
                         endMap.put("start", start);
-                        rootLogger.info("directory: {}, nextFilepath: {}, endMap: {}\n", directory, start, endMap);
+                        rootLogger.info("directory: {}, nextFilepath: {}, endMap: {}", directory, start, endMap);
                     }
                 } else if (list.size() <= cValue) {
                     count = 900;
@@ -522,7 +513,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
             int cValue = threads >= 10 ? threads / 2 : 3;
             int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 30 ? threads / 10 :
                     threads >= 10 ? 3 : 1;
-            List<ILocalFileLister<E, File>> list = checkListerInPool(cValue, tiny);
+            List<IFileLister<E, File>> list = checkListerInPool(cValue, tiny);
             while (list.size() > 0) {
                 list.parallelStream().forEach(lister -> recordListerByDirectory(lister.getName() + "-||-0"));
                 int multiple = threads / list.size();
@@ -530,19 +521,19 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                 executorPool = Executors.newFixedThreadPool(threads);
                 listerMap.clear();
                 list.parallelStream().forEach(lister -> {
-                    if (lister.getRemainedFiles() == null) return;
-                    int remainedSize = lister.getRemainedFiles().size();
+                    if (lister.getRemainedItems() == null) return;
+                    int remainedSize = lister.getRemainedItems().size();
                     if (remainedSize < multiple) {
                         if (remainedSize > 0) {
                             try {
-                                ILocalFileLister<E, File> sLister = getLister(lister.getName() + "-||-0",
-                                        lister.getRemainedFiles(), null, null, unitLen);
+                                IFileLister<E, File> sLister = getLister(lister.getName() + "-||-0",
+                                        lister.getRemainedItems(), null, null, unitLen);
                                 listerMap.put(sLister.getName(), sLister);
                                 executorPool.execute(() -> listing(lister));
                             } catch (IOException e) {
                                 try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                                 errorLogger.error("generate lister failed by {}\t{}", lister.getName(),
-                                        prefixesMap.get(lister.getName()), e);
+                                        directoriesMap.get(lister.getName()), e);
                             }
                         }
                         return;
@@ -550,8 +541,8 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     int size = remainedSize % multiple == 0 ? remainedSize / multiple : remainedSize / multiple + 1;
                     for (int i = 0; i < multiple; i++) {
                         try {
-                            ILocalFileLister<E, File> sLister = getLister(String.join("-||-", lister.getName(), String.valueOf(i)),
-                                    lister.getRemainedFiles().subList(size * i, i == maxIndex ? remainedSize : size * (i + 1)),
+                            IFileLister<E, File> sLister = getLister(String.join("-||-", lister.getName(), String.valueOf(i)),
+                                    lister.getRemainedItems().subList(size * i, i == maxIndex ? remainedSize : size * (i + 1)),
                                     null, null, unitLen);
                             listerMap.put(sLister.getName(), sLister);
                             executorPool.execute(() -> listing(lister));
@@ -559,7 +550,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                             errorLogger.error("generate lister failed by {}\t{}",
                                     String.join("-||-", lister.getName(), String.valueOf(i)),
-                                    prefixesMap.get(lister.getName()), e);
+                                    directoriesMap.get(lister.getName()), e);
                         }
                     }
                 });
@@ -577,15 +568,19 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();
+        IFileLister<E, File> startFileLister = null;
+        if (directories == null || directories.size() == 0) {
+            File originFile = new File(realPath);
+            recordListerByDirectory(realPath);
+            if (originFile.isDirectory()) startFileLister = generateLister(originFile);
+            else startFileLister = getLister(realPath);
+            directories = startFileLister.getDirectories();
+        }
         try {
             if (directories == null || directories.size() == 0) {
-                if (startFileInfoLister != null) {
-                    if (startFileInfoLister.hasNext()) {
-                        listing(startFileInfoLister);
-                    } else {
-                        startFileInfoLister.close();
-                    }
-                }
+                if (hasAntiPrefixes) rootLogger.info("there are no directories to check anti-prefixes.");
+                if (startFileLister.hasNext()) listing(startFileLister);
+                else startFileLister.close();
             } else {
                 if (hasAntiPrefixes) {
                     directories = directories.parallelStream().filter(this::checkPrefix)
@@ -594,7 +589,7 @@ public abstract class FileContainer<E, W, T> extends DatasourceActor implements 
                     directories.parallelStream().forEach(directory -> recordListerByDirectory(directory.getPath()));
                 }
                 executorPool = Executors.newFixedThreadPool(threads);
-                if (startFileInfoLister != null) processNodeLister(startFileInfoLister);
+                if (startFileLister != null) processNodeLister(startFileLister);
                 directoriesListing();
             }
             rootLogger.info("{} finished, results in {}.", info, savePath);

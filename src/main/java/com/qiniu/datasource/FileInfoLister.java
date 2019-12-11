@@ -1,6 +1,6 @@
 package com.qiniu.datasource;
 
-import com.qiniu.interfaces.ILocalFileLister;
+import com.qiniu.interfaces.IFileLister;
 import com.qiniu.model.local.FileInfo;
 import com.qiniu.util.FileUtils;
 
@@ -11,7 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
+public class FileInfoLister implements IFileLister<FileInfo, File> {
 
     private final String name;
     private int limit;
@@ -190,7 +190,7 @@ public class FileInfoLister implements ILocalFileLister<FileInfo, File> {
     }
 
     @Override
-    public List<FileInfo> getRemainedFiles() {
+    public List<FileInfo> getRemainedItems() {
         if (iterator == null) return null;
         return fileInfoList;
     }

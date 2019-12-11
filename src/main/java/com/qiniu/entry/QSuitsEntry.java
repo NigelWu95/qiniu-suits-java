@@ -278,9 +278,9 @@ public class QSuitsEntry {
         String separator = commonParams.getSeparator();
         String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        Map<String, Map<String, String>> linesMap = commonParams.getPathConfigMap();
-        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, addKeyPrefix,
-                rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
+        Map<String, Map<String, String>> urisMap = commonParams.getPathConfigMap();
+        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, urisMap,
+                commonParams.getAntiPrefixes(),addKeyPrefix, rmKeyPrefix, indexMap, null, unitLen, threads);
         textFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         textFileContainer.setRetryTimes(retryTimes);
         return textFileContainer;

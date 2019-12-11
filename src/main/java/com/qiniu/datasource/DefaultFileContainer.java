@@ -20,11 +20,6 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
     }
 
     @Override
-    protected String getNameWithoutParent(FileInfo fileInfo) {
-        return fileInfo.getFile().getName();
-    }
-
-    @Override
     public String getSourceName() {
         return "file";
     }
@@ -63,18 +58,18 @@ public class DefaultFileContainer extends FileContainer<FileInfo, BufferedWriter
     }
 
     @Override
-    protected ILocalFileLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
+    protected IFileLister<FileInfo, File> getLister(File directory, String start, String end, int unitLen) throws IOException {
         return new FileInfoLister(directory, keepDir, withEtag, withDatetime, withMime, withParent, transferPath, leftTrimSize, start, end, unitLen);
     }
 
     @Override
-    protected ILocalFileLister<FileInfo, File> getLister(String name, List<FileInfo> fileInfoList, String start, String end,
-                                                         int unitLen) throws IOException {
+    protected IFileLister<FileInfo, File> getLister(String name, List<FileInfo> fileInfoList, String start, String end,
+                                                    int unitLen) throws IOException {
         return new FileInfoLister(name, fileInfoList, start, end, unitLen);
     }
 
     @Override
-    protected ILocalFileLister<FileInfo, File> getLister(String singleFilePath) throws IOException {
+    protected IFileLister<FileInfo, File> getLister(String singleFilePath) throws IOException {
         File file = new File(singleFilePath);
         if (!file.exists()) throw new IOException(singleFilePath + " path not found.");
         FileInfo fileInfo = new FileInfo(file, transferPath, leftTrimSize);

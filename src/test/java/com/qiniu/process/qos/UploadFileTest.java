@@ -1,14 +1,11 @@
 package com.qiniu.process.qos;
 
 import com.qiniu.config.PropertiesFile;
-import com.qiniu.process.other.DownloadFile;
 import com.qiniu.storage.Configuration;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
-
-import static org.junit.Assert.*;
 
 public class UploadFileTest {
 

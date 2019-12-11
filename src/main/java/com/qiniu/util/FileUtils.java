@@ -36,8 +36,8 @@ public final class FileUtils {
         }
     }
 
-    public static String contentType(File file) throws IOException {
-        String type = fileNameMap.getContentTypeFor(file.getCanonicalPath());
+    public static String contentType(File file) {
+        String type = fileNameMap.getContentTypeFor(file.getPath());
         if (type == null) {
             type = mimetypesFileTypeMap.getContentType(file);
             if ("application/octet-stream".equals(type)) {
