@@ -89,9 +89,9 @@ public abstract class DatasourceActor {
         for (Map.Entry<String, IResultOutput> saverEntry : saverMap.entrySet()) {
             saverEntry.getValue().closeWriters();
             processor = processorMap.get(saverEntry.getKey());
-            if (processor != null) processor.closeResource();
+            if (processor != null) processor.cancel();
         }
-        String record = ":{}";
+        String record = "{}";
         if (progressMap.size() > 0) {
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
@@ -99,7 +99,7 @@ public abstract class DatasourceActor {
             saveMapper.setFileExt(".json");
             String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1);
             saveMapper.addWriter(fileName);
-            record = JsonUtils.toJsonObject(progressMap).toString();
+            record = JsonUtils.toJsonWithoutUrlEscape(progressMap);
             saveMapper.writeToKey(fileName, record, true);
             saveMapper.closeWriters();
             rootLogger.info("please check the lines breakpoint in {}.json, " +

@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
@@ -198,8 +197,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         int retry;
         String record;
         Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
-        JsonObject json = map != null ? JsonUtils.toJsonObject(map) :
-                (hasNext ? new JsonObject() : JsonNull.INSTANCE.getAsJsonObject());
+        JsonObject json = map != null ? JsonUtils.toJsonObject(map) : (hasNext ? new JsonObject() : null);
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
             if (stopped) break;
@@ -273,6 +271,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);
+            procedureLogger.info("{}:", lister.getPrefix());
             progressMap.remove(lister.getPrefix()); // 只有 export 成功情况下才移除 record
         } catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}

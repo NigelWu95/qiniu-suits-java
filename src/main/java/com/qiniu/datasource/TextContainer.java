@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.*;
@@ -129,8 +128,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
         int retry;
         String record;
         Map<String, String> map = urisMap.get(reader.getName());
-        JsonObject json = map != null ? JsonUtils.toJsonObject(map) :
-                (lastLine != null ? new JsonObject() : JsonNull.INSTANCE.getAsJsonObject());
+        JsonObject json = map != null ? JsonUtils.toJsonObject(map) : (lastLine != null ? new JsonObject() : null);
         while (lastLine != null) {
             if (LocalDateTime.now(DatetimeUtils.clock_Default).isAfter(pauseDateTime)) {
                 synchronized (object) {
@@ -189,6 +187,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
                 processorMap.put(orderStr, lineProcessor);
             }
             export(reader, saver, lineProcessor);
+            procedureLogger.info("{}:", reader.getName());
             progressMap.remove(reader.getName()); // 只有 export 成功情况下才移除 record
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}

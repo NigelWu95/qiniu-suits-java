@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
 import com.qiniu.interfaces.*;
@@ -223,8 +222,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         boolean hasNext = lister.hasNext();
         String record;
         Map<String, String> map = directoriesMap.get(lister.getName());
-        JsonObject json = map != null ? JsonUtils.toJsonObject(map) :
-                (hasNext ? new JsonObject() : JsonNull.INSTANCE.getAsJsonObject());
+        JsonObject json = map != null ? JsonUtils.toJsonObject(map) : (hasNext ? new JsonObject() : null);
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
             if (stopped) break;
@@ -281,7 +279,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);
-//            procedureLogger.info("{}: done", lister.getName());
+            procedureLogger.info("{}:", lister.getName());
             progressMap.remove(lister.getName()); // 只有 export 成功情况下才移除 record
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
@@ -597,7 +595,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             endAction();
         } catch (Throwable e) {
             stopped = true;
-            rootLogger.error(e.toString(), e);
+            rootLogger.error("export failed", e);
             endAction();
             System.exit(-1);
         }

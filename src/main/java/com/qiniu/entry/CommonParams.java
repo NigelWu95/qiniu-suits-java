@@ -1166,7 +1166,7 @@ public class CommonParams {
             savePath = savePath.substring(savePath.lastIndexOf(FileUtils.pathSeparator) + 1);
         }
         if (CloudApiUtils.isFileSource(source) && FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
-            throw new IOException("the save-path can not be same as path.");
+            throw new IOException(String.format("the save-path \"%s\" can not be same as path.", savePath));
         } else {
             File file = new File(savePath);
             File[] files = file.listFiles();
@@ -1180,10 +1180,11 @@ public class CommonParams {
                 }
                 if (isOk) {
                     if (pathConfigMap == null || pathConfigMap.size() <= 0) {
-                        throw new IOException("please change the save-path, because there are last listed files, for not cover them.");
+                        throw new IOException(String.format("please change the save-path \"%s\", " +
+                                "because there are last listed files, for not cover them.", savePath));
                     }
                 } else {
-                    throw new IOException("please change save-path because it's not empty.");
+                    throw new IOException(String.format("please change save-path \"%s\" because it's not empty.", savePath));
                 }
             }
         }
