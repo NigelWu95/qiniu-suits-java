@@ -17,11 +17,10 @@ import com.qiniu.util.Auth;
 import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedWriter, Map<String, String>> {
+public class QiniuQosContainer extends CloudStorageContainer<FileInfo, Map<String, String>> {
 
     private String accessKey;
     private String secretKey;
@@ -64,6 +63,8 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
         IStringFormat<FileInfo> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
+        } else if ("yaml".equals(saveFormat)) {
+            stringFormatter = line -> ConvertingUtils.toStringWithIndent(line, fields);
         } else {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }
@@ -76,7 +77,7 @@ public class QiniuQosContainer extends CloudStorageContainer<FileInfo, BufferedW
     }
 
     @Override
-    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

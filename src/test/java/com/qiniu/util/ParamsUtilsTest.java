@@ -1,5 +1,6 @@
 package com.qiniu.util;
 
+import com.google.gson.JsonNull;
 import com.qiniu.config.PropertiesFile;
 import org.junit.Test;
 
@@ -65,5 +66,18 @@ public class ParamsUtilsTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void test(){
+        StringBuilder builder = new StringBuilder();
+        builder.append(0);
+        builder.append(new Integer(0));
+        String string = null;
+        builder.append(string);
+        System.out.println(builder.toString());
+        String test = "12345/";
+        System.out.println(test.substring(test.lastIndexOf("/") + 1));
+        System.out.println(JsonNull.INSTANCE.toString());
     }
 }

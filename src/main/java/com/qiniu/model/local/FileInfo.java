@@ -17,6 +17,8 @@ public class FileInfo implements Comparable {
     public String mime;
     public String etag;
 
+    public FileInfo() {}
+
     public FileInfo(File file, String transferPath, int leftTrimSize) throws IOException {
         try {
 //            parentPath = file.getParent();
@@ -25,10 +27,15 @@ public class FileInfo implements Comparable {
             throw new IOException("file object can not be null.");
         }
         this.file = file;
-        if (leftTrimSize == 0) key = filepath;
-        else key = transferPath + filepath.substring(leftTrimSize);
+        if (leftTrimSize == 0) {
+            if (file.isDirectory()) key = filepath + "/";
+            else key = filepath;
+        } else {
+            if (file.isDirectory()) key = String.format("%s%s/", transferPath, filepath.substring(leftTrimSize));
+            else key = transferPath + filepath.substring(leftTrimSize);
+        }
         length = file.length();
-        timestamp = file.lastModified();
+//        timestamp = file.lastModified();
 //        mime = FileUtils.contentType(file);
 //        etag = Etag.file(file);
     }
@@ -47,6 +54,11 @@ public class FileInfo implements Comparable {
         return this;
     }
 
+    public FileInfo withDatetime() {
+        timestamp = file.lastModified();
+        return this;
+    }
+
     public FileInfo withMime() throws IOException {
         mime = FileUtils.contentType(file);
         return this;
@@ -55,5 +67,9 @@ public class FileInfo implements Comparable {
     public FileInfo withParent() {
         parentPath = file.getParent();
         return this;
+    }
+
+    public File getFile() {
+        return file;
     }
 }

@@ -93,7 +93,7 @@ public class AccountUtils {
         if (map == null) map = ParamsUtils.toParamsMap(filePath);
         String valueId = map.get(id.substring(0, idIndex));
         String valueSecret = map.get(secret.substring(0, secretIndex));
-        boolean isSetDefault = Boolean.valueOf(entryParam.getValue("default", "false"));
+        boolean isSetDefault = Boolean.parseBoolean(entryParam.getValue("default", "false"));
         if (valueId != null || valueSecret != null || (isSetDefault && map.get("account") != null)) {
             map.put(id.substring(0, idIndex), id.substring(idIndex + 1));
             map.put(secret.substring(0, secretIndex), secret.substring(secretIndex + 1));

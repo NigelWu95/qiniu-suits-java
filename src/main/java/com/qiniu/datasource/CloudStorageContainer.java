@@ -17,12 +17,12 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor implements IDataSource<IStorageLister<E>, IResultOutput<W>, T> {
+public abstract class CloudStorageContainer<E, T> extends DatasourceActor implements IDataSource<IStorageLister<E>, IResultOutput, T> {
 
     protected String bucket;
     protected List<String> antiPrefixes;
     protected boolean hasAntiPrefixes = false;
-    protected Map<String, Map<String, String>> prefixesMap;
+    protected ConcurrentMap<String, Map<String, String>> prefixesMap;
     protected List<String> prefixes;
     protected boolean prefixLeft;
     protected boolean prefixRight;
@@ -74,15 +74,15 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
 
     private void setPrefixesAndMap(Map<String, Map<String, String>> prefixesMap) throws IOException {
         if (prefixesMap == null || prefixesMap.size() <= 0) {
-            this.prefixesMap = new HashMap<>(threads);
+            this.prefixesMap = new ConcurrentHashMap<>(threads);
             prefixLeft = true;
             prefixRight = true;
             if (hasAntiPrefixes && !"upyun".equals(getSourceName())) prefixes = originPrefixList;
         } else {
-            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contains null.");
-            this.prefixesMap = new HashMap<>(threads);
+            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contain null.");
+            this.prefixesMap = new ConcurrentHashMap<>(threads);
             this.prefixesMap.putAll(prefixesMap);
-            prefixes = prefixesMap.keySet().stream().sorted().collect(Collectors.toList());
+            prefixes = prefixesMap.keySet().stream().sorted().distinct().collect(Collectors.toList());
             int size = prefixes.size();
             Iterator<String> iterator = prefixes.iterator();
             String temp = iterator.next();
@@ -97,12 +97,13 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                     marker = "".equals(value.get("marker")) ? null : value.get("marker");
                 }
                 if (start == null && end == null && marker == null) throw new IOException("prefixes can not only be empty string(\"\")");
+            } else {
+                end = value == null ? null : value.get("end");
             }
             while (iterator.hasNext() && size > 0) {
                 size--;
                 String prefix = iterator.next();
                 if (prefix.startsWith(temp)) {
-                    end = value == null ? null : value.get("end");
                     if (end == null || "".equals(end)) {
                         iterator.remove();
                         this.prefixesMap.remove(prefix);
@@ -112,6 +113,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 } else {
                     temp = prefix;
                     value = prefixesMap.get(temp);
+                    end = value == null ? null : value.get("end");
                 }
             }
         }
@@ -153,10 +155,6 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         this.processor = processor;
     }
 
-    private synchronized void insertIntoPrefixesMap(String prefix, Map<String, String> markerAndEnd) {
-        prefixesMap.put(prefix, markerAndEnd);
-    }
-
     /**
      * 检验 prefix 是否有效，在 antiPrefixes 前缀列表中或者为空均无效
      * @param prefix 待检验的 prefix
@@ -178,12 +176,6 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
 
     protected abstract ITypeConvert<E, String> getNewStringConverter() throws IOException;
 
-    void recordListerByPrefix(String prefix) {
-        JsonObject json = prefixesMap.get(prefix) == null ? null : JsonUtils.toJsonObject(prefixesMap.get(prefix));
-        try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-        procedureLogger.info(recorder.put(prefix, json));
-    }
-
     /**
      * 执行列举操作，直到当前的 lister 列举结束，并使用 processor 对象执行处理过程
      * @param lister 已经初始化的 lister 对象
@@ -191,7 +183,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
      * @param processor 用于资源处理的处理器对象
      * @throws IOException 列举出现错误或者持久化错误抛出的异常
      */
-    public void export(IStorageLister<E> lister, IResultOutput<W> saver, ILineProcess<T> processor) throws Exception {
+    public void export(IStorageLister<E> lister, IResultOutput saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<E, T> converter = getNewConverter();
         ITypeConvert<E, String> stringConverter = null;
         if (saveTotal) {
@@ -203,7 +195,9 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
         int retry;
+        String record;
         Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
+        JsonObject json = map != null ? JsonUtils.toJsonObject(map) : (hasNext ? new JsonObject() : null);
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
         while (objects.size() > 0 || hasNext) {
             if (stopped) break;
@@ -230,11 +224,11 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 }
             }
             if (hasNext) {
-                JsonObject json = recorder.getOrDefault(lister.getPrefix(), new JsonObject());
                 json.addProperty("marker", lister.getMarker());
-                json.addProperty("end", lister.getEndPrefix());
+                record = json.toString();
+                progressMap.put(lister.getPrefix(), record);
                 try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-                procedureLogger.info(recorder.put(lister.getPrefix(), json));
+                procedureLogger.info("{}-|-{}", lister.getPrefix(), record);
             }
             if (map != null) map.put("start", lister.currentEndKey());
             if (stopped) break;
@@ -255,7 +249,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
     }
 
-    protected abstract IResultOutput<W> getNewResultSaver(String order) throws IOException;
+    protected abstract IResultOutput getNewResultSaver(String order) throws IOException;
 
     /**
      * 将 lister 对象放入线程池进行执行列举，如果 processor 不为空则同时执行 process 过程
@@ -265,7 +259,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         // 持久化结果标识信息
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
-        IResultOutput<W> saver = null;
+        IResultOutput saver = null;
         ILineProcess<T> lineProcessor = null;
         try {
             saver = getNewResultSaver(orderStr);
@@ -273,17 +267,19 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             // 多线程情况下不要直接使用传入的 processor，因为对其关闭会造成 clone 的对象无法进行结果持久化的写入
             if (processor != null) {
                 lineProcessor = processor.clone();
+                lineProcessor.changeSaveOrder(orderStr);
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);
-            recorder.remove(lister.getPrefix()); // 只有 export 成功情况下才移除 record
+            procedureLogger.info("{}-|-", lister.getPrefix());
+            progressMap.remove(lister.getPrefix()); // 只有 export 成功情况下才移除 record
         } catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-            errorLogger.error("{}: {}, {}", lister.getPrefix(), recorder.getJson(lister.getPrefix()), e.error(), e);
+            errorLogger.error("{}: {}, {}", lister.getPrefix(), progressMap.get(lister.getPrefix()), e.error(), e);
             if (e.response != null) e.response.close();
         } catch (Throwable e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-            errorLogger.error("{}: {}", lister.getPrefix(), recorder.getJson(lister.getPrefix()), e);
+            errorLogger.error("{}: {}", lister.getPrefix(), progressMap.get(lister.getPrefix()), e);
         } finally {
             try { FileUtils.createIfNotExists(infoLogFile); } catch (IOException ignored) {}
             infoLogger.info("{}\t{}\t{}", orderStr, lister.getPrefix(), lister.count());
@@ -292,8 +288,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                 saver = null; // let gc work
             }
             saverMap.remove(orderStr);
-            // 实际上 processorMap 记录的 key 和 saverMap 的是一致的，只要 saverMap 中做了移除说明已经正常处理完任务，最后直接根据
-            // saverMap 的 keySet 来 check 即可
+            processorMap.remove(orderStr);
             if (lineProcessor != null) {
                 lineProcessor.closeResource();
                 lineProcessor = null;
@@ -334,7 +329,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         }
     }
 
-    private String moreValidPrefixes(IStorageLister<E> lister, boolean doFutureCheck) {
+    private String nextPoint(IStorageLister<E> lister, boolean doFutureCheck) {
         boolean next;
         try {
             next = doFutureCheck ? lister.hasFutureNext() : lister.hasNext();
@@ -360,21 +355,19 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                     } else if (point.compareTo(firstPoint) < 0) {
                         point = firstPoint;
                         lister.setEndPrefix(startPrefix + firstPoint);
-                        lister.setLimit(1);
+                        lister.setLimit(2);
                     } else {
-                        insertIntoPrefixesMap(startPrefix + point, new HashMap<String, String>(){{
-                            put("marker", lister.getMarker());
-                        }});
+                        prefixesMap.put(startPrefix + point, new HashMap<String, String>(){{ put("marker", lister.getMarker()); }});
                         lister.setEndPrefix(endKey);
                     }
                 } else {
                     point = firstPoint;
                     // 无 next 时直接将 lister 的结束位置设置到第一个预定义前
                     lister.setEndPrefix(startPrefix + firstPoint);
-                    lister.setLimit(1);
+                    lister.setLimit(2);
                 }
             } else {
-                return moreValidPrefixes(lister, true);
+                return nextPoint(lister, true);
             }
         }
         return point;
@@ -393,7 +386,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             if (generated == null) return false;
             else if (generated.currents().size() > 0 || generated.hasNext()) return true;
             else {
-                recorder.remove(generated.getPrefix());
+                progressMap.remove(generated.getPrefix());
                 generated.close();
                 return false;
             }
@@ -422,16 +415,22 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         if (lister.currents().size() > 0 || lister.hasNext()) {
             executorPool.execute(() -> listing(lister));
         } else {
-            recorder.remove(lister.getPrefix());
+            progressMap.remove(lister.getPrefix());
             lister.close();
         }
+    }
+
+    void recordListerByPrefix(String prefix) {
+        Map<String, String> map = prefixesMap.get(prefix);
+        String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
+        recordLister(prefix, record);
     }
 
     private List<IStorageLister<E>> computeToNextLevel(List<IStorageLister<E>> listerList) {
         if (hasAntiPrefixes) {
             return listerList.parallelStream().map(lister -> {
                 List<String> nextPrefixes = null;
-                String finalPoint = moreValidPrefixes(lister, true);
+                String finalPoint = nextPoint(lister, true);
                 if (finalPoint != null) {
                     nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
                             .map(prefix -> lister.getPrefix() + prefix).filter(this::checkPrefix)
@@ -444,7 +443,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         } else {
             return listerList.parallelStream().map(lister -> {
                 List<String> nextPrefixes = null;
-                String finalPoint = moreValidPrefixes(lister, true);
+                String finalPoint = nextPoint(lister, true);
                 if (finalPoint != null) {
                     nextPrefixes = originPrefixList.stream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
                             .map(prefix -> lister.getPrefix() + prefix)
@@ -479,7 +478,7 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                     if(!iLister.hasNext()) iterator.remove();
                 }
                 if (listerList.size() > 0 && listerList.size() <= tiny) {
-                    rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...\n", listerList.size(), cValue);
+                    rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...", listerList.size(), cValue);
                     for (IStorageLister<E> lister : listerList) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         prefix = lister.getPrefix();
@@ -493,13 +492,14 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
                             start = lister.currentEndKey();
                             if (start != null) endMap.put("start", start);
                         }
-                        rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}\n", prefix, nextMarker, endMap);
+                        rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}", prefix, nextMarker, endMap);
                         // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
                         if (nextMarker == null || nextMarker.isEmpty()) continue;
                         if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
                         extremePrefixes.add(prefix);
                         prefixMap.put("marker", nextMarker);
-                        insertIntoPrefixesMap(prefix, prefixMap);
+                        prefixesMap.put(prefix, prefixMap);
+
                     }
                 } else if (listerList.size() <= cValue) {
                     count = 900;
@@ -607,10 +607,10 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
         // 在初始化时即做检查，hasAntiPrefixes 的情况下 prefixes 不可能为空，所以在 prefixes 为空时，hasAntiPrefixes 一定为 false
         if (prefixes == null || prefixes.size() == 0) {
             recordListerByPrefix("");
-            startLister = generateLister("", 1);
+            startLister = generateLister("", 2);
             startLister.setLimit(unitLen);
             if (threads > 1) {
-                String finalPoint = moreValidPrefixes(startLister, false);
+                String finalPoint = nextPoint(startLister, false);
                 if (finalPoint != null) {
                     IStorageLister<E> lister = startLister;
                     prefixes = originPrefixList.parallelStream().filter(prefix -> prefix.compareTo(finalPoint) >= 0)
@@ -621,26 +621,25 @@ public abstract class CloudStorageContainer<E, W, T> extends DatasourceActor imp
             if (prefixLeft || "".equals(prefixes.get(0))) {
                 recordListerByPrefix("");
                 if ("".equals(prefixes.get(0))) prefixes.remove(0);
-                insertIntoPrefixesMap("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
-                startLister = generateLister("", 1);
+                prefixesMap.put("", new HashMap<String, String>(){{ put("end", prefixes.get(0)); }});
+                startLister = generateLister("", 2);
                 startLister.setLimit(unitLen);
                 prefixesMap.remove("");
             }
         }
         try {
-            if (!hasAntiPrefixes && (prefixes == null || prefixes.size() == 0)) {
+            if (prefixes == null || prefixes.size() == 0) {
+                if (hasAntiPrefixes) rootLogger.info("there are no prefixes to check anti-prefixes.");
                 if (startLister.currents().size() > 0 || startLister.hasNext()) {
                     listing(startLister);
                 } else {
-                    recorder.remove(startLister.getPrefix());
+                    progressMap.remove(startLister.getPrefix());
                     startLister.close();
                 }
             } else {
                 if (hasAntiPrefixes) {
-                    if (prefixes != null) {
-                        prefixes = prefixes.parallelStream().filter(this::checkPrefix)
-                                .peek(this::recordListerByPrefix).collect(Collectors.toList());
-                    }
+                    prefixes = prefixes.parallelStream().filter(this::checkPrefix)
+                            .peek(this::recordListerByPrefix).collect(Collectors.toList());
                 } else {
                     prefixes.parallelStream().forEach(this::recordListerByPrefix);
                 }

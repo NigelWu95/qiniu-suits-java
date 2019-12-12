@@ -7,7 +7,11 @@ public interface ILineProcess<T> {
 
     ILineProcess<T> clone() throws CloneNotSupportedException;
 
+    void changeSaveOrder(String order) throws IOException;
+
     String getProcessName();
+
+    default void setAutoIncrease(boolean autoIncrease) {}
 
     default void setBatchSize(int batchSize) throws IOException {}
 

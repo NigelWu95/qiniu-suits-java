@@ -6,7 +6,7 @@ import com.qiniu.util.FileUtils;
 import java.io.*;
 import java.util.*;
 
-public class FileSaveMapper implements IResultOutput<BufferedWriter> {
+public class FileSaveMapper implements IResultOutput {
 
     private Map<String, BufferedWriter> writerMap = new HashMap<>();
     private String savePath;
@@ -36,6 +36,18 @@ public class FileSaveMapper implements IResultOutput<BufferedWriter> {
         this.prefix = (prefix == null || "".equals(prefix)) ? "" : String.join("", prefix, "_");
         this.suffix = (suffix == null || "".equals(suffix)) ? "" : String.join("", "_", suffix);
         for (String targetWriter : "success,error".split(",")) preAddWriter(targetWriter);
+    }
+
+    public void changePrefixAndSuffix(String prefix, String suffix) {
+        if (prefix != null && !"".equals(prefix)) {
+            this.prefix = String.join("", prefix, "_");
+        }
+        if (suffix != null && !"".equals(suffix)) {
+            this.suffix = String.join("", suffix, "_");
+        }
+        if (writerMap.size() == 0) {
+            for (String targetWriter : "success,error".split(",")) preAddWriter(targetWriter);
+        }
     }
 
     public void setRetryTimes(int retryTimes) {

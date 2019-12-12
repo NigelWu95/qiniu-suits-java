@@ -20,7 +20,7 @@ public class TextFileContainerTest {
             put("key", "0");
         }};
         TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, null,
-                null, linesMap, indexMap, new ArrayList<String>(){{ add("key");}}, 100, 10);
+                null, null, null, indexMap, new ArrayList<String>(){{ add("key");}}, 100, 10);
         textFileContainer.export();
     }
 

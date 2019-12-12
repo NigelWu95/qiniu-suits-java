@@ -1,6 +1,7 @@
 package com.qiniu.process.qos;
 
 import com.google.gson.*;
+import com.qiniu.convert.JsonObjectPair;
 import com.qiniu.convert.StringBuilderPair;
 import com.qiniu.http.Response;
 import com.qiniu.interfaces.IStringFormat;
@@ -66,7 +67,7 @@ public class StatFile extends Base<Map<String, String>> {
         IStringFormat<JsonObject> stringFormatter;
         if (statJsonFields == null) statJsonFields = ConvertingUtils.getFields(ConvertingUtils.statFileFields, rmFields);
         if ("json".equals(format)) {
-            stringFormatter = JsonObject::toString;
+            stringFormatter = line -> ConvertingUtils.toPair(line, statJsonFields, new JsonObjectPair()).toString();
         } else {
             stringFormatter = line -> ConvertingUtils.toPair(line, statJsonFields, new StringBuilderPair(separator));
         }

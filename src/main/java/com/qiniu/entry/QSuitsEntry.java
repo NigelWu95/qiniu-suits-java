@@ -278,9 +278,9 @@ public class QSuitsEntry {
         String separator = commonParams.getSeparator();
         String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
-        Map<String, Map<String, String>> linesMap = commonParams.getPathConfigMap();
-        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, addKeyPrefix,
-                rmKeyPrefix, linesMap, indexMap, null, unitLen, threads);
+        Map<String, Map<String, String>> urisMap = commonParams.getPathConfigMap();
+        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, urisMap,
+                commonParams.getAntiPrefixes(),addKeyPrefix, rmKeyPrefix, indexMap, null, unitLen, threads);
         textFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         textFileContainer.setRetryTimes(retryTimes);
         return textFileContainer;
@@ -542,22 +542,22 @@ public class QSuitsEntry {
     private ILineProcess<Map<String, String>> getChangeStatus(boolean single) throws IOException {
         String status = entryParam.getValue("status").trim();
         ParamsUtils.checked(status, "status", "[01]");
-        return single ? new ChangeStatus(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.valueOf(status))
-                : new ChangeStatus(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.valueOf(status), savePath);
+        return single ? new ChangeStatus(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(status))
+                : new ChangeStatus(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(status), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeType(boolean single) throws IOException {
         String type = entryParam.getValue("type").trim();
         ParamsUtils.checked(type, "type", "[01]");
-        return single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.valueOf(type))
-                : new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.valueOf(type), savePath);
+        return single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(type))
+                : new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(type), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeLifecycle(boolean single) throws IOException {
         String days = entryParam.getValue("days").trim();
         ParamsUtils.checked(days, "days", "\\d+");
-        return single ? new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.valueOf(days))
-                : new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.valueOf(days), savePath);
+        return single ? new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(days))
+                : new ChangeLifecycle(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(days), savePath);
     }
 
     private ILineProcess<Map<String, String>> getCopyFile(Map<String, String> indexMap, boolean single) throws IOException {
@@ -580,9 +580,9 @@ public class QSuitsEntry {
         String force = entryParam.getValue("prefix-force", "false").trim();
         ParamsUtils.checked(force, "prefix-force", "(true|false)");
         return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
-                rmPrefix, Boolean.valueOf(force))
+                rmPrefix, Boolean.parseBoolean(force))
                 : new MoveFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
-                rmPrefix, Boolean.valueOf(force), savePath);
+                rmPrefix, Boolean.parseBoolean(force), savePath);
     }
 
     private ILineProcess<Map<String, String>> getDeleteFile(boolean single) throws IOException {
@@ -636,7 +636,7 @@ public class QSuitsEntry {
         if (!host.isEmpty() || md5Index != null || !callbackUrl.isEmpty() || !callbackBody.isEmpty() ||
                 !callbackBodyType.isEmpty() || !callbackHost.isEmpty() || "1".equals(type) || "true".equals(ignore)) {
             processor.setFetchArgs(host, md5Index, callbackUrl, callbackBody,
-                    callbackBodyType, callbackHost, Integer.valueOf(type), Boolean.valueOf(ignore));
+                    callbackBodyType, callbackHost, Integer.parseInt(type), Boolean.parseBoolean(ignore));
         }
         return processor;
     }
@@ -662,10 +662,10 @@ public class QSuitsEntry {
         String configJson = entryParam.getValue("pfop-config", "").trim();
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
         Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
-        return single ? new PfopCommand(configuration, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
-                Boolean.valueOf(combine), configJson, pfopConfigs)
-                : new PfopCommand(configuration, avinfoIndex, Boolean.valueOf(duration), Boolean.valueOf(size),
-                Boolean.valueOf(combine), configJson, pfopConfigs, savePath);
+        return single ? new PfopCommand(configuration, avinfoIndex, Boolean.parseBoolean(duration), Boolean.parseBoolean(size),
+                Boolean.parseBoolean(combine), configJson, pfopConfigs)
+                : new PfopCommand(configuration, avinfoIndex, Boolean.parseBoolean(duration), Boolean.parseBoolean(size),
+                Boolean.parseBoolean(combine), configJson, pfopConfigs, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop(Map<String, String> indexMap, boolean single) throws IOException {
@@ -718,8 +718,8 @@ public class QSuitsEntry {
         String queries = entryParam.getValue("queries", "").trim();
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.valueOf(expires))
-                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.valueOf(expires), savePath);
+        return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.parseLong(expires))
+                : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.parseLong(expires), savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
@@ -772,8 +772,8 @@ public class QSuitsEntry {
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, tenBucket, region,
-                1000 * Long.valueOf(expires), getQueriesMap()) : new com.qiniu.process.tencent.PrivateUrl(secretId,
-                secretKey, tenBucket, region, 1000 * Long.valueOf(expires), getQueriesMap(), savePath);
+                1000 * Long.parseLong(expires), getQueriesMap()) : new com.qiniu.process.tencent.PrivateUrl(secretId,
+                secretKey, tenBucket, region, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
@@ -793,8 +793,8 @@ public class QSuitsEntry {
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new com.qiniu.process.aliyun.PrivateUrl(accessId, accessSecret, aliBucket, endPoint,
-                1000 * Long.valueOf(expires), getQueriesMap()) : new com.qiniu.process.aliyun.PrivateUrl(accessId,
-                accessSecret, aliBucket, endPoint, 1000 * Long.valueOf(expires), getQueriesMap(), savePath);
+                1000 * Long.parseLong(expires), getQueriesMap()) : new com.qiniu.process.aliyun.PrivateUrl(accessId,
+                accessSecret, aliBucket, endPoint, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.aws.PrivateUrl getAwsS3PrivateUrl(boolean single) throws IOException {
@@ -812,8 +812,8 @@ public class QSuitsEntry {
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region,
-                1000 * Long.valueOf(expires), getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId,
-                secretKey, s3Bucket, endpoint, region, 1000 * Long.valueOf(expires), getQueriesMap(), savePath);
+                1000 * Long.parseLong(expires), getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId,
+                secretKey, s3Bucket, endpoint, region, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.huawei.PrivateUrl getHuaweiPrivateUrl(boolean single) throws IOException {
@@ -833,9 +833,9 @@ public class QSuitsEntry {
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         // 华为 sdk 的过期时间按秒设置
-        return single ? new com.qiniu.process.huawei.PrivateUrl(accessId, secretKey, huaweiBucket, endPoint, Long.valueOf(expires),
+        return single ? new com.qiniu.process.huawei.PrivateUrl(accessId, secretKey, huaweiBucket, endPoint, Long.parseLong(expires),
                 getQueriesMap()) : new com.qiniu.process.huawei.PrivateUrl(accessId, secretKey, huaweiBucket, endPoint,
-                Long.valueOf(expires), getQueriesMap(), savePath);
+                Long.parseLong(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.baidu.PrivateUrl getBaiduPrivateUrl(boolean single) throws IOException {
@@ -854,9 +854,9 @@ public class QSuitsEntry {
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         // 华为 sdk 的过期时间按秒设置
-        return single ? new com.qiniu.process.baidu.PrivateUrl(accessId, secretKey, baiduBucket, endPoint, Integer.valueOf(expires),
+        return single ? new com.qiniu.process.baidu.PrivateUrl(accessId, secretKey, baiduBucket, endPoint, Integer.parseInt(expires),
                 getQueriesMap()) : new com.qiniu.process.baidu.PrivateUrl(accessId, secretKey, baiduBucket, endPoint,
-                Integer.valueOf(expires), getQueriesMap(), savePath);
+                Integer.parseInt(expires), getQueriesMap(), savePath);
     }
 
     private ILineProcess<Map<String, String>> getDownloadFile(Map<String, String> indexMap, boolean single, boolean useQuery)
@@ -876,11 +876,11 @@ public class QSuitsEntry {
             try {
                 if (ranges.length > 1) {
                     range = new int[2];
-                    range[0] = Integer.valueOf(ranges[0]);
+                    range[0] = Integer.parseInt(ranges[0]);
                     String byteSize = ranges[1];
-                    if (byteSize != null && !"".equals(byteSize)) range[1] = Integer.valueOf(byteSize);
+                    if (byteSize != null && !"".equals(byteSize)) range[1] = Integer.parseInt(byteSize);
                 } else {
-                    range = new int[]{Integer.valueOf(ranges[0])};
+                    range = new int[]{Integer.parseInt(ranges[0])};
                 }
             } catch (Exception e) {
                 throw new IOException("incorrect range bytes value, " + e.toString());
@@ -890,18 +890,27 @@ public class QSuitsEntry {
         ParamsUtils.checked(preDown, "pre-down", "(true|false)");
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        String timeout = entryParam.getValue("download-timeout", null);
+        String timeout = entryParam.getValue("down-timeout", null);
         Configuration configuration = null;
         if (timeout != null) {
             configuration = new Configuration();
             configuration.connectTimeout = getQiniuConfig().connectTimeout;
             configuration.writeTimeout = getQiniuConfig().writeTimeout;
-            configuration.readTimeout = Integer.valueOf(timeout);
+            configuration.readTimeout = Integer.parseInt(timeout);
         }
-        return single ? new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, "true".equals(preDown)
-                ? null : savePath, addPrefix, rmPrefix)
-                : new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, Boolean.valueOf(preDown),
-                addPrefix, rmPrefix, savePath);
+        String downloadPath = entryParam.getValue("down-path", "").trim();
+        if (Boolean.parseBoolean(preDown)) {
+            downloadPath = null;
+        } else if (downloadPath.equals(savePath)) {
+            throw new IOException("please change save-path or down-path, because them should not be equal.");
+        } else if ("".equals(downloadPath)) {
+            if (single) downloadPath = ".";
+            else throw new IOException("please set down-path");
+        }
+        return single ? new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, addPrefix,
+                rmPrefix, downloadPath)
+                : new DownloadFile(configuration, protocol, domain, urlIndex, host, range, queries, addPrefix, rmPrefix,
+                downloadPath, savePath);
     }
 
     private ILineProcess<Map<String, String>> getImageCensor(Map<String, String> indexMap, boolean single, boolean useQuery)
@@ -929,8 +938,8 @@ public class QSuitsEntry {
         String checkUrl = entryParam.getValue("check-url", "true").trim();
         if ("true".equals(checkUrl) && !"".equals(hookUrl)) RequestUtils.checkCallbackUrl(hookUrl);
         return single ? new VideoCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, scenes,
-                Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl) : new VideoCensor(qiniuAccessKey, qiniuSecretKey,
-                getQiniuConfig(), protocol, domain, urlIndex, scenes, Integer.valueOf(interval), saverBucket, saverPrefix, hookUrl,
+                Integer.parseInt(interval), saverBucket, saverPrefix, hookUrl) : new VideoCensor(qiniuAccessKey, qiniuSecretKey,
+                getQiniuConfig(), protocol, domain, urlIndex, scenes, Integer.parseInt(interval), saverBucket, saverPrefix, hookUrl,
                 savePath);
     }
 
@@ -940,26 +949,25 @@ public class QSuitsEntry {
                 : new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), jobIdIndex, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getQiniuUploadFile(Map<String, String> indexMap, boolean single)
-            throws IOException {
+    private ILineProcess<Map<String, String>> getQiniuUploadFile(Map<String, String> indexMap, boolean single) throws IOException {
         String pathIndex = indexMap.containsValue("filepath") ? "filepath" : null;
         String parentPath = entryParam.getValue("parent-path", "").trim();
         String recorder = entryParam.getValue("record", "false").trim();
         ParamsUtils.checked(recorder, "record", "(true|false)");
-        boolean record = Boolean.valueOf(recorder);
+        boolean record = Boolean.parseBoolean(recorder);
         String keepPath = entryParam.getValue("keep-path", "true").trim();
         ParamsUtils.checked(keepPath, "keep-path", "(true|false)");
-        boolean keep = Boolean.valueOf(keepPath);
+        boolean keep = Boolean.parseBoolean(keepPath);
         String addPrefix = entryParam.getValue("add-prefix", "").trim();
         String rmPrefix = entryParam.getValue("rm-prefix", "").trim();
         String expiration = entryParam.getValue("expires", "3600").trim();
-        long expires = Long.valueOf(expiration);
+        long expires = Long.parseLong(expiration);
         StringMap policy = new StringMap();
         StringMap params = new StringMap();
         for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
             if (entry.getKey().matches("policy\\.(deleteAfterDays|isPrefixalScope|insertOnly|fsizeMin|fsizeLimit|" +
                     "detectMime|fileType)")) {
-                policy.put(entry.getKey().substring(7), Long.valueOf(entry.getValue().trim()));
+                policy.put(entry.getKey().substring(7), Long.parseLong(entry.getValue().trim()));
             } else if (entry.getKey().startsWith("policy.")) {
                 policy.put(entry.getKey().substring(7), entry.getValue().trim());
             } else if (entry.getKey().startsWith("params.")) {
@@ -968,15 +976,19 @@ public class QSuitsEntry {
         }
         String crc = entryParam.getValue("crc", "false").trim();
         ParamsUtils.checked(crc, "crc", "(true|false)");
-        boolean checkCrc = Boolean.valueOf(crc);
-        return single ? new UploadFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pathIndex, parentPath,
+        boolean checkCrc = Boolean.parseBoolean(crc);
+        Configuration configuration = getQiniuConfig();
+        String threshold = entryParam.getValue("threshold", "0").trim();
+        ParamsUtils.checked(threshold, "threshold", "\\d+");
+        int thresholdSize = Integer.parseInt(threshold);
+        if (thresholdSize > 4) configuration.putThreshold = thresholdSize * 1024 * 1024;
+        return single ? new UploadFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, pathIndex, parentPath,
                 record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc) :
-                new UploadFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pathIndex, parentPath,
+                new UploadFile(qiniuAccessKey, qiniuSecretKey, configuration, bucket, pathIndex, parentPath,
                         record, keep, addPrefix,rmPrefix, expires, policy, params, checkCrc, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getChangeMime(Map<String, String> indexMap, boolean single)
-            throws IOException {
+    private ILineProcess<Map<String, String>> getChangeMime(Map<String, String> indexMap, boolean single) throws IOException {
         String mimeIndex = indexMap.containsValue("mime") ? "mime" : null;
         String mimeType = entryParam.getValue("mime", null);
         if (mimeType != null) mimeType = mimeType.trim();

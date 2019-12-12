@@ -27,6 +27,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected String bucket;
     protected int batchSize;
     protected int retryTimes = 5;
+    protected boolean autoIncrease;
     protected AtomicInteger saveIndex;
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
@@ -52,6 +53,10 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         return this.processName;
     }
 
+    public void setAutoIncrease(boolean autoIncrease) {
+        this.autoIncrease = autoIncrease;
+    }
+
     public void setBatchSize(int batchSize) throws IOException {
         if (!ProcessUtils.canBatch(processName)) {
             throw new IOException(processName + " is not support batch operation.");
@@ -71,12 +76,22 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         Base<T> base = (Base<T>)super.clone();
         if (fileSaveMapper == null) return base;
         try {
-            base.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1)));
+            base.fileSaveMapper = autoIncrease ?
+                    new FileSaveMapper(savePath, processName, String.valueOf(saveIndex.addAndGet(1))) :
+                    new FileSaveMapper(savePath);
             base.fileSaveMapper.preAddWriter("need_retry");
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
         return base;
+    }
+
+    public void changeSaveOrder(String order) throws IOException {
+        try {
+            this.fileSaveMapper.changePrefixAndSuffix(processName, order);
+        } catch (NullPointerException e) {
+            throw new IOException("instance without savePath can not call changeSaveOrder method.");
+        }
     }
 
     /**

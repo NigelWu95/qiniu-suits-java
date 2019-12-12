@@ -20,12 +20,11 @@ import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 import com.qiniu.util.FileUtils;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, BufferedWriter, Map<String, String>> {
+public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Map<String, String>> {
 
 //    private String accessKeyId;
 //    private String accessKeySecret;
@@ -72,6 +71,8 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
         IStringFormat<OSSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
+        } else if ("yaml".equals(saveFormat)) {
+            stringFormatter = line -> ConvertingUtils.toStringWithIndent(line, fields);
         } else {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }
@@ -84,7 +85,7 @@ public class AliOssContainer extends CloudStorageContainer<OSSObjectSummary, Buf
     }
 
     @Override
-    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

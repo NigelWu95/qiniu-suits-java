@@ -1,6 +1,6 @@
 package com.qiniu.datasource;
 
-import com.qiniu.interfaces.IReader;
+import com.qiniu.interfaces.ITextReader;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,9 +9,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TextFileReader implements IReader<String> {
+public class TextFileReader implements ITextReader<File> {
 
     private String name;
+    private File source;
     private BufferedReader bufferedReader;
 //    private String endPrefix;
     private int limit;
@@ -19,14 +20,15 @@ public class TextFileReader implements IReader<String> {
     private List<String> lineList; // 缓存读取的行
     private long count;
 
-    public TextFileReader(File source, String startPrefix, int limit) throws IOException {
+    public TextFileReader(File file, String startPrefix, int limit) throws IOException {
         FileReader fileReader;
         try {
-            fileReader = new FileReader(source);
+            fileReader = new FileReader(file);
         } catch (IOException e) {
-            throw new IOException("file-path parameter may be incorrect, " + e.getMessage());
+            throw new IOException("filepath may be incorrect, " + e.getMessage());
         }
-        name = source.getPath();
+        name = file.getPath();
+        source = file;
         bufferedReader = new BufferedReader(fileReader);
         this.limit = limit;
         line = bufferedReader.readLine();
@@ -44,6 +46,11 @@ public class TextFileReader implements IReader<String> {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public File getOriginal() {
+        return source;
     }
 
     @Override
@@ -85,5 +92,6 @@ public class TextFileReader implements IReader<String> {
         } catch (IOException e) {
             bufferedReader = null;
         }
+        lineList.clear();
     }
 }

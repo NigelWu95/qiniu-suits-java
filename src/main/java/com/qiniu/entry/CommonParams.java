@@ -13,9 +13,7 @@ import com.qiniu.process.filtration.BaseFilter;
 import com.qiniu.process.filtration.SeniorFilter;
 import com.qiniu.util.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Base64;
@@ -46,6 +44,7 @@ public class CommonParams {
     private String baiduAccessId;
     private String baiduSecretKey;
     private String bucket;
+    private String logFilepath;
     private Map<String, Map<String, String>> pathConfigMap;
     private List<String> antiDirectories;
     private List<String> antiPrefixes;
@@ -166,12 +165,12 @@ public class CommonParams {
         path = entryParam.getValue("path", "");
         setSource();
         accountInit();
+        logFilepath = entryParam.getValue("log", null);
         if (isStorageSource) {
             setAuthKey();
             setBucket();
             String prefixes = entryParam.getValue("prefixes", null);
             setPathConfigMap(entryParam.getValue("prefix-config", ""), prefixes, true, true);
-            antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
             setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         } else {
@@ -183,6 +182,7 @@ public class CommonParams {
             String files = entryParam.getValue("files", null);
             setPathConfigMap(entryParam.getValue("file-config", ""), files, false, false);
         }
+        antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
         setProcess();
         setPrivateType();
         regionName = entryParam.getValue("region", "").trim().toLowerCase();
@@ -241,7 +241,7 @@ public class CommonParams {
                 indexMap.put("toKey", "toKey");
                 mapLine.put("toKey", entryParam.getValue("to-key", ""));
                 break;
-            case "download": savePath = entryParam.getValue("save-path", ".");
+            case "download":
             case "asyncfetch":
             case "avinfo":
             case "qhash":
@@ -299,11 +299,14 @@ public class CommonParams {
                 setSaveSeparator();
                 break;
             case "qupload":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key", ""));
-                String filepath = entryParam.getValue("filepath", "").trim();
+                String key = entryParam.getValue("key", "");
+                if (!fromLine) mapLine.put("key", key);
+                String filepath = entryParam.getValue("filepath", "");
                 if (!"".equals(filepath)) {
                     indexMap.put("filepath", "filepath");
                     mapLine.put("filepath", filepath);
+                } else if ("".equals(key)) {
+                    throw new IOException("filepath and key shouldn't all be empty, file must be found with them.");
                 }
                 break;
             case "mime":
@@ -320,9 +323,9 @@ public class CommonParams {
     }
 
     private void setTimeout() {
-        connectTimeout = Integer.valueOf(entryParam.getValue("connect-timeout", "60").trim());
-        readTimeout = Integer.valueOf(entryParam.getValue("read-timeout", "120").trim());
-        requestTimeout = Integer.valueOf(entryParam.getValue("request-timeout", "60").trim());
+        connectTimeout = Integer.parseInt(entryParam.getValue("connect-timeout", "60").trim());
+        readTimeout = Integer.parseInt(entryParam.getValue("read-timeout", "120").trim());
+        requestTimeout = Integer.parseInt(entryParam.getValue("request-timeout", "60").trim());
     }
 
     private void setSource() throws IOException {
@@ -397,7 +400,7 @@ public class CommonParams {
     private void setKeepDir() throws IOException {
         String keepDir = entryParam.getValue("keep-dir", "false");
         ParamsUtils.checked(keepDir, "keep-dir", "(true|false)");
-        this.keepDir = Boolean.valueOf(keepDir);
+        this.keepDir = Boolean.parseBoolean(keepDir);
     }
 
     private void setQiniuAuthKey() throws IOException {
@@ -602,11 +605,11 @@ public class CommonParams {
             if (bucket == null || "".equals(bucket)) bucket = entryParam.getValue("bucket").trim();
             else bucket = entryParam.getValue("bucket", bucket).trim();
         }
-        if ("qupload".equals(process) && entryParam.getValue("parse", null) == null && !"terminal".equals(source)) {
+        if ("qupload".equals(process) && "file".equals(entryParam.getValue("parse", "file")) && !"terminal".equals(source)) {
             isSelfUpload = true;
-            String prefixes = entryParam.getValue("directories", null);
-            setPathConfigMap(entryParam.getValue("directory-config", ""), prefixes, false, true);
-            antiDirectories = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-directories", "")));
+            parse = "file"; // 修正 parse 的默认值
+            String directories = entryParam.getValue("directories", null);
+            setPathConfigMap(entryParam.getValue("directory-config", ""), directories, false, true);
         }
     }
 
@@ -673,60 +676,102 @@ public class CommonParams {
         }
     }
 
+    private void fromProcedureLog(String logFile, boolean withMarker, boolean withEnd) throws IOException {
+        String lastLine = FileUtils.lastLineOfFile(logFile);
+        if (lastLine != null && !"".equals(lastLine)) {
+            try {
+                JsonObject jsonObject = JsonUtils.toJsonObject(lastLine);
+                parseConfigMapFromJson(jsonObject, withMarker, withEnd);
+            } catch (Exception e) {
+                File file = new File(logFile);
+                FileReader fileReader = new FileReader(file);
+                BufferedReader bufferedReader = new BufferedReader(fileReader);
+                int index;
+                String line;
+                String value;
+                Map<String, String> map = new HashMap<>();
+                while ((line = bufferedReader.readLine()) != null) {
+                    index = line.indexOf("-|-");
+                    map.put(line.substring(0, index), line.substring(index));
+                }
+                for (String key : map.keySet()) {
+                    value = map.get(key);
+                    if (!"".equals(value)) {
+                        pathConfigMap.put(key, JsonUtils.fromJson(value, map.getClass()));
+                    }
+                }
+            }
+        }
+    }
+
+    private void parseConfigMapFromJson(JsonObject jsonObject, boolean withMarker, boolean withEnd) throws IOException {
+        JsonObject jsonCfg;
+        JsonElement markerElement;
+        JsonElement startElement;
+        JsonElement endElement;
+        for (String key : jsonObject.keySet()) {
+            Map<String, String> startAndEnd = new HashMap<>();
+//                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
+            JsonElement json = jsonObject.get(key);
+            if (json == null || json instanceof JsonNull) {
+                pathConfigMap.put(key, null);
+                continue;
+            }
+            if (withMarker || withEnd) {
+                if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + key + " must be json.");
+                jsonCfg = json.getAsJsonObject();
+                if (withMarker) {
+                    markerElement = jsonCfg.get("marker");
+                    if (markerElement != null && !(markerElement instanceof JsonNull)) {
+                        startAndEnd.put("marker", markerElement.getAsString());
+                    }
+                }
+                startElement = jsonCfg.get("start");
+                if (startElement != null && !(startElement instanceof JsonNull)) {
+                    startAndEnd.put("start", startElement.getAsString());
+                }
+                if (withEnd) {
+                    endElement = jsonCfg.get("end");
+                    if (endElement != null && !(endElement instanceof JsonNull)) {
+                        startAndEnd.put("end", endElement.getAsString());
+                    }
+                }
+            } else {
+                startAndEnd.put("start", json.getAsString());
+            }
+            pathConfigMap.put(key, startAndEnd);
+        }
+    }
+
     private void setPathConfigMap(String jsonConfigPath, String subPaths, boolean withMarker, boolean withEnd) throws Exception {
         pathConfigMap = new HashMap<>();
-        if (jsonConfigPath != null && !"".equals(jsonConfigPath)) {
-            JsonFile jsonFile = new JsonFile(jsonConfigPath);
-            JsonObject jsonCfg;
-            JsonElement markerElement;
-            JsonElement startElement;
-            JsonElement endElement;
-            for (String key : jsonFile.getKeys()) {
-                Map<String, String> startAndEnd = new HashMap<>();
-//                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
-                JsonElement json = jsonFile.getElement(key);
-                if (json == null || json instanceof JsonNull) {
-                    pathConfigMap.put(key, null);
-                    continue;
-                }
-                if (withMarker || withEnd) {
-                    if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + key + " must be json.");
-                    jsonCfg = json.getAsJsonObject();
-                    if (withMarker) {
-                        markerElement = jsonCfg.get("marker");
-                        if (markerElement != null && !(markerElement instanceof JsonNull)) {
-                            startAndEnd.put("marker", markerElement.getAsString());
-                        }
-                    }
-                    startElement = jsonCfg.get("start");
-                    if (startElement != null && !(startElement instanceof JsonNull)) {
-                        startAndEnd.put("start", startElement.getAsString());
-                    }
-                    if (withEnd) {
-                        endElement = jsonCfg.get("end");
-                        if (endElement != null && !(endElement instanceof JsonNull)) {
-                            startAndEnd.put("end", endElement.getAsString());
-                        }
-                    }
-                } else {
-                    startAndEnd.put("start", json.getAsString());
-                }
-                pathConfigMap.put(key, startAndEnd);
+        if (logFilepath == null || "".equals(logFilepath)) {
+            if (jsonConfigPath != null && !"".equals(jsonConfigPath)) {
+                JsonFile jsonFile = new JsonFile(jsonConfigPath);
+                parseConfigMapFromJson(jsonFile.getJsonObject(), withMarker, withEnd);
+            } else if (subPaths != null && !"".equals(subPaths)) {
+                String[] subPathList = ParamsUtils.escapeSplit(subPaths);
+                for (String subPath : subPathList) pathConfigMap.put(subPath, null);
             }
-        } else if (subPaths != null && !"".equals(subPaths)) {
-            String[] subPathList = ParamsUtils.escapeSplit(subPaths);
-            for (String subPath : subPathList) pathConfigMap.put(subPath, null);
+        } else {
+            if (jsonConfigPath != null && !"".equals(jsonConfigPath)) {
+                throw new IOException("log and uris can not be used together, please remove prefixes/files/directories if you want use breakpoint with log.");
+            } else if (subPaths != null && !"".equals(subPaths)) {
+                throw new IOException("log and json config can not be used together, please remove config path if you want use breakpoint with log.");
+            } else {
+                fromProcedureLog(logFilepath, withMarker, withEnd);
+            }
         }
     }
 
     private void setPrefixLeft(String prefixLeft) throws IOException {
         ParamsUtils.checked(prefixLeft, "prefix-left", "(true|false)");
-        this.prefixLeft = Boolean.valueOf(prefixLeft);
+        this.prefixLeft = Boolean.parseBoolean(prefixLeft);
     }
 
     private void setPrefixRight(String prefixRight) throws IOException {
         ParamsUtils.checked(prefixRight, "prefix-right", "(true|false)");
-        this.prefixRight = Boolean.valueOf(prefixRight);
+        this.prefixRight = Boolean.parseBoolean(prefixRight);
     }
 
     public String[] splitDateScale(String dateScale) throws IOException {
@@ -827,7 +872,7 @@ public class CommonParams {
         String checkRewrite = entryParam.getValue("f-check-rewrite", "false").trim();
         ParamsUtils.checked(checkRewrite, "f-check-rewrite", "(true|false)");
         try {
-            seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.valueOf(checkRewrite)) {
+            seniorFilter = new SeniorFilter<Map<String, String>>(checkType, checkConfig, Boolean.parseBoolean(checkRewrite)) {
                 @Override
                 protected String valueFrom(Map<String, String> item, String key) {
                     return item.get(key);
@@ -862,7 +907,7 @@ public class CommonParams {
         if (indexes.startsWith("pre-")) {
             String num = indexes.substring(4);
             if (num.matches("\\d+")) {
-                int number = Integer.valueOf(num);
+                int number = Integer.parseInt(num);
                 if (number < 0) {
                     throw new IOException("pre size can not be smaller than zero.");
                 } else if (keys.size() >= number) {
@@ -916,14 +961,14 @@ public class CommonParams {
             fieldsMode = 1; // file 的 parse 方式，字段类型为 field，所以顺序无所谓，mime 和 etag 涉及计算，所以将优先级放在后面
             keys.add("key");
             keys.add("size");
-            keys.add("datetime");
             keys.add("parent");
+            keys.add("datetime");
             keys.add("mime");
             keys.add("etag");
             if ("".equals(indexes)) {
                 saveFormat = entryParam.getValue("save-format", "tab").trim();
-                if ("yaml".equals(saveFormat)) indexes = "pre-4";
-                else indexes = "pre-3";
+                if ("yaml".equals(saveFormat)) indexes = "pre-3";
+                else indexes = "pre-2";
             } else if (!indexes.startsWith("pre-")) {
                 throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
             }
@@ -979,8 +1024,8 @@ public class CommonParams {
                 if (!indexMap.containsKey("0")) indexMap.put("0", "key");
             }
         }
-        if (ProcessUtils.needFilepath(process) || "file".equals(parse) || isSelfUpload) {
-            setIndex(entryParam.getValue("filepath-index", "filepath").trim(), "filepath");
+        if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
+            setIndex(entryParam.getValue("filepath-index", fieldIndex ? "filepath" : "").trim(), "filepath");
 //            setIndex("parent", "parent");
         }
         if (indexMap.size() == 0) {
@@ -1085,16 +1130,21 @@ public class CommonParams {
 
     private void setUnitLen(String unitLen) throws IOException {
         if (unitLen.startsWith("-")) {
-            if ("qiniu".equals(source) || "local".equals(source)) unitLen = "10000";
-            else unitLen = "1000";
+            if (isSelfUpload) this.unitLen = 3;
+            if ("qiniu".equals(source) || "local".equals(source)) this.unitLen = 10000;
+            else this.unitLen = 1000;
+        } else {
+            ParamsUtils.checked(unitLen, "unit-len", "\\d+");
+            this.unitLen = Integer.parseInt(unitLen);
+            if (isSelfUpload && this.unitLen > 100) {
+                throw new IOException("file upload shouldn't has too big unit-len, suggest setting unit-len smaller than 100.");
+            }
         }
-        ParamsUtils.checked(unitLen, "unit-len", "\\d+");
-        this.unitLen = Integer.valueOf(unitLen);
     }
 
     private void setThreads(String threads) throws IOException {
         ParamsUtils.checked(threads, "threads", "[1-9]\\d*");
-        this.threads = Integer.valueOf(threads);
+        this.threads = Integer.parseInt(threads);
     }
 
     private void setBatchSize(String batchSize) throws IOException {
@@ -1106,12 +1156,12 @@ public class CommonParams {
             }
         }
         ParamsUtils.checked(batchSize, "batch-size", "\\d+");
-        this.batchSize = Integer.valueOf(batchSize);
+        this.batchSize = Integer.parseInt(batchSize);
     }
 
     private void setRetryTimes(String retryTimes) throws IOException {
         ParamsUtils.checked(retryTimes, "retry-times", "\\d+");
-        this.retryTimes = Integer.valueOf(retryTimes);
+        this.retryTimes = Integer.parseInt(retryTimes);
     }
 
     private void setSaveTotal(String saveTotal) throws IOException {
@@ -1138,14 +1188,18 @@ public class CommonParams {
             }
         }
         ParamsUtils.checked(saveTotal, "save-total", "(true|false)");
-        this.saveTotal = Boolean.valueOf(saveTotal);
+        this.saveTotal = Boolean.parseBoolean(saveTotal);
     }
 
     private void setSavePath() throws IOException {
-        savePath = entryParam.getValue("save-path", "local".equals(source) ? (path.endsWith(FileUtils.pathSeparator) ?
-                path.substring(0, path.length() - 1) : path) + "-result" : bucket);
+        savePath = entryParam.getValue("save-path", "").trim();
+        if ("".equals(savePath)) {
+            savePath = "local".equals(source) ? (path.endsWith(FileUtils.pathSeparator) ?
+                    path.substring(0, path.length() - 1) : path) + "-result" : bucket;
+            savePath = savePath.substring(savePath.lastIndexOf(FileUtils.pathSeparator) + 1);
+        }
         if (CloudApiUtils.isFileSource(source) && FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
-            throw new IOException("the save-path can not be same as path.");
+            throw new IOException(String.format("the save-path \"%s\" can not be same as path.", savePath));
         } else {
             File file = new File(savePath);
             File[] files = file.listFiles();
@@ -1159,10 +1213,11 @@ public class CommonParams {
                 }
                 if (isOk) {
                     if (pathConfigMap == null || pathConfigMap.size() <= 0) {
-                        throw new IOException("please change the save-path, because there are last listed files, for not cover them.");
+                        throw new IOException(String.format("please change the save-path \"%s\", " +
+                                "because there are last listed files, for not cover them.", savePath));
                     }
                 } else {
-                    throw new IOException("please change save-path because it's not empty.");
+                    throw new IOException(String.format("please change save-path \"%s\" because it's not empty.", savePath));
                 }
             }
         }
@@ -1207,7 +1262,7 @@ public class CommonParams {
                     jsonArray.add(scales[0]);
                     jsonArray.add(scales[1]);
                 } else {
-                    jsonArray.add(Integer.valueOf(scales[0]));
+                    jsonArray.add(Integer.parseInt(scales[0]));
                     jsonArray.add(Integer.MAX_VALUE);
                 }
                 pfopJson.add("scale", jsonArray);
@@ -1224,12 +1279,12 @@ public class CommonParams {
         String delay = entryParam.getValue("pause-delay", null);
         if (startTime != null) {
             ParamsUtils.checked(delay, "pause-delay", "\\d+");
-            pauseDelay = Long.valueOf(delay);
+            pauseDelay = Long.parseLong(delay);
         }
         String duration = entryParam.getValue("pause-duration", null);
         if (startTime != null) {
             ParamsUtils.checked(duration, "pause-duration", "\\d+");
-            pauseDuration = Long.valueOf(duration);
+            pauseDuration = Long.parseLong(duration);
         }
     }
 

@@ -49,7 +49,11 @@ public final class JsonUtils {
     }
 
     public static String toJsonWithoutUrlEscape(Object srcObject) {
-        return escapeGson.toJson(srcObject).replace("\\\\", "\\");
+        return escapeGson.toJson(srcObject)
+                .replace(":\"{\\\"", ":{\"")
+                .replace("\\\"}\",", "\"},")
+                .replace("\\\":\\\"", "\":\"")
+                .replace("\\\\", "\\");
     }
 
     public static JsonObject toJsonObject(Map<String, String> map) {

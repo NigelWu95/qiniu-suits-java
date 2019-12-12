@@ -38,7 +38,7 @@ public class DatetimeUtilsTest {
                 datetime = map.get("lastModified");
             } else {
                 long accuracy = (long) Math.pow(10, (timestamp.length() - 10));
-                datetime = DatetimeUtils.stringOf(Long.valueOf(timestamp), accuracy);
+                datetime = DatetimeUtils.stringOf(Long.parseLong(timestamp), accuracy);
             }
         }
         localDateTime = LocalDateTime.parse(datetime);

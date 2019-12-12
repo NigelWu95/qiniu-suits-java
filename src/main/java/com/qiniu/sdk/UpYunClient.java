@@ -64,8 +64,8 @@ public class UpYunClient {
         fileItem.key = key;
         try {
             fileItem.attribute = conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_TYPE);
-            fileItem.size = Long.valueOf(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_SIZE));
-            fileItem.lastModified = Long.valueOf(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_DATE));
+            fileItem.size = Long.parseLong(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_SIZE));
+            fileItem.lastModified = Long.parseLong(conn.getHeaderField(UpYunConfig.X_UPYUN_FILE_DATE));
         } catch (NullPointerException | NumberFormatException e) {
             throw new SuitsException(e, 404, e.getMessage() + ", the file may be not exists: " + fileItem);
         } finally {

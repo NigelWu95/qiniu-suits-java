@@ -27,7 +27,8 @@ public class UploadFile extends Base<Map<String, String>> {
 
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
-                      StringMap policy, StringMap params, boolean checkCrc, String savePath, int saveIndex) throws IOException {
+                      StringMap policy, StringMap params, boolean checkCrc, String savePath, int saveIndex)
+            throws IOException {
         super("qupload", accessKey, secretKey, null, savePath, saveIndex);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         auth = Auth.create(accessKey, secretKey);
@@ -52,20 +53,19 @@ public class UploadFile extends Base<Map<String, String>> {
         } else {
             uploadManager = new UploadManager(configuration.clone());
         }
-        set(configuration, bucket, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params, checkCrc);
+        set(configuration, bucket, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params,
+                checkCrc);
     }
 
     public UploadFile(String accessKey, String secretKey, Configuration configuration, String bucket, String pathIndex,
                       String parentPath, boolean record, boolean keepPath, String addPrefix, String rmPrefix, long expires,
-                      StringMap policy, StringMap params,
-                      boolean checkCrc, String savePath) throws IOException {
+                      StringMap policy, StringMap params, boolean checkCrc, String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, pathIndex, parentPath, record, keepPath, addPrefix, rmPrefix,
                 expires, policy, params, checkCrc, savePath, 0);
     }
 
     private void set(Configuration configuration, String bucket, String pathIndex, String parentPath, boolean keepPath,
-                     String addPrefix, String rmPrefix, long expires, StringMap policy, StringMap params,
-                     boolean checkCrc) {
+                     String addPrefix, String rmPrefix, long expires, StringMap policy, StringMap params, boolean checkCrc) {
         this.configuration = configuration;
         this.bucket = bucket;
         if (pathIndex == null || "".equals(pathIndex)) this.pathIndex = "filepath";
@@ -108,7 +108,7 @@ public class UploadFile extends Base<Map<String, String>> {
             if (key == null || "".equals(key)) throw new IOException(pathIndex + " is not exists or empty in " + line);
             if (parentPath == null) {
                 filepath = key;
-                if (key.startsWith(FileUtils.pathSeparator)) key = key.substring(1);
+//                if (key.startsWith(FileUtils.pathSeparator)) key = key.substring(1);
             } else {
                 if (key.startsWith(FileUtils.pathSeparator)) {
                     filepath = String.join("", parentPath, key);
@@ -119,19 +119,25 @@ public class UploadFile extends Base<Map<String, String>> {
             }
             line.put(pathIndex, filepath);
         } else {
-            if (key != null) {
-                if (keepPath) {
-                    if (key.startsWith(FileUtils.pathSeparator)) key = key.substring(1);
-                } else {
-                    key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
-                }
+//            if (key != null) {
+//                if (keepPath) {
+//                    if (key.startsWith(FileUtils.pathSeparator)) key = key.substring(1);
+//                } else {
+//                    key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
+//                }
+//            } else {
+//                if (keepPath) {
+//                    if (filepath.startsWith(FileUtils.pathSeparator)) key = filepath.substring(1);
+//                    else key = filepath;
+//                } else {
+//                    key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
+//                }
+//            }
+            if (keepPath) {
+                if (key == null) key = filepath;
             } else {
-                if (keepPath) {
-                    if (filepath.startsWith(FileUtils.pathSeparator)) key = filepath.substring(1);
-                    else key = filepath;
-                } else {
-                    key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
-                }
+                if (key == null) key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
+                else key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
             }
             if (parentPath != null) {
                 if (filepath.startsWith(FileUtils.pathSeparator)) {

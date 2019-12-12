@@ -18,11 +18,10 @@ import com.qiniu.interfaces.IResultOutput;
 import com.qiniu.util.CloudApiUtils;
 import com.qiniu.util.ConvertingUtils;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, BufferedWriter, Map<String, String>> {
+public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Map<String, String>> {
 
 //    private String secretId;
 //    private String secretKey;
@@ -67,6 +66,8 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
         IStringFormat<COSObjectSummary> stringFormatter;
         if ("json".equals(saveFormat)) {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new JsonObjectPair()).toString();
+        } else if ("yaml".equals(saveFormat)) {
+            stringFormatter = line -> ConvertingUtils.toStringWithIndent(line, fields);
         } else {
             stringFormatter = line -> ConvertingUtils.toPair(line, fields, new StringBuilderPair(saveSeparator));
         }
@@ -79,7 +80,7 @@ public class TenCosContainer extends CloudStorageContainer<COSObjectSummary, Buf
     }
 
     @Override
-    protected IResultOutput<BufferedWriter> getNewResultSaver(String order) throws IOException {
+    protected IResultOutput getNewResultSaver(String order) throws IOException {
         return order != null ? new FileSaveMapper(savePath, getSourceName(), order) : new FileSaveMapper(savePath);
     }
 

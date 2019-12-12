@@ -81,7 +81,8 @@ public class UpLister implements IStorageLister<FileItem> {
         JsonElement jsonElement = returnJson.get("files");
         if (jsonElement instanceof JsonArray) {
             JsonArray files = returnJson.get("files").getAsJsonArray();
-            List<FileItem> fileItems = new ArrayList<>(files.size());
+            int initSize = files.size() > 100 ? (int)(files.size() * 0.67) : files.size();
+            List<FileItem> fileItems = new ArrayList<>(initSize);
             if (files.size() > 0) {
                 JsonObject object;
                 String attribute;
@@ -94,7 +95,7 @@ public class UpLister implements IStorageLister<FileItem> {
                             prefix + "/" + object.get("name").getAsString();
                     if ("folder".equals(attribute)) {
                         if (directories == null) {
-                            directories = new ArrayList<>();
+                            directories = new ArrayList<>(initSize);
                             directories.add(totalName);
                         } else {
                             directories.add(totalName);

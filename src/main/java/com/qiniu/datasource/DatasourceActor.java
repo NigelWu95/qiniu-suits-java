@@ -1,6 +1,5 @@
 package com.qiniu.datasource;
 
-import com.qiniu.common.JsonRecorder;
 import com.qiniu.interfaces.*;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.util.*;
@@ -42,12 +41,15 @@ public abstract class DatasourceActor {
     protected ConcurrentMap<String, IResultOutput> saverMap;
     protected ConcurrentMap<String, ILineProcess> processorMap;
     protected boolean stopped;
+    protected ConcurrentMap<String, String> progressMap;
 
-    public DatasourceActor(int unitLen, int threads) {
+    public DatasourceActor(int unitLen, int threads) throws IOException {
+        if (unitLen <= 1) throw new IOException("unitLen must bigger than 1.");
         this.unitLen = unitLen;
         this.threads = threads;
         saverMap = new ConcurrentHashMap<>(threads);
         processorMap = new ConcurrentHashMap<>(threads);
+        progressMap = new ConcurrentHashMap<>(threads);
     }
 
     public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields)
@@ -67,7 +69,11 @@ public abstract class DatasourceActor {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
     }
 
-    protected JsonRecorder recorder = new JsonRecorder();
+    void recordLister(String key, String record) {
+        try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
+        procedureLogger.info("{}:{}", key, record);
+        progressMap.put(key, record);
+    }
 
     protected void sleep(long millis) {
         try {
@@ -83,16 +89,17 @@ public abstract class DatasourceActor {
         for (Map.Entry<String, IResultOutput> saverEntry : saverMap.entrySet()) {
             saverEntry.getValue().closeWriters();
             processor = processorMap.get(saverEntry.getKey());
-            if (processor != null) processor.closeResource();
+            if (processor != null) processor.cancel();
         }
-        String record = recorder.toString();
-        if (recorder.size() > 0) {
+        String record = "{}";
+        if (progressMap.size() > 0) {
             String path = new File(savePath).getCanonicalPath();
             FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
             saveMapper.setAppend(false);
             saveMapper.setFileExt(".json");
-            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1) + "-lines";
+            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1);
             saveMapper.addWriter(fileName);
+            record = JsonUtils.toJsonWithoutUrlEscape(progressMap);
             saveMapper.writeToKey(fileName, record, true);
             saveMapper.closeWriters();
             rootLogger.info("please check the lines breakpoint in {}.json, " +

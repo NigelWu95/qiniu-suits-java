@@ -2,7 +2,9 @@ package com.qiniu.interfaces;
 
 import java.io.*;
 
-public interface IResultOutput<T> {
+public interface IResultOutput {
+
+    void changePrefixAndSuffix(String prefix, String suffix);
 
     void setRetryTimes(int retryTimes);
 
