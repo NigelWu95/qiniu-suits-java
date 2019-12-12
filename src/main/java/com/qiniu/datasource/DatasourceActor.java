@@ -71,7 +71,7 @@ public abstract class DatasourceActor {
 
     void recordLister(String key, String record) {
         try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-        procedureLogger.info("{}:{}", key, record);
+        procedureLogger.info("{}-|-{}", key, record);
         progressMap.put(key, record);
     }
 

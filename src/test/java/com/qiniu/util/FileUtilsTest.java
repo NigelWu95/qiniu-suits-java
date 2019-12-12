@@ -71,4 +71,12 @@ public class FileUtilsTest {
         File file3 = new File("\\~/Downloads");
         System.out.println(file3.getCanonicalPath());
     }
+
+    @Test
+    public void testLastLineOfFile() throws IOException {
+        System.out.println("test");
+        System.out.println(FileUtils.lastLineOfFile("pom.xml"));
+//        System.out.println(FileUtils.lastLineOfFile("qsuits.iml"));
+        System.out.println(FileUtils.lastLineOfFile("/Users/wubingheng/Downloads/redis-work.md"));
+    }
 }
