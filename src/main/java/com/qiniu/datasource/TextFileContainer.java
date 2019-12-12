@@ -94,11 +94,12 @@ public class TextFileContainer extends TextContainer<File, Map<String, String>> 
         } else {
             throw new IOException("");
         }
-        return files.parallelStream().map(file1 -> {
+        return files.parallelStream().map(pFile -> {
             try {
-                return new TextFileReader(file, null, unitLen);
+                return new TextFileReader(pFile, null, unitLen);
             } catch (IOException e) {
                 e.printStackTrace();
+                errorLogger.error("generate lister failed by {}\t{}", pFile.getPath(), urisMap.get(pFile.getPath()), e);
                 return null;
             }
         }).filter(Objects::nonNull).peek(reader -> recordListerByUri(reader.getName())).collect(Collectors.toList());

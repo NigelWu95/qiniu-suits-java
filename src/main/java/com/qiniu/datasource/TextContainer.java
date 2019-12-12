@@ -66,6 +66,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
             this.urisMap = new HashMap<>(threads);
             this.urisMap.putAll(urisMap);
             int size = this.urisMap.size();
+            uris = new ArrayList<>();
             Iterator<String> iterator = this.urisMap.keySet().stream().sorted().collect(Collectors.toList()).iterator();
             while (iterator.hasNext() && size > 0) {
                 size--;
@@ -162,12 +163,13 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
                 if (HttpRespUtils.checkException(e, 2) < -1) throw e;
                 if (e.response != null) e.response.close();
             }
-            json.addProperty("start", reader.currentEndLine());
+            statistics.addAndGet(convertedList.size());
+            lastLine = reader.currentEndLine();
+            json.addProperty("start", lastLine);
             record = json.toString();
             progressMap.put(reader.getName(), record);
             try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
             procedureLogger.info("{}-|-{}", reader.getName(), record);
-            lastLine = reader.currentEndLine();
         }
     }
 
@@ -233,11 +235,11 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
             readers = getReaders(FileUtils.convertToRealPath(path));
         } else {
             if (hasAntiPrefixes) {
-                uris.parallelStream().filter(this::checkPrefix).forEach(this::recordListerByUri);
+                uris = uris.parallelStream().filter(this::checkPrefix).peek(this::recordListerByUri).collect(Collectors.toList());
             } else {
                 uris.parallelStream().forEach(this::recordListerByUri);
             }
-            readers = uris.parallelStream().filter(this::checkPrefix).map(uri -> {
+            readers = uris.parallelStream().map(uri -> {
                 try {
                     return generateReader(uri);
                 } catch (IOException e) {
@@ -252,6 +254,11 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
             } else {
                 executorPool = Executors.newFixedThreadPool(threads);
                 readers.parallelStream().forEach(this::reading);
+                executorPool.shutdown();
+                while (!executorPool.isTerminated()) {
+                    sleep(1000);
+                    rootLogger.info("finished count: {}.", statistics.get());
+                }
                 rootLogger.info("{} finished, results in {}.", info, savePath);
             }
             endAction();

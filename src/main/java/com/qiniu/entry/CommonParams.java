@@ -717,7 +717,7 @@ public class CommonParams {
                 pathConfigMap.put(key, null);
                 continue;
             }
-            if (withMarker || withEnd) {
+//            if (withMarker || withEnd) {
                 if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + key + " must be json.");
                 jsonCfg = json.getAsJsonObject();
                 if (withMarker) {
@@ -736,9 +736,9 @@ public class CommonParams {
                         startAndEnd.put("end", endElement.getAsString());
                     }
                 }
-            } else {
-                startAndEnd.put("start", json.getAsString());
-            }
+//            } else {
+//                startAndEnd.put("start", json.getAsString());
+//            }
             pathConfigMap.put(key, startAndEnd);
         }
     }
@@ -1206,9 +1206,11 @@ public class CommonParams {
             boolean isOk = false;
             if (files != null && files.length > 0) {
                 for (File file1 : files) {
-                    if (file1.getName().startsWith(source) && file1.length() > 0) {
-                        isOk = true;
-                        break;
+                    if (file1.length() > 0) {
+                        if (file1.getName().startsWith(source) || (!"".equals(process) && file1.getName().startsWith(process))) {
+                            isOk = true;
+                            break;
+                        }
                     }
                 }
                 if (isOk) {
