@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class UpYosContainer extends CloudStorageContainer<FileItem, Map<String, String>> {
@@ -116,38 +118,160 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, Map<String, 
         }
     }
 
-    private AtomicLong atomicLong = new AtomicLong(0);
-
-    private void listForNextIteratively(List<String> prefixes) throws Exception {
-        List<String> tempPrefixes;
-        List<Future<List<String>>> futures = new ArrayList<>();
-        for (String prefix : prefixes) {
-            if (atomicLong.get() > threads) {
-                tempPrefixes = directoriesAfterListerRun(prefix);
-                if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
-            } else {
-                atomicLong.incrementAndGet();
-                futures.add(executorPool.submit(() -> {
-                    List<String> list = directoriesAfterListerRun(prefix);
-                    atomicLong.decrementAndGet();
-                    return list;
-                }));
+    private List<String> loopForFutures(List<Future<IStorageLister<FileItem>>> futures) throws Exception {
+        Iterator<Future<IStorageLister<FileItem>>> iterator;
+        Future<IStorageLister<FileItem>> future;
+        IStorageLister<FileItem> tempLister;
+        List<String> nextPrefixes = new ArrayList<>();
+        iterator = futures.iterator();
+        while (iterator.hasNext()) {
+            future = iterator.next();
+            if (future.isDone()) {
+                tempLister = future.get();
+                if (tempLister != null) {
+                    if (tempLister.getDirectories() != null && tempLister.getDirectories().size() > 0) {
+                        if (hasAntiPrefixes) {
+                            nextPrefixes.addAll(tempLister.getDirectories().parallelStream()
+                                    .filter(this::checkPrefix)
+                                    .peek(this::recordListerByPrefix)
+                                    .collect(Collectors.toList()));
+                        } else {
+                            tempLister.getDirectories().parallelStream().forEach(this::recordListerByPrefix);
+                            nextPrefixes.addAll(tempLister.getDirectories());
+                        }
+                        tempLister.getDirectories().clear();
+                    }
+                    processNodeLister(tempLister);
+                }
+                integer.decrementAndGet();
+                iterator.remove();
             }
         }
-        Iterator<Future<List<String>>> iterator;
-        Future<List<String>> future;
-        while (futures.size() > 0) {
-            iterator = futures.iterator();
-            while (iterator.hasNext()) {
-                future = iterator.next();
-                if (future.isDone()) {
-                    tempPrefixes = future.get();
-                    if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
-                    iterator.remove();
+        iterator = null;
+        future = null;
+        tempLister = null;
+        return nextPrefixes;
+    }
+
+    private Lock lock = new ReentrantLock();
+    private AtomicInteger integer = new AtomicInteger(0);
+
+    private List<String> listForNextIteratively(List<String> prefixes) throws Exception {
+        List<Future<IStorageLister<FileItem>>> futures = new ArrayList<>();
+        List<String> nextPrefixes = new ArrayList<>();
+        Future<IStorageLister<FileItem>> future;
+        List<String> tempPrefixes;
+        for (String prefix : prefixes) {
+            if (integer.get() < threads) {
+                future = executorPool.submit(() -> {
+                    try {
+                        return generateLister(prefix);
+                    } catch (IOException e) {
+                        try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                        errorLogger.error("generate lister failed by {}\t{}", prefix, prefixesMap.get(prefix), e);
+                        return null;
+                    }
+                });
+                if (future.isDone() && lock.tryLock()) {
+                    try {
+                        IStorageLister<FileItem> futureLister = future.get();
+                        if (futureLister != null) {
+                            if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
+                                if (hasAntiPrefixes) {
+                                    nextPrefixes.addAll(futureLister.getDirectories().parallelStream()
+                                            .filter(this::checkPrefix)
+                                            .peek(dir -> recordListerByPrefix(prefix))
+                                            .collect(Collectors.toList()));
+                                } else {
+                                    futureLister.getDirectories().parallelStream().forEach(dir -> recordListerByPrefix(prefix));
+                                    nextPrefixes.addAll(futureLister.getDirectories());
+                                }
+                                futureLister.getDirectories().clear();
+                            }
+                            processNodeLister(futureLister);
+                        }
+                    } catch (Exception e) {
+                        try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                        errorLogger.error("execute lister failed", e);
+                    } finally {
+                        lock.unlock();
+                    }
+                } else {
+                    integer.incrementAndGet();
+                    futures.add(future);
+                }
+            } else {
+                while (!lock.tryLock());
+                try {
+                    IStorageLister<FileItem> futureLister = generateLister(prefix);
+                    if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
+                        if (hasAntiPrefixes) {
+                            nextPrefixes.addAll(futureLister.getDirectories().parallelStream()
+                                    .filter(this::checkPrefix)
+                                    .peek(this::recordListerByPrefix)
+                                    .collect(Collectors.toList()));
+                        } else {
+                            futureLister.getDirectories().parallelStream().forEach(this::recordListerByPrefix);
+                            nextPrefixes.addAll(futureLister.getDirectories());
+                        }
+                        futureLister.getDirectories().clear();
+                    }
+                    processNodeLister(futureLister);
+                } catch (Exception e) {
+                    try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
+                    errorLogger.error("generate lister failed by {}\t{}", prefixLeft, prefixesMap.get(prefix), e);
+                } finally {
+                    lock.unlock();
                 }
             }
+            tempPrefixes = loopForFutures(futures);
+            nextPrefixes.addAll(tempPrefixes);
+            tempPrefixes.clear();
         }
+        while (futures.size() > 0) {
+            tempPrefixes = loopForFutures(futures);
+            nextPrefixes.addAll(loopForFutures(futures));
+            tempPrefixes.clear();
+        }
+        futures = null;
+        future = null;
+        tempPrefixes = null;
+        prefixes.clear();
+        prefixes = null;
+        return nextPrefixes;
     }
+
+//    private AtomicLong atomicLong = new AtomicLong(0);
+//    private void listForNextIteratively(List<String> prefixes) throws Exception {
+//        List<String> tempPrefixes;
+//        List<Future<List<String>>> futures = new ArrayList<>();
+//        for (String prefix : prefixes) {
+//            if (atomicLong.get() > threads) {
+//                tempPrefixes = directoriesAfterListerRun(prefix);
+//                if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
+//            } else {
+//                atomicLong.incrementAndGet();
+//                futures.add(executorPool.submit(() -> {
+//                    List<String> list = directoriesAfterListerRun(prefix);
+//                    atomicLong.decrementAndGet();
+//                    return list;
+//                }));
+//            }
+//        }
+//        Iterator<Future<List<String>>> iterator;
+//        Future<List<String>> future;
+//        while (futures.size() > 0) {
+//            iterator = futures.iterator();
+//            while (iterator.hasNext()) {
+//                future = iterator.next();
+//                if (future.isDone()) {
+//                    tempPrefixes = future.get();
+//                    if (tempPrefixes != null) listForNextIteratively(tempPrefixes);
+//                    iterator.remove();
+//                }
+//            }
+//        }
+//    }
 
     /**
      * 根据当前参数值创建多线程执行数据源导出工作
@@ -187,7 +311,8 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, Map<String, 
         try {
             if (prefixes != null && prefixes.size() > 0) {
                 executorPool = Executors.newFixedThreadPool(threads);
-                listForNextIteratively(prefixes);
+//                listForNextIteratively(prefixes);
+                while (prefixes.size() > 0) prefixes = listForNextIteratively(prefixes);
                 executorPool.shutdown();
                 while (!executorPool.isTerminated()) sleep(1000);
             }

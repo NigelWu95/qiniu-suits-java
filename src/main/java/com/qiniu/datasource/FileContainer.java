@@ -118,6 +118,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             String end = value == null ? null : value.get("end");
             File tempFile = new File(temp);
             if (!tempFile.exists()) tempFile = new File(realPath, temp);
+            directories = new ArrayList<>();
             if (tempFile.isDirectory()) directories.add(tempFile);
             else throw new IOException(temp + " is not valid directory.");
             String forCheckPath = tempFile.getCanonicalPath() + FileUtils.pathSeparator;
@@ -247,6 +248,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                     errorLogger.error("process objects: {}", lister.getName(), e);
                     if (e.response != null) e.response.close();
                 }
+                statistics.addAndGet(convertedList.size());
             }
             if (hasNext) {
                 json.addProperty("start", lister.currentEndFilepath());
@@ -372,7 +374,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
     }
 
     private Lock lock = new ReentrantLock();
-    private AtomicInteger integer = new AtomicInteger(threads);
+    private AtomicInteger integer = new AtomicInteger(0);
 
     private List<File> listForNextIteratively(List<File> directories) throws Exception {
         List<Future<IFileLister<E, File>>> futures = new ArrayList<>();
@@ -411,7 +413,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                         }
                     } catch (Exception e) {
                         try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
-                        errorLogger.error("excute lister failed", e);
+                        errorLogger.error("execute lister failed", e);
                     } finally {
                         lock.unlock();
                     }
@@ -496,6 +498,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             }
             sleep(1000);
             count++;
+            rootLogger.info("finished count: {}.", statistics.get());
         }
         if (notCheck) return new ArrayList<>();
         else return list;
@@ -506,7 +509,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
 //            directories = directories.parallelStream().map(this::directoriesFromLister).filter(Objects::nonNull)
 //                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
 //        }
-        while (directories != null && directories.size() > 0) directories = listForNextIteratively(directories);
+        while (directories.size() > 0) directories = listForNextIteratively(directories);
         executorPool.shutdown();
         if (threads > 1) {
             int cValue = threads >= 10 ? threads / 2 : 3;
@@ -557,7 +560,10 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 list = checkListerInPool(cValue, tiny);
             }
         }
-        while (!executorPool.isTerminated()) sleep(1000);
+        while (!executorPool.isTerminated()) {
+            sleep(1000);
+            rootLogger.info("finished count: {}.", statistics.get());
+        }
     }
 
     @Override

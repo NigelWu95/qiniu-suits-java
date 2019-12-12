@@ -14,6 +14,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.qiniu.entry.CommonParams.lineFormats;
 
@@ -41,6 +42,7 @@ public abstract class DatasourceActor {
     protected ConcurrentMap<String, IResultOutput> saverMap;
     protected ConcurrentMap<String, ILineProcess> processorMap;
     protected boolean stopped;
+    protected AtomicLong statistics;
     protected ConcurrentMap<String, String> progressMap;
 
     public DatasourceActor(int unitLen, int threads) throws IOException {
@@ -49,6 +51,7 @@ public abstract class DatasourceActor {
         this.threads = threads;
         saverMap = new ConcurrentHashMap<>(threads);
         processorMap = new ConcurrentHashMap<>(threads);
+        statistics = new AtomicLong(0);
         progressMap = new ConcurrentHashMap<>(threads);
     }
 
@@ -71,7 +74,7 @@ public abstract class DatasourceActor {
 
     void recordLister(String key, String record) {
         try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-        procedureLogger.info("{}:{}", key, record);
+        procedureLogger.info("{}-|-{}", key, record);
         progressMap.put(key, record);
     }
 

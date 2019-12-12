@@ -327,20 +327,25 @@ public final class ConvertingUtils {
 
     public static <T> T toPair(JsonObject json, Map<String, String> indexMap, KeyValuePair<String, T> pair) throws IOException {
         if (json == null) throw new IOException("empty jsonObject.");
+        String field;
         JsonElement jsonElement;
         for (String index : indexMap.keySet()) {
+            field = indexMap.get(index);
             jsonElement = json.get(index);
             // JsonUtils.toString(null) 和 JsonUtils.toString(JsonNull.INSTANCE) 均为 null
-            if (jsonElement instanceof JsonPrimitive) {
-                JsonPrimitive primitive = jsonElement.getAsJsonPrimitive();
-                if (primitive.isBoolean()) pair.put(indexMap.get(index), JsonUtils.fromJson(jsonElement, Boolean.class));
-                else if (primitive.isNumber()) pair.put(indexMap.get(index), JsonUtils.fromJson(jsonElement, Long.class));
-                else pair.put(indexMap.get(index), jsonElement.toString());
-            } else {
+            if (longFields.contains(field)) pair.put(field, jsonElement.getAsLong());
+            else if (intFields.contains(field)) pair.put(field, jsonElement.getAsInt());
+//            else if (jsonElement instanceof JsonPrimitive) {
+//                JsonPrimitive primitive = jsonElement.getAsJsonPrimitive();
+//                if (primitive.isBoolean()) pair.put(indexMap.get(index), JsonUtils.fromJson(jsonElement, Boolean.class));
+//                else if (primitive.isNumber()) pair.put(indexMap.get(index), JsonUtils.fromJson(jsonElement, Long.class));
+//                else pair.put(indexMap.get(index), jsonElement.toString());
+//            }
+            else {
                 try {
-                    pair.put(indexMap.get(index), JsonUtils.toString(jsonElement));
+                    pair.put(field, JsonUtils.toString(jsonElement));
                 } catch (JsonSyntaxException e) {
-                    pair.put(indexMap.get(index), String.valueOf(jsonElement));
+                    pair.put(field, String.valueOf(jsonElement));
                 }
             }
         }
@@ -562,14 +567,16 @@ public final class ConvertingUtils {
         JsonElement value;
         for (String field : fields) {
             value = json.get(field);
+            if (value == null) continue;
             if (longFields.contains(field)) pair.put(field, value.getAsLong());
             else if (intFields.contains(field)) pair.put(field, value.getAsInt());
-            else if (value instanceof JsonPrimitive) {
-                JsonPrimitive primitive = value.getAsJsonPrimitive();
-                if (primitive.isBoolean()) pair.put(field, JsonUtils.fromJson(value, Boolean.class));
-                else if (primitive.isNumber()) pair.put(field, JsonUtils.fromJson(value, Long.class));
-                else pair.put(field, String.valueOf(value));
-            } else {
+//            else if (value instanceof JsonPrimitive) {
+//                JsonPrimitive primitive = value.getAsJsonPrimitive();
+//                if (primitive.isBoolean()) pair.put(field, JsonUtils.fromJson(value, Boolean.class));
+//                else if (primitive.isNumber()) pair.put(field, JsonUtils.fromJson(value, Long.class));
+//                else pair.put(field, String.valueOf(value));
+//            }
+            else {
                 try {
                     pair.put(field, JsonUtils.toString(value));
                 } catch (JsonSyntaxException e) {

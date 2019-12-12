@@ -43,9 +43,9 @@ public class FileSaveMapper implements IResultOutput {
             this.prefix = String.join("", prefix, "_");
         }
         if (suffix != null && !"".equals(suffix)) {
-            this.suffix = String.join("", suffix, "_");
+            this.suffix = String.join("", "_", suffix);
         }
-        if (writerMap.size() == 0) {
+        if (!writerMap.containsKey("success")) {
             for (String targetWriter : "success,error".split(",")) preAddWriter(targetWriter);
         }
     }
