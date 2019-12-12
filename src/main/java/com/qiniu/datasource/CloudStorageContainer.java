@@ -228,7 +228,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                 record = json.toString();
                 progressMap.put(lister.getPrefix(), record);
                 try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-                procedureLogger.info("{}:{}", lister.getPrefix(), record);
+                procedureLogger.info("{}-|-{}", lister.getPrefix(), record);
             }
             if (map != null) map.put("start", lister.currentEndKey());
             if (stopped) break;
@@ -271,7 +271,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);
-            procedureLogger.info("{}:", lister.getPrefix());
+            procedureLogger.info("{}-|-", lister.getPrefix());
             progressMap.remove(lister.getPrefix()); // 只有 export 成功情况下才移除 record
         } catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}

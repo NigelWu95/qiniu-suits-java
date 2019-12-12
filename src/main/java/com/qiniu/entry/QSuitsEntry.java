@@ -949,8 +949,7 @@ public class QSuitsEntry {
                 : new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), jobIdIndex, savePath);
     }
 
-    private ILineProcess<Map<String, String>> getQiniuUploadFile(Map<String, String> indexMap, boolean single)
-            throws IOException {
+    private ILineProcess<Map<String, String>> getQiniuUploadFile(Map<String, String> indexMap, boolean single) throws IOException {
         String pathIndex = indexMap.containsValue("filepath") ? "filepath" : null;
         String parentPath = entryParam.getValue("parent-path", "").trim();
         String recorder = entryParam.getValue("record", "false").trim();

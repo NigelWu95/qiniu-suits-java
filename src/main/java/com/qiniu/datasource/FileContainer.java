@@ -253,7 +253,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 record = json.toString();
                 progressMap.put(lister.getName(), record);
                 try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-                procedureLogger.info("{}:{}", lister.getName(), record);
+                procedureLogger.info("{}-|-{}", lister.getName(), record);
             }
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
@@ -279,7 +279,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);
-            procedureLogger.info("{}:", lister.getName());
+            procedureLogger.info("{}-|-", lister.getName());
             progressMap.remove(lister.getName()); // 只有 export 成功情况下才移除 record
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}

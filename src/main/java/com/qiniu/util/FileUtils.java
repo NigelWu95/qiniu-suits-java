@@ -1,11 +1,10 @@
 package com.qiniu.util;
 
 import javax.activation.MimetypesFileTypeMap;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.net.FileNameMap;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -224,5 +223,28 @@ public final class FileUtils {
                 raf = null;
             }
         }
+    }
+
+    public static String lastLineOfFile(String filePath) throws IOException {
+        RandomAccessFile accessFile = new RandomAccessFile(filePath, "r");
+        if (accessFile.length() < 1) return null;
+        byte[] bytes = new byte[1];
+        long pos = accessFile.length();
+        if (pos > 2) {
+            accessFile.seek(--pos);
+            accessFile.read(bytes);
+            String s = new String(bytes);
+            accessFile.seek(--pos);
+            while (pos > 0 && accessFile.read(bytes) != -1 && "\n".equals(s)) {
+                accessFile.seek(--pos);
+                s = new String(bytes);
+            }
+            while (pos > 0 && accessFile.read(bytes) != -1 && !"\n".equals(s)) {
+                accessFile.seek(--pos);
+                s = new String(bytes);
+            }
+            if (pos > 0) accessFile.seek(pos + 2);
+        }
+        return new String(accessFile.readLine().getBytes(StandardCharsets.ISO_8859_1));
     }
 }

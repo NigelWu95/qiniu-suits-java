@@ -44,6 +44,7 @@ public class CommonParams {
     private String baiduAccessId;
     private String baiduSecretKey;
     private String bucket;
+    private String logFilepath;
     private Map<String, Map<String, String>> pathConfigMap;
     private List<String> antiDirectories;
     private List<String> antiPrefixes;
@@ -164,12 +165,12 @@ public class CommonParams {
         path = entryParam.getValue("path", "");
         setSource();
         accountInit();
+        logFilepath = entryParam.getValue("log", null);
         if (isStorageSource) {
             setAuthKey();
             setBucket();
             String prefixes = entryParam.getValue("prefixes", null);
             setPathConfigMap(entryParam.getValue("prefix-config", ""), prefixes, true, true);
-            antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
             setPrefixLeft(entryParam.getValue("prefix-left", "false").trim());
             setPrefixRight(entryParam.getValue("prefix-right", "false").trim());
         } else {
@@ -181,6 +182,7 @@ public class CommonParams {
             String files = entryParam.getValue("files", null);
             setPathConfigMap(entryParam.getValue("file-config", ""), files, false, false);
         }
+        antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
         setProcess();
         setPrivateType();
         regionName = entryParam.getValue("region", "").trim().toLowerCase();
@@ -297,11 +299,14 @@ public class CommonParams {
                 setSaveSeparator();
                 break;
             case "qupload":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key", ""));
-                String filepath = entryParam.getValue("filepath", "").trim();
+                String key = entryParam.getValue("key", "");
+                if (!fromLine) mapLine.put("key", key);
+                String filepath = entryParam.getValue("filepath", "");
                 if (!"".equals(filepath)) {
                     indexMap.put("filepath", "filepath");
                     mapLine.put("filepath", filepath);
+                } else if ("".equals(key)) {
+                    throw new IOException("filepath and key shouldn't all be empty, file must be found with them.");
                 }
                 break;
             case "mime":
@@ -602,9 +607,9 @@ public class CommonParams {
         }
         if ("qupload".equals(process) && "file".equals(entryParam.getValue("parse", "file")) && !"terminal".equals(source)) {
             isSelfUpload = true;
-            String prefixes = entryParam.getValue("directories", null);
-            setPathConfigMap(entryParam.getValue("directory-config", ""), prefixes, false, true);
-            antiDirectories = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-directories", "")));
+            parse = "file"; // 修正 parse 的默认值
+            String directories = entryParam.getValue("directories", null);
+            setPathConfigMap(entryParam.getValue("directory-config", ""), directories, false, true);
         }
     }
 
@@ -671,63 +676,91 @@ public class CommonParams {
         }
     }
 
-    private Map<String, String> fromProcedureLog(String logFile) throws IOException {
-        File file = new File(logFile);
-        FileReader fileReader = new FileReader(file);
-        BufferedReader bufferedReader = new BufferedReader(fileReader);
-        Map<String, String> map = new HashMap<>();
-        int index;
-        String line;
-        while ((line = bufferedReader.readLine()) != null) {
-            index = line.indexOf(":{");
-            map.put(line.substring(0, index), line.substring(index));
+    private void fromProcedureLog(String logFile, boolean withMarker, boolean withEnd) throws IOException {
+        String lastLine = FileUtils.lastLineOfFile(logFile);
+        if (lastLine != null && !"".equals(lastLine)) {
+            try {
+                JsonObject jsonObject = JsonUtils.toJsonObject(lastLine);
+                parseConfigMapFromJson(jsonObject, withMarker, withEnd);
+            } catch (Exception e) {
+                File file = new File(logFile);
+                FileReader fileReader = new FileReader(file);
+                BufferedReader bufferedReader = new BufferedReader(fileReader);
+                int index;
+                String line;
+                String value;
+                Map<String, String> map = new HashMap<>();
+                while ((line = bufferedReader.readLine()) != null) {
+                    index = line.indexOf("-|-");
+                    map.put(line.substring(0, index), line.substring(index));
+                }
+                for (String key : map.keySet()) {
+                    value = map.get(key);
+                    if (!"".equals(value)) {
+                        pathConfigMap.put(key, JsonUtils.fromJson(value, map.getClass()));
+                    }
+                }
+            }
         }
-        return map;
+    }
+
+    private void parseConfigMapFromJson(JsonObject jsonObject, boolean withMarker, boolean withEnd) throws IOException {
+        JsonObject jsonCfg;
+        JsonElement markerElement;
+        JsonElement startElement;
+        JsonElement endElement;
+        for (String key : jsonObject.keySet()) {
+            Map<String, String> startAndEnd = new HashMap<>();
+//                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
+            JsonElement json = jsonObject.get(key);
+            if (json == null || json instanceof JsonNull) {
+                pathConfigMap.put(key, null);
+                continue;
+            }
+            if (withMarker || withEnd) {
+                if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + key + " must be json.");
+                jsonCfg = json.getAsJsonObject();
+                if (withMarker) {
+                    markerElement = jsonCfg.get("marker");
+                    if (markerElement != null && !(markerElement instanceof JsonNull)) {
+                        startAndEnd.put("marker", markerElement.getAsString());
+                    }
+                }
+                startElement = jsonCfg.get("start");
+                if (startElement != null && !(startElement instanceof JsonNull)) {
+                    startAndEnd.put("start", startElement.getAsString());
+                }
+                if (withEnd) {
+                    endElement = jsonCfg.get("end");
+                    if (endElement != null && !(endElement instanceof JsonNull)) {
+                        startAndEnd.put("end", endElement.getAsString());
+                    }
+                }
+            } else {
+                startAndEnd.put("start", json.getAsString());
+            }
+            pathConfigMap.put(key, startAndEnd);
+        }
     }
 
     private void setPathConfigMap(String jsonConfigPath, String subPaths, boolean withMarker, boolean withEnd) throws Exception {
         pathConfigMap = new HashMap<>();
-        if (jsonConfigPath != null && !"".equals(jsonConfigPath)) {
-            JsonFile jsonFile = new JsonFile(jsonConfigPath);
-            JsonObject jsonCfg;
-            JsonElement markerElement;
-            JsonElement startElement;
-            JsonElement endElement;
-            for (String key : jsonFile.getKeys()) {
-                Map<String, String> startAndEnd = new HashMap<>();
-//                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
-                JsonElement json = jsonFile.getElement(key);
-                if (json == null || json instanceof JsonNull) {
-                    pathConfigMap.put(key, null);
-                    continue;
-                }
-                if (withMarker || withEnd) {
-                    if (!(json instanceof JsonObject)) throw new IOException("the value of key: " + key + " must be json.");
-                    jsonCfg = json.getAsJsonObject();
-                    if (withMarker) {
-                        markerElement = jsonCfg.get("marker");
-                        if (markerElement != null && !(markerElement instanceof JsonNull)) {
-                            startAndEnd.put("marker", markerElement.getAsString());
-                        }
-                    }
-                    startElement = jsonCfg.get("start");
-                    if (startElement != null && !(startElement instanceof JsonNull)) {
-                        startAndEnd.put("start", startElement.getAsString());
-                    }
-                    if (withEnd) {
-                        endElement = jsonCfg.get("end");
-                        if (endElement != null && !(endElement instanceof JsonNull)) {
-                            startAndEnd.put("end", endElement.getAsString());
-                        }
-                    }
-                } else {
-                    startAndEnd.put("start", json.getAsString());
-                }
-                pathConfigMap.put(key, startAndEnd);
+        if (logFilepath == null || "".equals(logFilepath)) {
+            if (jsonConfigPath != null && !"".equals(jsonConfigPath)) {
+                JsonFile jsonFile = new JsonFile(jsonConfigPath);
+                parseConfigMapFromJson(jsonFile.getJsonObject(), withMarker, withEnd);
+            } else if (subPaths != null && !"".equals(subPaths)) {
+                String[] subPathList = ParamsUtils.escapeSplit(subPaths);
+                for (String subPath : subPathList) pathConfigMap.put(subPath, null);
             }
-        } else if (subPaths != null && !"".equals(subPaths)) {
-            String[] subPathList = ParamsUtils.escapeSplit(subPaths);
-            for (String subPath : subPathList) pathConfigMap.put(subPath, null);
+        } else {
+            if (jsonConfigPath != null && !"".equals(jsonConfigPath)) {
+                throw new IOException("log and uris can not be used together, please remove prefixes/files/directories if you want use breakpoint with log.");
+            } else if (subPaths != null && !"".equals(subPaths)) {
+                throw new IOException("log and json config can not be used together, please remove config path if you want use breakpoint with log.");
+            } else {
+                fromProcedureLog(logFilepath, withMarker, withEnd);
+            }
         }
     }
 
@@ -991,8 +1024,8 @@ public class CommonParams {
                 if (!indexMap.containsKey("0")) indexMap.put("0", "key");
             }
         }
-        if (ProcessUtils.needFilepath(process) || "file".equals(parse) || isSelfUpload) {
-            setIndex(entryParam.getValue("filepath-index", "filepath").trim(), "filepath");
+        if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
+            setIndex(entryParam.getValue("filepath-index", fieldIndex ? "filepath" : "").trim(), "filepath");
 //            setIndex("parent", "parent");
         }
         if (indexMap.size() == 0) {
@@ -1097,7 +1130,7 @@ public class CommonParams {
 
     private void setUnitLen(String unitLen) throws IOException {
         if (unitLen.startsWith("-")) {
-            if (isSelfUpload) this.unitLen = 20;
+            if (isSelfUpload) this.unitLen = 3;
             if ("qiniu".equals(source) || "local".equals(source)) this.unitLen = 10000;
             else this.unitLen = 1000;
         } else {

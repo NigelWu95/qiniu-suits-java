@@ -166,7 +166,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
             record = json.toString();
             progressMap.put(reader.getName(), record);
             try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-            procedureLogger.info("{}:{}", reader.getName(), record);
+            procedureLogger.info("{}-|-{}", reader.getName(), record);
             lastLine = reader.currentEndLine();
         }
     }
@@ -187,7 +187,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
                 processorMap.put(orderStr, lineProcessor);
             }
             export(reader, saver, lineProcessor);
-            procedureLogger.info("{}:", reader.getName());
+            procedureLogger.info("{}-|-", reader.getName());
             progressMap.remove(reader.getName()); // 只有 export 成功情况下才移除 record
         }  catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
