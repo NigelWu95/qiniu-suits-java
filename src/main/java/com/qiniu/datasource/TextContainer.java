@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class TextContainer<S, T> extends DatasourceActor implements IDataSource<ITextReader<S>, IResultOutput, T> {
 
@@ -127,7 +128,6 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
         List<T> convertedList;
         List<String> writeList;
         int retry;
-        String record;
         Map<String, String> map = urisMap.get(reader.getName());
         JsonObject json = map != null ? JsonUtils.toJsonObject(map) : (lastLine != null ? new JsonObject() : null);
         while (lastLine != null) {
@@ -166,10 +166,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
             statistics.addAndGet(convertedList.size());
             lastLine = reader.currentEndLine();
             json.addProperty("start", lastLine);
-            record = json.toString();
-            progressMap.put(reader.getName(), record);
-            try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-            procedureLogger.info("{}-|-{}", reader.getName(), record);
+            recordLister(reader.getName(), json.toString());
         }
     }
 
@@ -215,14 +212,13 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
         }
     }
 
-    protected abstract ITextReader<S> getReader(String name, String start, int unitLen) throws IOException;
+    protected abstract ITextReader<S> generateReader(String name) throws IOException;
 
-    private ITextReader<S> generateReader(String name) throws IOException {
-        Map<String, String> map = urisMap.get(name);
-        return getReader(name, map == null ? null : map.get("start"), unitLen);
-    }
+    protected abstract String getUriFrom(S s);
 
-    protected abstract List<ITextReader<S>> getReaders(String path) throws IOException;
+    protected abstract ITextReader<S> generateReader(S s) throws IOException;
+
+    protected abstract List<S> getUriEntities(String path) throws IOException;
 
     public void export() throws Exception {
         String info = processor == null ? String.join(" ", "read lines from path:", path) :
@@ -230,37 +226,55 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tpath\tquantity");
         showdownHook();
-        List<ITextReader<S>> readers;
+        Stream<ITextReader<S>> readerStream;
         if (uris == null || uris.size() == 0) {
-            readers = getReaders(FileUtils.convertToRealPath(path));
+            List<S> uriEntities = getUriEntities(FileUtils.convertToRealPath(path));
+            if (hasAntiPrefixes) {
+                uriEntities = uriEntities.parallelStream().filter(uriEntity -> checkPrefix(getUriFrom(uriEntity)))
+                        .peek(uriEntity -> recordListerByUri(getUriFrom(uriEntity))).collect(Collectors.toList());
+            } else {
+                uriEntities.parallelStream().forEach(uriEntity -> recordListerByUri(getUriFrom(uriEntity)));
+            }
+            readerStream = uriEntities.parallelStream().map(uriEntity -> {
+                try {
+                    return generateReader(uriEntity);
+                } catch (IOException e) {
+                    errorLogger.error("generate reader failed by {}\t{}", getUriFrom(uriEntity), urisMap.get(getUriFrom(uriEntity)), e);
+                    return null;
+                }
+            });
         } else {
             if (hasAntiPrefixes) {
                 uris = uris.parallelStream().filter(this::checkPrefix).peek(this::recordListerByUri).collect(Collectors.toList());
             } else {
                 uris.parallelStream().forEach(this::recordListerByUri);
             }
-            readers = uris.parallelStream().map(uri -> {
+            readerStream = uris.parallelStream().map(uri -> {
                 try {
                     return generateReader(uri);
                 } catch (IOException e) {
                     errorLogger.error("generate lister failed by {}\t{}", uri, urisMap.get(uri), e);
                     return null;
                 }
-            }).filter(Objects::nonNull).peek(reader -> recordListerByUri(reader.getName())).collect(Collectors.toList());
+            });
         }
         try {
-            if (readers == null || readers.size() <= 0) {
-                rootLogger.info("no text readers to export.");
-            } else {
-                executorPool = Executors.newFixedThreadPool(threads);
-                readers.parallelStream().forEach(this::reading);
-                executorPool.shutdown();
-                while (!executorPool.isTerminated()) {
-                    sleep(1000);
-                    rootLogger.info("finished count: {}.", statistics.get());
+            executorPool = Executors.newFixedThreadPool(threads);
+            readerStream.filter(generated -> {
+                if (generated == null) return false;
+                else if (generated.currentEndLine() != null) return true;
+                else {
+                    progressMap.remove(generated.getName());
+                    generated.close();
+                    return false;
                 }
-                rootLogger.info("{} finished, results in {}.", info, savePath);
+            }).forEach(this::reading);
+            executorPool.shutdown();
+            while (!executorPool.isTerminated()) {
+                sleep(1000);
+                rootLogger.info("finished count: {}.", statistics.get());
             }
+            rootLogger.info("{} finished, results in {}.", info, savePath);
             endAction();
         } catch (Throwable e) {
             stopped = true;

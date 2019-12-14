@@ -12,7 +12,6 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 public class TextFileContainer extends TextContainer<File, Map<String, String>> {
 
@@ -43,22 +42,34 @@ public class TextFileContainer extends TextContainer<File, Map<String, String>> 
     }
 
     @Override
-    protected ITextReader<File> getReader(String name, String start, int unitLen) throws IOException {
+    protected ITextReader<File> generateReader(String name) throws IOException {
+        Map<String, String> map = urisMap.get(name);
         File file = new File(name);
         if (!file.exists()) file = new File(path, name);
         if (file.isDirectory()) {
             throw new IOException(name + " is a directory, but it should be a file.");
         } else if (file.exists()) {
-            return new TextFileReader(file, start, unitLen);
+            return new TextFileReader(file, map == null ? null : map.get("start"), unitLen);
         } else {
             throw new IOException(name + " is not exists.");
         }
     }
 
+    @Override
+    protected String getUriFrom(File file) {
+        return file.getPath();
+    }
+
+    @Override
+    protected ITextReader<File> generateReader(File file) throws IOException {
+        Map<String, String> map = urisMap.get(file.getPath());
+        return new TextFileReader(file, map == null ? null : map.get("start"), unitLen);
+    }
+
     private Lock lock = new ReentrantLock();
 
     @Override
-    protected List<ITextReader<File>> getReaders(String path) throws IOException {
+    protected List<File> getUriEntities(String path) throws IOException {
         File file = new File(path);
         List<File> files = new ArrayList<>();
         List<File> directories = new ArrayList<>();
@@ -86,22 +97,14 @@ public class TextFileContainer extends TextContainer<File, Map<String, String>> 
                         lock.unlock();
                         return dirs;
                     }).filter(Objects::nonNull)
-                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(new ArrayList<>());
+                            .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(new ArrayList<>());
                 }
             } else {
                 files.add(file);
             }
         } else {
-            throw new IOException("");
+            throw new IOException("the file not exists from path: " + path);
         }
-        return files.parallelStream().map(pFile -> {
-            try {
-                return new TextFileReader(pFile, null, unitLen);
-            } catch (IOException e) {
-                e.printStackTrace();
-                errorLogger.error("generate lister failed by {}\t{}", pFile.getPath(), urisMap.get(pFile.getPath()), e);
-                return null;
-            }
-        }).filter(Objects::nonNull).peek(reader -> recordListerByUri(reader.getName())).collect(Collectors.toList());
+        return files;
     }
 }

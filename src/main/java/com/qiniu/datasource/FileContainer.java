@@ -221,7 +221,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         List<String> writeList;
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
-        String record;
         Map<String, String> map = directoriesMap.get(lister.getName());
         JsonObject json = map != null ? JsonUtils.toJsonObject(map) : (hasNext ? new JsonObject() : null);
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
@@ -252,10 +251,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             }
             if (hasNext) {
                 json.addProperty("start", lister.currentEndFilepath());
-                record = json.toString();
-                progressMap.put(lister.getName(), record);
-                try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-                procedureLogger.info("{}-|-{}", lister.getName(), record);
+                recordLister(lister.getName(), json.toString());
             }
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
@@ -318,6 +314,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 integer.decrementAndGet();
             });
         } else {
+            progressMap.remove(lister.getName());
             lister.close();
         }
     }
@@ -352,11 +349,8 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                         if (hasAntiPrefixes) {
                             nextDirectories.addAll(tempLister.getDirectories().parallelStream()
                                     .filter(this::checkPrefix)
-                                    .peek(dir -> recordListerByDirectory(dir.getPath()))
                                     .collect(Collectors.toList()));
                         } else {
-                            tempLister.getDirectories().parallelStream().forEach(dir ->
-                                    recordListerByDirectory(dir.getPath()));
                             nextDirectories.addAll(tempLister.getDirectories());
                         }
                         tempLister.getDirectories().clear();
@@ -400,11 +394,8 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                                 if (hasAntiPrefixes) {
                                     nextDirectories.addAll(futureLister.getDirectories().parallelStream()
                                             .filter(this::checkPrefix)
-                                            .peek(dir -> recordListerByDirectory(dir.getPath()))
                                             .collect(Collectors.toList()));
                                 } else {
-                                    futureLister.getDirectories().parallelStream().forEach(dir ->
-                                            recordListerByDirectory(dir.getPath()));
                                     nextDirectories.addAll(futureLister.getDirectories());
                                 }
                                 futureLister.getDirectories().clear();
@@ -429,11 +420,8 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                         if (hasAntiPrefixes) {
                             nextDirectories.addAll(futureLister.getDirectories().parallelStream()
                                     .filter(this::checkPrefix)
-                                    .peek(dir -> recordListerByDirectory(dir.getPath()))
                                     .collect(Collectors.toList()));
                         } else {
-                            futureLister.getDirectories().parallelStream().forEach(dir ->
-                                    recordListerByDirectory(dir.getPath()));
                             nextDirectories.addAll(futureLister.getDirectories());
                         }
                         futureLister.getDirectories().clear();
@@ -452,7 +440,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         }
         while (futures.size() > 0) {
             tempDirectories = loopForFutures(futures);
-            nextDirectories.addAll(loopForFutures(futures));
+            nextDirectories.addAll(tempDirectories);
             tempDirectories.clear();
         }
         futures = null;
@@ -460,6 +448,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         tempDirectories = null;
         directories.clear();
         directories = null;
+        nextDirectories.parallelStream().forEach(dir -> recordListerByDirectory(dir.getPath()));
         return nextDirectories;
     }
 
