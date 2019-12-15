@@ -1,6 +1,8 @@
 package com.qiniu.process.qiniu;
 
+import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
+import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
@@ -67,6 +69,27 @@ public class FetchFile extends Base<Map<String, String>> {
         FetchFile fetchFile = (FetchFile) super.clone();
         fetchFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
         return fetchFile;
+    }
+
+    @Override
+    protected IFileChecker fileCheckerInstance() {
+        return "stat".equals(checkType) ? key -> {
+            Response response;
+            try {
+                response = bucketManager.statResponse(bucket, key);
+            } catch (QiniuException e) {
+                if (e.response != null) e.response.close();
+                return null;
+            }
+            if (response.statusCode == 200) {
+                try {
+                    return response.bodyString();
+                } finally {
+                    response.close();
+                }
+            }
+            return null;
+        } : key -> null;
     }
 
     @Override

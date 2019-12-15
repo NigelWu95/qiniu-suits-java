@@ -19,6 +19,8 @@ public interface ILineProcess<T> {
 
     default void setNextProcessor(ILineProcess<T> nextProcessor) {}
 
+    default void setCheckType(String checkType) {}
+
     default ILineProcess<T> getNextProcessor() {
         return null;
     }

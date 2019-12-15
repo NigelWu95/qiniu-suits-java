@@ -3,6 +3,7 @@ package com.qiniu.process;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.qiniu.common.QiniuException;
+import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.util.*;
@@ -31,6 +32,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected AtomicInteger saveIndex;
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
+    protected IFileChecker iFileChecker;
+    protected String checkType;
     protected boolean canceled;
 
     public Base(String processName, String accessId, String secretKey, String bucket) {
@@ -38,6 +41,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         this.accessId = accessId;
         this.secretKey = secretKey;
         this.bucket = bucket;
+        this.iFileChecker = key -> null;
     }
 
     public Base(String processName, String accessKey, String secretKey, String bucket, String savePath, int saveIndex)
@@ -92,6 +96,15 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         } catch (NullPointerException e) {
             throw new IOException("instance without savePath can not call changeSaveOrder method.");
         }
+    }
+
+    protected IFileChecker fileCheckerInstance() {
+        return key -> null;
+    }
+
+    public void setCheckType(String checkType) {
+        this.checkType = checkType;
+        this.iFileChecker = fileCheckerInstance();
     }
 
     /**
