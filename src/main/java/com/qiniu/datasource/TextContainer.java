@@ -110,7 +110,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
         return true;
     }
 
-    void recordListerByUri(String prefix) {
+    private void recordListerByUri(String prefix) {
         Map<String, String> map = urisMap.get(prefix);
         String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
         recordLister(prefix, record);

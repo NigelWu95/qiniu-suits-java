@@ -498,7 +498,10 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
 //            directories = directories.parallelStream().map(this::directoriesFromLister).filter(Objects::nonNull)
 //                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
 //        }
-        while (directories.size() > 0) directories = listForNextIteratively(directories);
+        while (directories.size() > 0) {
+            directories = listForNextIteratively(directories);
+            if (progressMap.size() == 0) procedureLogFile.delete();
+        }
         executorPool.shutdown();
         if (threads > 1) {
             int cValue = threads >= 10 ? threads / 2 : 3;

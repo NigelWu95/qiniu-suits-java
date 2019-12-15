@@ -60,8 +60,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     public void setBatchSize(int batchSize) throws IOException {
         if (!ProcessUtils.canBatch(processName)) {
             throw new IOException(processName + " is not support batch operation.");
-        } else if (batchSize > 1000) {
-            throw new IOException("batch size must less than 1000.");
+        } else if (batchSize > 1000 || batchSize < 1) {
+            throw new IOException("batch size must less than 1000 and more than 1.");
         } else {
             this.batchSize = batchSize;
         }
@@ -157,7 +157,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     private void batchProcess(List<T> lineList, int batchSize, int retryTimes) throws IOException {
         int times = lineList.size()/batchSize + 1;
         List<T> processList;
-        String result;
         int retry;
         String message = null;
         QiniuException exception = null;
@@ -172,8 +171,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                 try {
                     processList = putBatchOperations(processList);
                     if (processList.size() > 0) {
-                        result = batchResult(processList);
-                        processList = parseBatchResult(processList, result);
+                        processList = parseBatchResult(processList, batchResult(processList));
                     }
                 } catch (QiniuException e) {
                     retry = HttpRespUtils.checkException(e, retry);
@@ -227,7 +225,6 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws IOException 处理失败可能抛出的异常
      */
     private void singleProcess(List<T> lineList, int retryTimes) throws IOException {
-        String result;
         int retry;
         T line;
         String message;
@@ -237,8 +234,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             retry = retryTimes;
             while (retry > 0) {
                 try {
-                    result = singleResult(line);
-                    parseSingleResult(line, result);
+                    parseSingleResult(line, singleResult(line));
                     break;
                 } catch (QiniuException e) {
                     retry = HttpRespUtils.checkException(e, retry);
@@ -267,8 +263,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             return singleResult(line);
         } catch (NullPointerException e) {
             if (canceled) {
-                throw new IOException("processor is canceled state.", e);
-            } else if (bucket == null) { // 如果是关闭了那么 bucket 应该为 null
+                throw new IOException("processor in canceled state.", e);
+            } else if (batchSize < 0) { // 如果是关闭了那么 batchSize 应该小于 0
                 throw new IOException("input is empty or the processor may be already closed.", e);
             } else {
                 throw new IOException("instance without savePath can not call this batch process method.", e);
@@ -292,8 +288,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         } catch (NullPointerException e) {
             if (canceled) {
 ////            // nothing to do
-            } else
-                if (bucket == null) { // 如果是关闭了那么 bucket 应该为 null
+            } else if (batchSize < 0) { // 如果是关闭了那么 batchSize 应该小于 0
                 throw new IOException("input is empty or the processor may be already closed.", e);
             } else {
                 throw new IOException("instance without savePath can not call this batch process method.", e);
@@ -309,6 +304,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         accessId = null;
         secretKey = null;
         bucket = null;
+        batchSize = -1;
         saveIndex = null;
         savePath = null;
         if (fileSaveMapper != null) fileSaveMapper.closeWriters();

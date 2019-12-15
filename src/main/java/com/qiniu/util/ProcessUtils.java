@@ -20,6 +20,8 @@ public final class ProcessUtils {
         add("download");
         add("imagecensor");
         add("videocensor");
+        add("cdnrefresh");
+        add("cdnprefetch");
     }};
     public static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
@@ -65,6 +67,8 @@ public final class ProcessUtils {
         add("stat");
         add("mime");
         add("metadata");
+        add("cdnrefresh");
+        add("cdnprefetch");
     }};
     public static Set<String> tenProcesses = new HashSet<String>(){{
         add("tenprivate");
@@ -97,6 +101,8 @@ public final class ProcessUtils {
         add("imagecensor");
         add("videocensor");
         add("censorresult");
+        add("cdnrefresh");
+        add("cdnprefetch");
     }};
     public static Set<String> supportStorageSource = new HashSet<String>(){{
         addAll(needQiniuAuthProcesses);

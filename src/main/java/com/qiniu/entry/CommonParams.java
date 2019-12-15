@@ -190,11 +190,11 @@ public class CommonParams {
         setSeniorFilter();
         setIndexMap();
         checkFilterForProcess();
-        setUnitLen(entryParam.getValue("unit-len", "-1").trim());
-        setThreads(entryParam.getValue("threads", "50").trim());
-        setBatchSize(entryParam.getValue("batch-size", "-1").trim());
-        setRetryTimes(entryParam.getValue("retry-times", "5").trim());
-        setSaveTotal(entryParam.getValue("save-total", "").trim());
+        setUnitLen();
+        setThreads();
+        setBatchSize();
+        setRetryTimes();
+        setSaveTotal();
         setSavePath();
         saveTag = entryParam.getValue("save-tag", "").trim();
         saveFormat = entryParam.getValue("save-format", "tab").trim();
@@ -220,7 +220,7 @@ public class CommonParams {
         setPrivateType();
         regionName = entryParam.getValue("region", "").trim().toLowerCase();
         setIndexMap();
-        setRetryTimes(entryParam.getValue("retry-times", "5").trim());
+        setRetryTimes();
         String line = entryParam.getValue("line", null);
         ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
         boolean fromLine = line != null && !"".equals(line);
@@ -1128,7 +1128,8 @@ public class CommonParams {
         }
     }
 
-    private void setUnitLen(String unitLen) throws IOException {
+    private void setUnitLen() throws IOException {
+        String unitLen = entryParam.getValue("unit-len", "-1").trim();
         if (unitLen.startsWith("-")) {
             if (isSelfUpload) this.unitLen = 3;
             if ("qiniu".equals(source) || "local".equals(source)) this.unitLen = 10000;
@@ -1142,30 +1143,54 @@ public class CommonParams {
         }
     }
 
-    private void setThreads(String threads) throws IOException {
+    private void setThreads() throws IOException {
+        String defaultValue = "cdnrefresh".equals(process) || "cdnprefetch".equals(process) ? "1" : "50";
+        String threads = entryParam.getValue("threads", defaultValue).trim();
         ParamsUtils.checked(threads, "threads", "[1-9]\\d*");
         this.threads = Integer.parseInt(threads);
     }
 
-    private void setBatchSize(String batchSize) throws IOException {
+    private void setBatchSize() throws IOException {
+        String batchSize = entryParam.getValue("batch-size", "-1").trim();
         if (batchSize.startsWith("-")) {
             if (ProcessUtils.canBatch(process)) {
-                batchSize = "stat".equals(process) ? "100" : "1000";
+                if ("cdnrefresh".equals(process)) {
+                    if ("true".equals(entryParam.getValue("is-dir", "false").trim())) this.batchSize = 10;
+                    else this.batchSize = 30;
+                } else if ("cdnprefetch".equals(process)) {
+                    this.batchSize = 30;
+                } else if ("stat".equals(process)) {
+                    this.batchSize = 100;
+                } else {
+                    this.batchSize = 1000;
+                }
             } else {
-                batchSize = "0";
+                this.batchSize = 0;
+            }
+        } else {
+            ParamsUtils.checked(batchSize, "batch-size", "\\d+");
+            this.batchSize = Integer.parseInt(batchSize);
+            if ("cdnrefresh".equals(process)) {
+                if ("true".equals(entryParam.getValue("is-dir", "false").trim()) && this.batchSize > 10) {
+                    throw new IOException("cdn url refresh for dir can not use batchSize more than 10.");
+                } else if (this.batchSize > 60) {
+                    throw new IOException("cdn url refresh can not use batchSize more than 10.");
+                }
+            } else if ("cdnprefetch".equals(process)) {
+                this.batchSize = 30;
             }
         }
-        ParamsUtils.checked(batchSize, "batch-size", "\\d+");
-        this.batchSize = Integer.parseInt(batchSize);
     }
 
-    private void setRetryTimes(String retryTimes) throws IOException {
+    private void setRetryTimes() throws IOException {
+        String retryTimes = entryParam.getValue("retry-times", "5").trim();
         ParamsUtils.checked(retryTimes, "retry-times", "\\d+");
         this.retryTimes = Integer.parseInt(retryTimes);
     }
 
-    private void setSaveTotal(String saveTotal) throws IOException {
-        if (saveTotal == null || "".equals(saveTotal)) {
+    private void setSaveTotal() throws IOException {
+        String saveTotal = entryParam.getValue("save-total", "").trim();
+        if ("".equals(saveTotal)) {
             if (isStorageSource) {
                 saveTotal = "true";
 //（2）云存储数据源时如果无 process 则为 true，如果存在 process 但不包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。

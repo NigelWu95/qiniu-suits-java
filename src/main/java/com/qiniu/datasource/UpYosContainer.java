@@ -307,7 +307,10 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, Map<String, 
             if (prefixes != null && prefixes.size() > 0) {
                 executorPool = Executors.newFixedThreadPool(threads);
 //                listForNextIteratively(prefixes);
-                while (prefixes.size() > 0) prefixes = listForNextIteratively(prefixes);
+                while (prefixes.size() > 0) {
+                    prefixes = listForNextIteratively(prefixes);
+                    if (progressMap.size() == 0) procedureLogFile.delete();
+                }
                 executorPool.shutdown();
                 while (!executorPool.isTerminated()) sleep(1000);
             }

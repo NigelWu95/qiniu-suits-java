@@ -13,9 +13,7 @@ import com.qiniu.datasource.*;
 import com.qiniu.interfaces.*;
 import com.qiniu.process.filtration.*;
 import com.qiniu.process.other.*;
-import com.qiniu.process.qai.*;
-import com.qiniu.process.qdora.*;
-import com.qiniu.process.qos.*;
+import com.qiniu.process.qiniu.*;
 import com.qiniu.sdk.UpYunConfig;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
@@ -503,6 +501,8 @@ public class QSuitsEntry {
             case "qupload": processor = getQiniuUploadFile(indexes, single); break;
             case "mime": processor = getChangeMime(indexes, single); break;
             case "metadata": processor = getChangeMetadata(single); break;
+            case "cdnrefresh": processor = getCdnRefresh(indexes, single); break;
+            case "cdnprefetch": processor = getCdnPrefetch(indexes, single); break;
             case "filter": case "": break;
             default: throw new IOException("unsupported process: " + process);
         }
@@ -1024,5 +1024,26 @@ public class QSuitsEntry {
         }
         return single ? new ChangeMetadata(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, metadata, condition.toString()) :
                 new ChangeMetadata(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, metadata, condition.toString(), savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getCdnRefresh(Map<String, String> indexMap, boolean single) throws IOException {
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        String dir = entryParam.getValue("is-dir", "false").trim();
+        ParamsUtils.checked(dir, "is-dir", "(true|false)");
+        boolean isDir = Boolean.parseBoolean(dir);
+        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, isDir, false)
+                : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, isDir, false, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getCdnPrefetch(Map<String, String> indexMap, boolean single) throws IOException {
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, false, true)
+                : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, false, true, savePath);
     }
 }

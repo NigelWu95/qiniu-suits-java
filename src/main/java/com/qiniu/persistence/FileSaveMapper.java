@@ -99,14 +99,14 @@ public class FileSaveMapper implements IResultOutput {
         return writer;
     }
 
-    synchronized public void addWriter(String key) throws IOException {
+    public synchronized void addWriter(String key) throws IOException {
         BufferedWriter writer = writerMap.get(key);
         if (writer != null) throw new IOException("this writer is already exists.");
         writer = add(key);
         writerMap.put(key, writer);
     }
 
-    synchronized public void closeWriters() {
+    public synchronized void closeWriters() {
         if (writerMap.size() <= 0) return;
         int retry;
         BufferedWriter bufferedWriter;
@@ -140,7 +140,7 @@ public class FileSaveMapper implements IResultOutput {
         suffix = null;
     }
 
-    synchronized private void doWrite(String key, String item, boolean flush) throws IOException {
+    private synchronized void doWrite(String key, String item, boolean flush) throws IOException {
         BufferedWriter bufferedWriter = writerMap.get(key);
         if (bufferedWriter == null) {
             if (writerMap.containsKey(key)) {

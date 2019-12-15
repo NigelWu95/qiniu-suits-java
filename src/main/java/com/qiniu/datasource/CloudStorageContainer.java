@@ -496,7 +496,6 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                         extremePrefixes.add(prefix);
                         prefixMap.put("marker", nextMarker);
                         prefixesMap.put(prefix, prefixMap);
-
                     }
                 } else if (listerList.size() <= cValue) {
                     count = 900;
@@ -552,6 +551,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         List<IStorageLister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
         while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
             prefixesMap.clear();
+            if (progressMap.size() == 0) procedureLogFile.delete();
             listerList = computeToNextLevel(listerList);
         }
         if (listerList != null && listerList.size() > 0) {
