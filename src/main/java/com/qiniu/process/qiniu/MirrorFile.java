@@ -1,10 +1,12 @@
 package com.qiniu.process.qiniu;
 
+import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.CloudApiUtils;
+import com.qiniu.util.HttpRespUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -42,6 +44,11 @@ public class MirrorFile extends Base<Map<String, String>> {
     }
 
     @Override
+    protected IFileChecker fileCheckerInstance() {
+        return "stat".equals(checkType) ? CloudApiUtils.fileCheckerInstance(bucketManager, bucket) : key -> null;
+    }
+
+    @Override
     protected String resultInfo(Map<String, String> line) {
         return line.get("key");
     }
@@ -50,8 +57,8 @@ public class MirrorFile extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-        bucketManager.prefetch(bucket, key);
-        return key;
+        if (iFileChecker.check(key) != null) throw new IOException("file exists");
+        return HttpRespUtils.getResult(bucketManager.prefetch(bucket, key));
     }
 
     @Override

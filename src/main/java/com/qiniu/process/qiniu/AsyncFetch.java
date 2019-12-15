@@ -4,6 +4,7 @@ import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
+import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
@@ -39,7 +40,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         super("asyncfetch", accessKey, secretKey, bucket);
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
-        CloudApiUtils.checkQiniu(new BucketManager(auth, configuration), bucket);
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.requestUrl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
 //        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
 //        CloudApiUtils.checkQiniu(bucketManager, bucket);
@@ -52,7 +53,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         super("asyncfetch", accessKey, secretKey, bucket, savePath, saveIndex);
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
-        CloudApiUtils.checkQiniu(new BucketManager(auth, configuration), bucket);
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.requestUrl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
 //        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
 //        CloudApiUtils.checkQiniu(bucketManager, bucket);
@@ -106,6 +107,12 @@ public class AsyncFetch extends Base<Map<String, String>> {
         return asyncFetch;
     }
 
+    @Override
+    protected IFileChecker fileCheckerInstance() {
+        return "stat".equals(checkType) ? CloudApiUtils.fileCheckerInstance(new BucketManager(auth, configuration), bucket)
+                : key -> null;
+    }
+
     public Response asyncFetch(String url, String key, String md5, String etag) throws QiniuException {
         StringMap stringMap = new StringMap().put("url", url).put("bucket", bucket)
                 .putNotNull("key", key).putNotEmpty("etag", etag);
@@ -142,6 +149,8 @@ public class AsyncFetch extends Base<Map<String, String>> {
         line.put("key", key);
         String etag = line.get("etag");
         if (etag == null || "".equals(etag)) etag = line.get("hash");
+//        String check = iFileChecker.check(key);
+        if (iFileChecker.check(key) != null) throw new IOException("file exists");
         Response response = asyncFetch(url, key, line.get(md5Index), etag);
         return String.join("\t", key, url, String.valueOf(response.statusCode), HttpRespUtils.getResult(response));
     }

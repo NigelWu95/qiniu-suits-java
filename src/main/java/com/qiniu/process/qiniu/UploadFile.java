@@ -1,6 +1,8 @@
 package com.qiniu.process.qiniu;
 
+import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.process.Base;
+import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.persistent.FileRecorder;
@@ -97,6 +99,12 @@ public class UploadFile extends Base<Map<String, String>> {
     }
 
     @Override
+    protected IFileChecker fileCheckerInstance() {
+        return "stat".equals(checkType) ? CloudApiUtils.fileCheckerInstance(new BucketManager(auth, configuration), bucket)
+                : key -> null;
+    }
+
+    @Override
     protected String resultInfo(Map<String, String> line) {
         return String.join( "\t", line.get("key"), line.get(pathIndex));
     }
@@ -151,6 +159,7 @@ public class UploadFile extends Base<Map<String, String>> {
         }
         key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
         line.put("key", key);
+        if (iFileChecker.check(key) != null) throw new IOException("file exists");
         if (filepath.endsWith(FileUtils.pathSeparator)) {
             return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(new byte[]{}, key, auth.uploadToken(bucket, key, expires, policy),
                     params, null, checkCrc)));

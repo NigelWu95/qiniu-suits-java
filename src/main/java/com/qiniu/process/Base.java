@@ -78,6 +78,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     @SuppressWarnings("unchecked")
     public Base<T> clone() throws CloneNotSupportedException {
         Base<T> base = (Base<T>)super.clone();
+        if (checkType != null && !"".equals(checkType)) this.iFileChecker = fileCheckerInstance();
         if (fileSaveMapper == null) return base;
         try {
             base.fileSaveMapper = autoIncrease ?
@@ -322,6 +323,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
         savePath = null;
         if (fileSaveMapper != null) fileSaveMapper.closeWriters();
         fileSaveMapper = null;
+        iFileChecker = null;
     }
 
     public void cancel() {

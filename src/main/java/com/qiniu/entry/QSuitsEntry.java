@@ -511,6 +511,7 @@ public class QSuitsEntry {
             if (ProcessUtils.canBatch(processor.getProcessName())) processor.setBatchSize(commonParams.getBatchSize());
             // 为了保证程序出现因网络等原因产生的非预期异常时正常运行需要设置重试次数
             processor.setRetryTimes(retryTimes);
+            processor.setCheckType(entryParam.getValue("check", "").trim());
             if (privateProcessor != null) {
                 privateProcessor.setNextProcessor(processor);
                 return privateProcessor;

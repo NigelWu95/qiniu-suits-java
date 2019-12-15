@@ -73,23 +73,7 @@ public class FetchFile extends Base<Map<String, String>> {
 
     @Override
     protected IFileChecker fileCheckerInstance() {
-        return "stat".equals(checkType) ? key -> {
-            Response response;
-            try {
-                response = bucketManager.statResponse(bucket, key);
-            } catch (QiniuException e) {
-                if (e.response != null) e.response.close();
-                return null;
-            }
-            if (response.statusCode == 200) {
-                try {
-                    return response.bodyString();
-                } finally {
-                    response.close();
-                }
-            }
-            return null;
-        } : key -> null;
+        return "stat".equals(checkType) ? CloudApiUtils.fileCheckerInstance(bucketManager, bucket) : key -> null;
     }
 
     @Override
@@ -111,6 +95,8 @@ public class FetchFile extends Base<Map<String, String>> {
             else key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url)));
         }
         line.put("key", key);
+//        String check = iFileChecker.check(key);
+        if (iFileChecker.check(key) != null) throw new IOException("file exists");
         Response response = bucketManager.fetchResponse(url, bucket, key);
         return String.join("\t", key, url, String.valueOf(response.statusCode), HttpRespUtils.getResult(response));
     }
