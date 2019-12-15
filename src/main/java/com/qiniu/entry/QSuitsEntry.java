@@ -503,6 +503,7 @@ public class QSuitsEntry {
             case "metadata": processor = getChangeMetadata(single); break;
             case "cdnrefresh": processor = getCdnRefresh(indexes, single); break;
             case "cdnprefetch": processor = getCdnPrefetch(indexes, single); break;
+            case "fetch": processor = getFetch(indexes, single); break;
             case "filter": case "": break;
             default: throw new IOException("unsupported process: " + process);
         }
@@ -1045,5 +1046,38 @@ public class QSuitsEntry {
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, false, true)
                 : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, false, true, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getFetch(Map<String, String> indexMap, boolean single) throws IOException {
+        String ak = qiniuAccessKey == null || qiniuAccessKey.isEmpty() ?
+                entryParam.getValue("qiniu-ak").trim() : qiniuAccessKey;
+        String sk = qiniuSecretKey == null || qiniuSecretKey.isEmpty() ?
+                entryParam.getValue("qiniu-sk").trim() : qiniuSecretKey;
+        String toBucket = entryParam.getValue("to-bucket").trim();
+        if (toBucket.equals(bucket) && "qiniu".equals(source))
+            throw new IOException("the to-bucket can not be same as bucket if source is qiniu.");
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        String addPrefix = entryParam.getValue("add-prefix", null);
+        String rmPrefix = entryParam.getValue("rm-prefix", null);
+        String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
+        com.qiniu.storage.Region region = "".equals(regionStr) ?
+                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, toBucket))
+                : CloudApiUtils.getQiniuRegion(regionStr);
+        String rsDomain = entryParam.getValue("rs-domain", null);
+        String apiDomain = entryParam.getValue("api-domain", null);
+        if (rsDomain != null || apiDomain != null) {
+            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
+            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
+            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
+        }
+        Configuration configuration = new Configuration(region);
+        if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
+        if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
+        if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        return single ? new FetchFile(ak, sk, configuration, toBucket, protocol, domain, urlIndex, addPrefix, rmPrefix)
+                : new FetchFile(ak, sk, configuration, toBucket, protocol, domain, urlIndex, addPrefix, rmPrefix, savePath);
     }
 }
