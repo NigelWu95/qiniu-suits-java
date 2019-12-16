@@ -20,6 +20,9 @@ public final class ProcessUtils {
         add("download");
         add("imagecensor");
         add("videocensor");
+        add("cdnrefresh");
+        add("cdnprefetch");
+        add("fetch");
     }};
     public static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
@@ -53,6 +56,7 @@ public final class ProcessUtils {
         add("qupload");
         add("mime");
         add("metadata");
+        add("fetch");
     }};
     public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
@@ -65,6 +69,8 @@ public final class ProcessUtils {
         add("stat");
         add("mime");
         add("metadata");
+        add("cdnrefresh");
+        add("cdnprefetch");
     }};
     public static Set<String> tenProcesses = new HashSet<String>(){{
         add("tenprivate");
@@ -97,6 +103,8 @@ public final class ProcessUtils {
         add("imagecensor");
         add("videocensor");
         add("censorresult");
+        add("cdnrefresh");
+        add("cdnprefetch");
     }};
     public static Set<String> supportStorageSource = new HashSet<String>(){{
         addAll(needQiniuAuthProcesses);
@@ -128,6 +136,7 @@ public final class ProcessUtils {
         add("download");
         add("imagecensor");
         add("videocensor");
+        add("fetch");
     }};
 
     public static boolean needUrl(String process) {

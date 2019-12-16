@@ -4,9 +4,9 @@
 # qiniu-suits (qsuits)
 qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过设计的[前缀并发算法](docs/datasource.md#并发列举)能够高效**并发列举**
 云存储空间的资源列表(支持**七牛云/阿里云/腾讯云/AWS S3/又拍云/华为云/百度云等**，支持 S3 接口的均可以通过 S3 数据源的方式来导出)，同时支持对包含
-资源列表的多个本地文本数据源并发进行批量处理，处理功能主要包括本地文件上传和对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，
-非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)（直接调用接口处理命
-令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2命令行执行器-qsuits)）。  
+资源列表的本地数据源并发进行批量处理，处理功能主要包括对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，以及本地数据源下大规模
+文件上传或者导出文件列表，非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)
+（直接调用接口处理命令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8 环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2命令行执行器-qsuits)）。  
 
 ### 功能列表：
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及最大结束文件名或 marker 等参数  
@@ -24,6 +24,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 - [x] 修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
 - [x] 对设置了镜像源的空间资源进行镜像更新或拉取 [mirror 配置](docs/mirror.md)  
 - [x] 异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
+- [x] 同步抓取资源到指定空间 [fetch 配置](docs/fetch.md)  
 - [x] 查询资源的 hash & size [qhash 配置](docs/qhash.md)  
 - [x] 查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
 - [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
@@ -37,6 +38,7 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 - [x] 内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
 - [x] 修改资源的 mimeType [mime 配置](docs/mime.md)  
 - [x] 修改资源的 metadata [metadata 配置](docs/metadata.md)  
+- [x] CDN 资源的刷新预取操作 [cdn 操作配置](docs/cdn.md)  
 
 *【部分 process 属于危险操作（如文件删除/禁用等），需要在启动后根据提示输入 y/yes 确认，如果不希望进行 verify 验证则需要在命令行加入 -f 参数】*  
 
@@ -149,7 +151,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 ```  
 
 ### 3 数据源
-数据源分为三种类型：**云存储列举(storage)**、**文本文件行读取(file)**、**文件路径和属性读取(filepath)**，可以通过 `path=` 来指定数据源地址：  
+数据源分为两种类型：**云存储列举(storage)**、**本地文件读取(file)**，可以通过 `path=` 来指定数据源地址：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](docs/datasource.md#1-七牛云存储)  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](docs/datasource.md#2-腾讯云存储)  
 `path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](docs/datasource.md#3-阿里云存储)  
@@ -175,16 +177,24 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 |upyun    |`up-id=`<br>`up-secret=`<br>| 密钥对为又拍云存储空间授权的[操作员](https://help.upyun.com/knowledge-base/quick_start/#e6938de4bd9ce59198)和其密码，又拍云存储目前没有 region 概念|  
 |huawei   |`hua-id=`<br>`hua-secret=`<br>`region=cn-north-1/...`| 密钥对为华为云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[华为 Region](https://support.huaweicloud.com/devg-obs/zh-cn_topic_0105713153.html)|  
 |baidu    |`bai-id=`<br>`bai-secret=`<br>`region=bj/gz/su...`| 密钥对为百度云账号的 AccessKeyId 和 SecretAccessKey<br>region(可不设置)使用简称，参考[百度 Region](https://cloud.baidu.com/doc/BOS/s/Ojwvyrpgd#%E7%A1%AE%E8%AE%A4endpoint)|  
-#### file 文本文件行读取  
-文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
+
+#### file 本地文件读取  
+本地文件数据源分为**两种情况：（1）读取文件内容为数据列表按行输入（2）读取路径下的文件本身，包括目录遍历，得到文件信息作为输入**  
+1. 第一种情况，文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  
 `separator=\t` 表示输入行的格式分隔符（非 json 时可能需要）  
 `add-keyPrefix=` 数据源中每一行的文件名添加前缀  
 `rm-keyPrefix=` 数据源中每一行的文件名去除前缀  
-`line-config=` 数据源路径即对应文本读取的起始行配置  
+`uris=` 设置数据源路径下需要读取的文件名列表，以 `,` 号分割文件名，不设置默认读取 path 下全部文本文件  
+`uri-config=` 数据源文件路径及对应文本读取的起始行配置  
 **数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)**  
-#### filepath 文件路径和属性读取
-该数据源用于上传文件的操作，设置 `process=qupload` 时自动生效，从 `path` 中读取所有文件（除隐藏文件外）执行上传操作，具体配置可参考 [qupload 配置](docs/uploadfile.md)。
+
+2. 第二种情况，读取文件本身，用于导出本地的文件列表，也可以进行文件上传，解析参数如下：  
+`parse=file` 表示进行文件信息解析格式  
+`directories=` 设置数据源路径下需要读取的目录列表，以 `,` 号分割目录名，不设置默认读取 path 下全部目录下的文件  
+`directory-config=` 数据源文件目录及对应已上传的文件名配置，配置中记录已上传的文件在 path 中的位置标识  
+（1）该数据源导出文件列表时默认只包含 filepath 和 key 信息，如果需要 size、date 等其他信息，请参考 [数据源配置](docs/datasource.md#关于-indexes-索引)。  
+（2）用于上传文件的操作时，设置 `process=qupload` 会自动生效，从 `path` 中读取所有文件（除隐藏文件外）执行上传操作，具体配置可参考 [qupload 配置](docs/uploadfile.md)。  
 
 ### 4 过滤器功能  
 从数据源输入的数据通常可能存在过滤需求，如过滤指定规则的文件名、过滤时间点或者过滤存储类型等，可通过配置选项设置一些过滤条件，目前支持两种过滤条件：
@@ -258,6 +268,7 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `process=lifecycle` 表示修改空间资源的生命周期 [lifecycle 配置](docs/lifecycle.md)  
 `process=mirror` 表示对设置了镜像源的空间资源进行镜像更新 [mirror 配置](docs/mirror.md)  
 `process=asyncfetch` 表示异步抓取资源到指定空间 [asyncfetch 配置](docs/asyncfetch.md)  
+`process=fetch` 表示同步抓取资源到指定空间 [fetch 配置](docs/fetch.md)  
 `process=qhash` 表示查询资源的 qhash [qhash 配置](docs/qhash.md)  
 `process=avinfo` 表示查询空间资源的视频元信息 [avinfo 配置](docs/avinfo.md)  
 `process=pfopcmd` 表示根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
@@ -269,8 +280,9 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `process=imagecensor` 表示图片类型资源内容审核 [imagecensor 配置](docs/censor.md#图片审核)  
 `process=videocensor` 表示视频类型资源内容审核 [videocensor 配置](docs/censor.md#视频审核)  
 `process=censorresult` 表示内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
-`process=mime` 修改资源的 mimeType [mime 配置](docs/mime.md)  
-`process=metadata` 修改资源的 metadata [metadata 配置](docs/metadata.md)  
+`process=mime` 表示修改资源的 mimeType [mime 配置](docs/mime.md)  
+`process=metadata` 表示修改资源的 metadata [metadata 配置](docs/metadata.md)  
+`process=cdnrefresh/cdnprefetch` 表示 CDN 资源的刷新预取操作 [cdn 操作配置](docs/cdn.md)  
 
 **注意**：  
 1. 云存储数据源 + process 操作的情况下通常会涉及两对密钥，数据源一对，process 操作一对，如果是 delete、status 等操作则这两对密钥相同，使用一个密
@@ -299,13 +311,19 @@ rm-fields=
 |save-separator| 字符串| 结果保存为 tab 格式时使用的分隔符，结合 save-format=tab 默认为使用 "\t"|  
 |rm-fields| 字符串列表| 保存结果中去除的字段，为输入行中的实际字段选项，用 "," 做分隔，如 key,hash，表明从结果中去除 key 和 hash 字段再进行保存，不填表示所有字段均保留|  
 
-#### 关于save-total  
+#### 关于 save-total  
 （1）用于选择是否直接保存数据源完整输出结果，针对存在过滤条件或下一步处理过程时是否需要保存原始数据，如 bucket 的 list 操作需要在列举出结果之后再针
     对字段进行过滤或者做删除，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置为 false，如
     果是删除等操作，通常删除结果会直接保存文件名和删除结果，原始数据也不需要保存。  
 （1）本地文件数据源时默认如果存在 process 或者 filter 则设置 save-total=false，反之则设置 save-total=true（说明可能是单纯格式转换）。  
 （2）云存储数据源时默认设置 save-total=true。  
 （3）保存结果的路径 **默认（save-path）使用 <bucket\>（云存储数据源情况下）名称或者 <path\>-result 来创建目录**。  
+
+#### 关于 save-format  
+（1）json 将数据源的信息导出保存为 json 格式  
+（2）tab 将数据源的信息导出保存为 table 格式，以 tab 键 `\t` 来分割各项值，顺序按照默认标准字段的顺序  
+（3）csv 将数据源的信息导出保存为 table 格式，以 `,` 来分割各项值，顺序按照默认标准字段的顺序  
+（4）yaml 将数据源的信息导出保存为类 yaml 格式，目录下的子目录或文件采用比上一级多一个缩进（`\t`）的形式，用于文件列表的层级输出展示  
 
 #### 关于持久化文件名  
 （1）持数据源久化结果的文件名为 "<source-name\>\_success_<order\>.txt"，如 qiniu 存储数据源结果为 "qiniu_success_<order\>.txt"，
@@ -365,13 +383,17 @@ java.net.SocketTimeoutException: timeout
 表示在 \<filename\>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，\<filename\> 表示文件名。
 2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次列举时使用断点文件
 作为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
-3. 对于 file 数据源产生的断点文件记录了读取的文本行，亦可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次
-继续读 file 数据源操作时使用断点文件作为行配置文件: line-config=<breakpoint_filepath> 即可，参见：[line-config 配置](docs/datasource.md#line-config-配置)。  
-4. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分（7.72 及以下版本中断点参数请和其他参数保持一致放在命令行或配置文件中，7.72 以上
+3. 对于 file 数据源读取文件列表时，产生的断点文件记录了读取的文本行，可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，
+则在下次继续读 file 数据源操作时使用断点文件作为行配置文件: uri-config=<breakpoint_filepath> 即可，参见：[uri-config 配置](docs/datasource.md#uri-config-配置)。 
+4. 对于 file 数据源进行上传的情况，断点信息记录的是目录下已经上传到的文件名位置，产生的断点文件亦可以直接作为下次续操作的操作来使用完成后续上传，如
+断点文件为 \<filename\>.json，则在下次继续上传该 path 目录的文件时时使用断点文件作为行配置文件: directory-config=<breakpoint_filepath> 
+即可（注意是 directory-config），参见：[directory-config 配置](docs/uploadfile.md#directory-config-配置)。  
+5. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分（7.72 及以下版本中断点参数请和其他参数保持一致放在命令行或配置文件中，7.72 以上
 版本无此限制，只要提供断点参数无论是否与其他参数同在命令行或配置文件中均可生效）。  
 
-**注意：如果是系统宕机、断电或者强制关机或者进程强行 kill 等情况，无法得到输出的断点提示，因此只能通过[<位置记录日志>](#9-程序日志)来查看最后的断
-点信息，取出 procedure.log 日志的最后一行并创建断点配置文件，从而按照上述方式进行断点运行。**  
+**注意：如果是系统宕机、断电或者强制关机或者进程强行 kill 等情况，无法得到输出的断点文件提示，因此只能通过[<位置记录日志>](#9-程序日志)来查看最后
+的断点信息，在 8.2.1 版本以上设置了 log 参数可用于启用日志记录的断点，即取出运行路径下 logs 目录中的 procedure[x].log 日志，将该日志文件设置
+为 `-log=<procedure[x].log's path>` 再运行可完成断点续操作。**  
 
 ### 11 分布式任务方案
 对于不同账号或空间可以直接在不同的机器上执行任务，对于单个空间资源数量太大无法在合适条件下使用单台机器完成作业时，可分机器进行作业，如对一个空间列举完

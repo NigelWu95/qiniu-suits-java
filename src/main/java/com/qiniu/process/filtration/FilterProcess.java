@@ -139,7 +139,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             }
         } catch (NullPointerException e) {
             if (canceled) {
-                throw new IOException("processor is canceled state.");
+                throw new IOException("processor in canceled state.");
             } else if (filter == null) { // 如果是关闭了那么 filter 应该为 null
                 throw new IOException("input is empty or the processor may be already closed.");
             } else {

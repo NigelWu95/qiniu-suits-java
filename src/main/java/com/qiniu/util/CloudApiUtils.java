@@ -33,6 +33,7 @@ import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.SuitsException;
 import com.qiniu.http.Response;
+import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.sdk.FileItem;
 import com.qiniu.sdk.UpYunClient;
 import com.qiniu.sdk.UpYunConfig;
@@ -456,5 +457,25 @@ public final class CloudApiUtils {
             futureSize += limit;
         }
         return new ArrayList<>(futureSize);
+    }
+
+    public static IFileChecker fileCheckerInstance(BucketManager bucketManager, String bucket) {
+        return key -> {
+            Response response;
+            try {
+                response = bucketManager.statResponse(bucket, key);
+            } catch (QiniuException e) {
+                if (e.response != null) e.response.close();
+                return null;
+            }
+            if (response.statusCode == 200) {
+                try {
+                    return response.bodyString();
+                } finally {
+                    response.close();
+                }
+            }
+            return null;
+        };
     }
 }

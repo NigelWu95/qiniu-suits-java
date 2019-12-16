@@ -11,12 +11,15 @@
 ```
 process=qupload
 path=
+directories=
+directory-config=
 ak=
 sk=
 bucket=
 filepath-index=
 parent-path=
 record=
+keep-dir=
 keep-path=
 add-prefix=
 rm-prefix=
@@ -24,28 +27,49 @@ expires=
 policy.[]=
 params.[]=
 crc=
+threshold=
+check=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process|上传资源时设置为 qupload | 表示上传资源操作|  
 |path| 本地路径| path 是数据源选项，可以通过设置本地路径来指定要上传的文件，为目录时会遍历目录下（包括内层目录）除隐藏文件外的所有文件|  
+|directories| 文件目录列表| 如果希望上传 path 下的几个目录中文件，可设置 path 路径下需要读取的目录列表，以 `,` 号分割目录名，不设置默认读取 path 下全部目录进行文件的上传|  
+|directory-config| 配置文件路径|数据源文件目录及对应已上传的文件名配置，配置中记录已上传的文件在 path 中的位置标识，配置格式为 json，参考[ directory-config 配置文件](#directory-config-配置)，该配置不需要自行编写|  
 |ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取|  
 |bucket| 字符串| 上传到的资源原空间名称|  
 |filepath-index| 文件路径索引| 非必填字端，当直接上传 path 路径中的文件时无需设置，如果是通过读取文本文件每一行中的路径信息则需要设置|  
-|parent-path|上级目录| 该参数通常和 filepath-index 同时使用，用于规定文本中的路径值拼接上层目录得到要上传的文件路径|  
+|parent-path|上级目录| 该参数通常和 filepath-index 同时使用，用于规定文本中的路径值拼接上层目录得到要上传的文件路径，通过 path 自动读取文件的情况下不需要设置该参数|  
 |record| true/false| 对于大于 4M 的文件会自动使用分片上传，该参数用于规定分片上传是否记录上传进度信息（断点续传作用），默认不开启|  
 |keep-path| true/false| 上传到空间的文件名（资源 key）是否保存从 path 开始的完整路径，默认为 true，则使用文件完整路径作为空间的资源 key|  
+|keep-dir| true/false| 是否维持目录结构而针对目录产生一条文件名以 / 结尾的文件记录，即使目录为空也会创建该目录，默认为 false|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|  
 |expires| 整型数字| 单个文件上传操作的鉴权有效期，单位 s(秒)，默认为 3600|  
 |policy.[]| 字符串/整型数字| 可以设置一些上传策略参数，如 policy.deleteAfterDays=7 表示七天之后自动删除文件，其他参数可参考[七牛上传策略](https://developer.qiniu.com/kodo/manual/1206/put-policy)|  
 |params.[]| 字符串| 上传时设置的一些变量参数，如 params.x:user=138300 表示 x:user 的信息为 138300，可参考[七牛上传自定义变量](https://developer.qiniu.com/kodo/manual/1235/vars#xvar)|  
 |crc| true/false| 是否开启 crc32 来校验文件的上传，默认为 false|  
-|line-config| 配置文件路径|已上传的文件在 path 中的位置标识，用于[断点续操作](../README.md#10-断点续操作)，不需要自行编写该配置|  
+|threshold| 整型数字| 设置文件分片上传的阈值，超过该阈值时才启用分片上传，小于该阈值的文件都是表单上传，默认阈值是 4M，对于内网上传时可以设置较大的阈值提高上传效率|  
+|check|字符串| 进行文件存在性检查，目前可设置为 `stat`，表示通过 stat 接口检查目标文件名是否存在，如果存在则不进行 fetch，而记录为 `file exsits`|  
 
-### 关于 line-config
-line-config 需要的断点文件基于上次上传文件操作未完成的情况下可以产生，理论上只要上传的目录结构没有发生变化，断点文件就能针对上次未完成上传的文件进
-行上传，而不会所有文件重新上传一遍，断点信息的获取参考[断点续操作](../README.md#10-断点续操作)。
+### 关于 directory-config
+directory-config 用来设置要读取的文件目录及位置信息，在 path 为空的情况下，directory-config 中的文件名必须是完整的目录路径，path 为目录时，
+directory-config 中的目录名可以采取相对 path 路径下的目录名。配置中每一个目录对应的值表示在一个文件名信息，在实际读取数据源过程中，会参照该文件
+名，从之后的文件开始读取，即此文件名信息标示目录中的读取位置，可以用于设置断点。directory-config 需要的断点文件基于上次上传文件操作未完成的情况下
+可以产生，理论上只要上传的目录结构没有发生变化，断点文件就能针对上次未完成上传的文件进行上传，而不会所有文件重新上传一遍，断点信息的获取参考[断点续操作](../README.md#10-断点续操作)。  
+
+#### directory-config 配置
+```json
+{
+  "/Users/wubingheng/Projects/Github/test":{
+    "start":"qiniu_success_2.txt"
+  }
+}
+```  
+|选项|含义|  
+|-----|-----|  
+|key|上述配置文件中的 "/Users/wubingheng/Projects/Github/test" 等表示目录名或路径，不可重复，重复情况下后者会覆盖前者|  
+|value| 表示数据源中某一行的内容，如 "qiniu_success_1.txt" 表示 "/Users/wubingheng/Projects/Github/test" 目录中可能存在该文件名|  
 
 ### 上传超时时间
 timeout 参数可以通过全局的 timeout 来设置，参考：[超时设置](../README.md#7-超时设置)  

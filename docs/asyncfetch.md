@@ -20,6 +20,7 @@ url-index=
 add-prefix=
 rm-prefix=
 to-bucket=
+check=
 host=
 callback-url=
 callback-body=
@@ -31,7 +32,7 @@ check-url=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
-|process| 异步抓取时设置为asyncfetch | 表示异步 fetch 操作|  
+|process| 异步抓取操作时设置为 asyncfetch | 表示异步 fetch 操作|  
 |ak、sk|长度 40 的字符串|抓取到七牛账号的ak、sk，通过七牛控制台个人中心获取|  
 |qiniu-ak、qiniu-sk|长度 40 的字符串|抓取到七牛账号的ak、sk，如果数据源为 qiniu 且目标账号和数据源为同一账号，则无需再设置，如果是跨七牛账号抓取，目标账号的密钥请用 qiniu-ak/qiniu-sk 来设置|  
 |qiniu-zone|存储区域字符串|抓取到七牛空间的区域，不填时则自动判断，如果愿意指定则在目标空间的区域和数据源区域不一致时使用 qiniu-zone 设置|  
@@ -42,6 +43,7 @@ check-url=
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|   
 |to-bucket|字符串| 保存抓取结果的空间名|  
+|check|字符串| 进行文件存在性检查，目前可设置为 `stat`，表示通过 stat 接口检查目标文件名是否存在，如果存在则不进行 fetch，而记录为 `file exsits`|  
 |host| host 字符串|抓取源资源时指定 host|  
 |md5-index| 字符串| 资源 md5 值索引（下标），需要手动指定才会进行解析|  
 |callback-url| 公网可访问的 url 字符串| 设置回调地址|  

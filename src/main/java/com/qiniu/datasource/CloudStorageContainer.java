@@ -79,7 +79,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
             prefixRight = true;
             if (hasAntiPrefixes && !"upyun".equals(getSourceName())) prefixes = originPrefixList;
         } else {
-            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contain null.");
+            if (prefixesMap.containsKey(null) || prefixesMap.containsValue(null)) throw new IOException("prefixes map can not contain null.");
             this.prefixesMap = new ConcurrentHashMap<>(threads);
             this.prefixesMap.putAll(prefixesMap);
             prefixes = prefixesMap.keySet().stream().sorted().distinct().collect(Collectors.toList());
@@ -195,7 +195,6 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         List<E> objects = lister.currents();
         boolean hasNext = lister.hasNext();
         int retry;
-        String record;
         Map<String, String> map = prefixAndEndedMap.get(lister.getPrefix());
         JsonObject json = map != null ? JsonUtils.toJsonObject(map) : (hasNext ? new JsonObject() : null);
         // 初始化的 lister 包含首次列举的结果列表，需要先取出，后续向前列举时会更新其结果列表
@@ -226,10 +225,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
             }
             if (hasNext) {
                 json.addProperty("marker", lister.getMarker());
-                record = json.toString();
-                progressMap.put(lister.getPrefix(), record);
-                try { FileUtils.createIfNotExists(procedureLogFile); } catch (IOException ignored) {}
-                procedureLogger.info("{}-|-{}", lister.getPrefix(), record);
+                recordLister(lister.getPrefix(), json.toString());
             }
             if (map != null) map.put("start", lister.currentEndKey());
             if (stopped) break;
@@ -500,7 +496,6 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                         extremePrefixes.add(prefix);
                         prefixMap.put("marker", nextMarker);
                         prefixesMap.put(prefix, prefixMap);
-
                     }
                 } else if (listerList.size() <= cValue) {
                     count = 900;
@@ -556,6 +551,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         List<IStorageLister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
         while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
             prefixesMap.clear();
+            if (progressMap.size() == 0) procedureLogFile.delete();
             listerList = computeToNextLevel(listerList);
         }
         if (listerList != null && listerList.size() > 0) {

@@ -2,10 +2,10 @@
 
 ## 简介
 从支持的数据源中读入资源信息列表，部分数据源需要指定行解析方式或所需格式分隔符，读取指定位置的字段作为输入值进行下一步处理。**目前支持的数据源类型分为
-几大类型：云存储列举(storage)、文件内容读取(file)**。  
+几大类型：云存储列举(storage)、本地文件读取(file)**。  
 
 ## 配置
-数据源分为两种类型：云存储列举(storage)、文本文件行读取(file)，可以通过 **path= 来指定数据源地址：  
+数据源分为两种类型：云存储列举(storage)、本地文件读取(file)，可以通过 **path= 来指定数据源地址：  
 `path=qiniu://<bucket>` 表示从七牛存储空间列举出资源列表，参考[七牛数据源示例](#1-七牛云存储)  
 `path=tencent://<bucket>` 表示从腾讯存储空间列举出资源列表，参考[腾讯数据源示例](#2-腾讯云存储)  
 `path=aliyun://<bucket>` 表示从阿里存储空间列举出资源列表，参考[阿里数据源示例](#3-阿里云存储)  
@@ -31,36 +31,48 @@ indexes=key,etag,fsize
 |threads| 整型数| 表示预期最大线程数，若实际得到的文件数或列举前缀数小于该值时以实际数目为准|  
 |indexes| 字符串列表| 资源元信息字段索引（下标），设置输入行对应的元信息字段下标|  
 
-**备注：** indexes、unit-len、threads 均有默认值非必填，indexes 说明及默认值参考下述[ indexes 索引](#关于-indexes-索引)，unit-len 
-和 threads 说明及默认值参考下述[并发处理](#关于并发处理 )，建议根据需要优化参数配置。  
+**备注：** indexes、unit-len、threads 均有默认值非必填，indexes 说明及默认值参考下述[ indexes 索引](#关于-indexes-索引)，unit-len 和
+threads 说明及默认值参考下述[并发处理](#关于并发处理 )，建议根据需要优化参数配置。  
 
 #### 关于 indexes 索引 
-`indexes` 是一个配置字段映射关系的参数，即规定用于从输入行中取出所需字段的索引名及映射到目标对象的字段名，程序会解析每一个键值对构成索引表，默认设置
-为顺序包含 9 个字段：**key,etag,size,datetime,mime,type,status,md5,owner**，参考[文件信息字段](#关于文件信息字段)，只需要按顺序设置 
-9 个字段的索引即可，如 `indexes=0,1,2,3,4,5` 表示取第一个字段为 key，取第二个字段为 etag，以此类推，**列举操作**或者**文件输入格式为 json**
-时如 `indexes=key,etag,size,datetime,mime,type` 表示从依次取出 key,etag,size,datetime,mime,type 这些值，后几位不填写或者中间填写 -1
-的表示不需要该部分字段，如 `key,hash,size,-1,timestamp,-1,type` 表示需要 key,hash,size,timestamp,type 这些值，而其他的不需要。  
+1. `indexes` 是一个配置字段映射关系的参数，即规定用于从输入行中取出所需字段的索引名及映射到目标对象的字段名，程序会解析每一个键值对构成索引表，绝大
+多数数据源默认设置为顺序包含 9 个字段：**key,etag,size,datetime,mime,type,status,md5,owner**，参考[文件信息字段](#关于文件信息字段)。但
+是对于 file 数据源进行上传操作时或者 `parse=file` 导出文件信息列表时，默认字段为 **key,parent,size,datetime,mime,etag**，key 为解析的文
+件名称，字段减少和顺序变化的原因是因为 mime 和 etag 需要经过计算得到，故优先级放低，不是必需的情况下可以舍弃，size 和 datetime 为非关键信息，也
+可以选择舍弃，parent 表示该文件所在的父层路径。   
 
-**默认情况：**  
-（1）当数据源为 [storage](#3-storage-云存储列举) 类型时，也可按照[上述 indexes 规范](#关于-indexes-索引)自行设置该参数，用于指定列举结果
-的持久化或者下一步 process 操作所需要的字段，默认包含全部下标。对于 datetime 字段，实际上是根据文件对象的 putTime 或者 lastModified 时间戳转
+2. **indexes 索引的设置方式有三种**  
+（1）使用 `indexes=pre-<索引的前几位个数>`，即按照索引的字段顺序需要前几个默认字段，如 `indexes=pre-3`，表示输入字段需要 key,etag,size，如
+果是 parse 为分割形式的数据源，那么索引下标会自动使用 `0,1,2` 来填充，如果是字段格式的数据源（如 json 或者文件对象 object），则索引会自动使用 
+`key,etag,size` 来填充，`pre-` 后面的数字取几便会顺序填充几个索引，但是数字不能大于默认字段的长度且不能小于 1。  
+（2）需要按顺序设置 9 个字段的索引，如 `indexes=0,1,2,3,4,5` 表示取第一个字段为 key，取第二个字段为 etag，以此类推，**列举操作**或者**文件输
+入格式为 json**时如 `indexes=key,etag,size,datetime,mime,type` 表示从依次取出 key,etag,size,datetime,mime,type 这些值，后几位不填
+写或者中间填写 -1 的表示不需要该部分字段，如 `key,hash,size,-1,timestamp,-1,type` 表示需要 key,hash,size,timestamp,type 这些值，而其
+他的不需要。  
+（3）不遵循文件信息默认字段的设置方式，此时需要中括号 []，参数格式为 `[key1:index1,key2:index2,key3:index3,...]`，由于命令行终端可能对该参
+数格式字符敏感，故可能需要加上 `"` 来设置，例如，输入行以分隔符分割得到字符串数据其中包含三个字段，分别表示<文件名>、<文件大小>、<时间>，那么可以设
+置 `indexes="[key:0,size:1,datetime:2]"`，如输入行是包含 key,size,datetime 等字段的 json，则可以设置 `indexes="[key:key,size:key,datetime:datetime]"`，
+表示目标对象字段需要 key,size,datetime，且从输入行中进行解析的索引分别为 key,size,key,datetime。因此 `indexes` 可以设置多个键值对，每个键
+值对都表示程序中字段与输入行中索引的对应关系，即 `<key>:<index>`。`<key>` 即为表示实际含义的对象字段名，`<index>` 可以为数字或字符串，即将输入
+行按照一种格式解析后可以读取对象字段值的索引，为数字且输入格式为 tab/csv 时表示输入行可分隔为 value 数组，采用数组下标的方式读取目标值，为字符串时
+可以是 json 行的原始字段名。
+
+3. **默认情况：**  
+（1）当数据源为 [storage](#3-storage-云存储列举) 类型时，也可按照[上述 indexes 规范](#关于-indexes-索引)自行设置该参数，用于指定列举结果的
+持久化或者下一步 process 操作所需要的字段，默认包含全部下标。对于 datetime 字段，实际上是根据文件对象的 putTime 或者 lastModified 时间戳转
 换而来的日期时间字符串，便于了解具体时间信息，默认只能得到 datetime 信息，如果需要原本的时间戳信息，则需要在 indexes 中加入 timestamp 字段，程
 序会自动识别并扩展出该字段，如 `indexes=key,etag,size,timestamp,mime,type`，此时持久化结果中或者 process 的输入行中将体现 timestamp，亦
 可使两者同时存在，如 `indexes=key,etag,size,datetime,timestamp,mime,type,status,md5,owner`。  
 
 （2）当数据源为 [file](#2-file-文本文件行读取) 类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引只有
-`0`，输入格式为 `json` 时索引只有 `key`，使用默认值时若存在 [filter](filter.md) 过滤字段则会自动添加过滤字段，需要指定更多字段时可按照[indexes 规范](#关于-indexes-索引)
+`0`，输入格式为 `json` 时索引只有 `key`，使用默认值时若存在 [filter](filter.md) 过滤字段则会自动添加过滤字段，需要指定更多字段时可按照[ indexes 规范](#关于-indexes-索引)
 设置，例如为数字列表:`0,1,2,3,...` 或者 `json` 的 `key` 名称列表，采用默认字段的设置方式时长度不超过 9，表明取对应顺序的前几个字段，当数据格式
 为 `tab/csv` 时索引必须均为整数，如果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 `-1` 索引表示，表示跳过该顺序对应的字段，例如原输入
 行中不包含 mime 字段，则可以设置 `indexes=0,1,2,3,-1,5`。  
 
-事实上，对于 file 数据源，`indexes` 还有一种设置方式，不需要遵循文件信息的字段，此时需要中括号 []，参数格式为 `[key1:index1,key2:index2,key3:index3,...]`，
-由于命令行终端可能对该参数格式字符敏感，故可能需要加上 `"` 来设置，例如，输入行以分隔符分割得到字符串数据其中包含三个字段，分别表示<文件名>、<文件大小>、
-<时间>，那么可以设置 `indexes="[key:0,size:1,datetime:2]"`，如输入行是包含 key,size,datetime 等字段的 json，则可以设置
-`indexes="[key:key,size:key,datetime:datetime]"`，表示目标对象字段需要 key,size,datetime，且从输入行中进行解析的索引分别为 key,size,key,datetime。
-因此 `indexes` 可以设置多个键值对，每个键值对都表示程序中字段与输入行中索引的对应关系，即 `<key>:<index>`。`<key>` 即为表示实际含义的对象字段名，
-`<index>` 可以为数字或字符串，即将输入行按照一种格式解析后可以读取对象字段值的索引，为数字且输入格式为 tab/csv 时表示输入行可分隔为 value 数组，
-采用数组下标的方式读取目标值，为字符串时可以是 json 行的原始字段名。    
+（3）对于 file 数据源，存在的特殊情况是即扫描 path 下的文件进行上传（`process=qupload`）或者导出列表（`parse=file`），对于这种情况，indexes
+的设置只允许使用第一种设置方式，即 `indexes=pre-<个数>`，个数不超过 6，如果不设置则默认会取得两项信息：filepath 和 key，key 是属于 indexes 
+的第一个默认字段，而 filepath 是必备字段且对于 path 下文件的直接扫描不希望更改该字段的索引值，默认即为 filepath。  
 
 #### 关于并发处理  
 (1) 云存储数据源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的加速列举，线程数在配置文件中指定，自动按照线程数检索前缀并执行并发列举。  
@@ -82,7 +94,10 @@ indexes=key,etag,fsize
 |华为云存储   |key            |metadata.etag  |metadata.contentLength|lastModified 转换而来|metadata.contentType        |storageClass     |无此含义字段     |metadata.contentMd5|Owner.id  |  
 |百度云存储   |key            |etag           |size             |lastModified 转换而来    |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段  |Owner.displayName |  
 
-### 2 file 文本文件行读取
+### 2 file 本地文件读取
+本地文件数据源分为**两种情况：（1）读取文件内容为数据列表按行输入（2）读取路径下的文件本身，包括目录遍历，得到文件信息作为输入**  
+### 2.1 文本文件行读取  
+文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 ```
 parse=tab/json
 separator=\t
@@ -90,7 +105,8 @@ separator=\t
 indexes=
 add-keyPrefix=
 rm-keyPrefix=
-line-config=
+uris=
+uri-config=
 ```
 |参数名|参数值及类型 |含义|  
 |-----|-------|-----|  
@@ -98,27 +114,63 @@ line-config=
 |separator| 字符串| 当 parse=tab 时，可另行指定该参数为格式分隔符来分析字段|  
 |add-keyPrefix| 字符串|将解析出的 key 字段加上指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 少了前缀的情况，补上前缀才能获取到资源|  
 |rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 `/` 前缀|  
-|line-config| 配置文件路径|表示从该配置中读取文件名作为 file 数据源，同时文件名对应的值表示读取该文件的起始位置，配置文件格式为 json，可参考[ line-config 配置](#关于-line-config)|  
+|uris| 字符串|数据源路径下需要读取的文件名列表，如果只想处理部分文件，可使用参数设置列表的方式，以 `,` 号分割文件名，不设置默认读取 path 下全部文本文件|  
+|uri-config| 配置文件路径|表示从该配置中读取文件名作为 file 数据源，同时文件名对应的值表示读取该文件的起始位置，配置文件格式为 json，可参考[ uri-config 配置](#关于-uri-config)|  
 
-#### 关于 line-config
-line-config 用来设置要读取的文件路径，在 path 为空的情况下，line-config 中的文件名必须是完整的路径名，path 为目录时，line-config 中的文件名
-可以采取相对该目录的路径，因此 line-config 中的文件名必须存在。配置中每一个文件源对应的值表示在一行文本信息，在实际读取数据源过程中，会参照该行信息，
-从之后的位置开始读入数据，即此行文本信息标示文件中的读取位置，可以用于设置断点。
+#### 关于 uri-config
+uri-config 用来设置要读取的文件路径，在 path 为空的情况下，uri-config 中的文件名必须是完整的路径名，path 为目录时，uri-config 中的文件名可
+以采取相对 path 路径下的文件名，因此 uri-config 中的文件名必须存在。配置中每一个文件源对应的值表示在一行文本信息，在实际读取数据源过程中，会参照
+该行信息，从之后的位置开始读入数据，即此行文本信息标示文件中的读取位置，可以用于设置断点。
 
-##### line-config 配置
+##### uri-config 配置
 ```json
 {
-  "/Users/wubingheng/Projects/Github/test/success_1.txt":"test.gif",
-  "/Users/wubingheng/Projects/Github/test/success_2.txt":"",
-  "../test/success_3.txt":"",
-  "../test/success_4.txt":"",
-  "../test/success_5.txt":""
+  "/Users/wubingheng/Projects/Github/test/success_1.txt":{
+    "start":"test.gif"
+  },
+  "/Users/wubingheng/Projects/Github/test/success_2.txt":{
+    "start":"test.jpg"
+  }
 }
 ```  
 |选项|含义|  
 |-----|-----|  
-|key|上述配置文件中的 "../test/success_3.txt" 等表示文件名或路径，不可重复，重复情况下后者会覆盖前者|  
+|key|上述配置文件中的 "/Users/wubingheng/Projects/Github/test/success_1.txt" 等表示文件名或路径，不可重复，重复情况下后者会覆盖前者|  
 |value| 表示数据源中某一行的内容，如 "test.gif" 表示 "/Users/wubingheng/Projects/Github/test/success_1.txt" 文件中可能存在某一行包含该信息|  
+
+### 2.2 文件信息读取  
+2. 第二种情况，读取文件本身，用于导出本地的文件列表，也可以进行文件上传，解析参数如下：  
+```
+parse=file
+directories=
+directory-config=
+```  
+|参数名|参数值及类型 |含义|  
+|-----|-------|-----|  
+|parse| 字符串 file| 表示进行文件信息解析格式，解析 path 下文件本身信息时必须设置 parse=file|  
+|directories| 字符串|设置数据源路径下需要读取的目录列表，以 `,` 号分割目录名，不设置默认读取 path 下全部目录下的文件|  
+|directory-config| 配置文件路径|数据源文件目录及对应已上传的文件名配置，配置中记录已上传的文件在 path 中的位置标识，配置文件格式为 json，可参考[ directory-config 配置](#关于-directory-config)|  
+
+（1）该数据源导出文件列表时默认只包含 filepath 和 key 信息，如果需要 size、date 等其他信息，请参考 [数据源配置](#关于-indexes-索引)。  
+（2）用于上传文件的操作时，设置 `process=qupload` 会自动生效，从 `path` 中读取所有文件（除隐藏文件外）执行上传操作，具体配置可参考 [qupload 配置](uploadfile.md)。  
+
+#### 关于 directory-config
+directory-config 用来设置要读取的文件目录及位置信息，在 path 为空的情况下，directory-config 中的文件名必须是完整的目录路径，path 为目录时，
+directory-config 中的目录名可以采取相对 path 路径下的目录名。配置中每一个目录对应的值表示在一个文件名信息，在实际读取数据源过程中，会参照该文件
+名，从之后的文件开始读取，即此文件名信息标示目录中的读取位置，可以用于设置断点。  
+
+##### directory-config 配置
+```json
+{
+  "/Users/wubingheng/Projects/Github/test":{
+    "start":"qiniu_success_2.txt"
+  }
+}
+```  
+|选项|含义|  
+|-----|-----|  
+|key|上述配置文件中的 "/Users/wubingheng/Projects/Github/test" 等表示目录名或路径，不可重复，重复情况下后者会覆盖前者|  
+|value| 表示数据源中某一行的内容，如 "qiniu_success_1.txt" 表示 "/Users/wubingheng/Projects/Github/test" 目录中可能存在该文件名|  
 
 ### 3 storage 云存储列举  
 ```
@@ -139,7 +191,7 @@ prefix-right=
 |region|字符串|存储区域|
 |bucket|字符串| 需要列举的空间名称，通过 "path=qiniu://<bucket\>" 来设置的话此参数可不设置，设置则会覆盖 path 中指定的 bucket 值|  
 |prefixes| 字符串| 表示只列举某些文件名前缀的资源，，支持以 `,` 分隔的列表，如果前缀本身包含 `,\=` 等特殊字符则需要加转义符，如 `\,`|  
-|prefix-config| 字符串| 该选项用于设置列举前缀的[配置文件](#prefix-config-配置)路径，配置文件格式为 json，参考[ prefix-config 配置文件](#prefix-config-配置)|
+|prefix-config| 字符串| 该选项用于设置列举前缀的配置文件路径，配置格式为 json，参考[ prefix-config 配置文件](#prefix-config-配置)|
 |anti-prefixes| 字符串| 表示列举时排除某些文件名前缀的资源，支持以 `,` 分隔的列表，特殊字符同样需要转义符|  
 |prefix-left| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之前的文件|  
 |prefix-right| true/false| 当设置多个前缀时，可选择是否列举所有前缀 ASCII 顺序之后的文件|  
