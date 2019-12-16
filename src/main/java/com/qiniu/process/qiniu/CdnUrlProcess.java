@@ -20,7 +20,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
     private String domain;
     private String urlIndex;
     private boolean isDir;
-    private boolean prefetch;
+//    private boolean prefetch;
     private List<String> batches;
     private List<Map<String, String>> lines;
     private ICdnApplier cdnApplier;
@@ -46,7 +46,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             this.urlIndex = urlIndex;
         }
         this.isDir = isDir;
-        this.prefetch = prefetch;
+//        this.prefetch = prefetch;
     }
 
     public CdnUrlProcess(String accessKey, String secretKey, String protocol, String domain, String urlIndex, boolean isDir,
@@ -73,7 +73,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             this.urlIndex = urlIndex;
         }
         this.isDir = isDir;
-        this.prefetch = prefetch;
+//        this.prefetch = prefetch;
         this.fileSaveMapper.preAddWriter("invalid");
     }
 

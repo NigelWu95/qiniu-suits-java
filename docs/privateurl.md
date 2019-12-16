@@ -47,7 +47,7 @@ queries 参数用于设置 ?+参数部分（或 url 的后缀），希望在私�
 
 #### 命令行方式
 ```
--process=private -ak= -sk= -bucket= 
+-process=privateurl -ak= -sk= -bucket= 
 ```
 
 ### 其他存储配置参数

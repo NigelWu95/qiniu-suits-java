@@ -13,19 +13,19 @@ public class SuitsException extends IOException {
     }
 
     public SuitsException(Exception e, int statusCode) {
-        super(String.join(", ", String.valueOf(statusCode), e.getCause().getMessage()));
+        super(String.join(", ", String.valueOf(statusCode), e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
         this.exception = e;
         this.statusCode = statusCode;
     }
 
     public SuitsException(Exception e, int statusCode, String error) {
-        super(String.join(", ", String.valueOf(statusCode), error, e.getCause().getMessage()));
+        super(String.join(", ", String.valueOf(statusCode), error, e.getCause() == null ? e.getMessage() : e.getCause().getMessage()));
         this.exception = e;
         this.statusCode = statusCode;
     }
 
     public SuitsException(SuitsException e, String message) {
-        super(String.join(", ", e.getCause().getMessage(), message));
+        super(String.join(", ", e.getCause() == null ? e.getMessage() : e.getCause().getMessage(), message));
         this.exception = e;
         this.statusCode = e.getStatusCode();
     }

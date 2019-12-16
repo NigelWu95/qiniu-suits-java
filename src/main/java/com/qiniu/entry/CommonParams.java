@@ -179,8 +179,8 @@ public class CommonParams {
             setKeepDir();
             addKeyPrefix = entryParam.getValue("add-keyPrefix", null);
             rmKeyPrefix = entryParam.getValue("rm-keyPrefix", null);
-            String files = entryParam.getValue("files", null);
-            setPathConfigMap(entryParam.getValue("file-config", ""), files, false, false);
+            String uris = entryParam.getValue("uris", null);
+            setPathConfigMap(entryParam.getValue("uri-config", ""), uris, false, false);
         }
         antiPrefixes = Arrays.asList(ParamsUtils.escapeSplit(entryParam.getValue("anti-prefixes", "")));
         setProcess();
@@ -714,7 +714,7 @@ public class CommonParams {
 //                if ("".equals(prefix)) throw new IOException("prefix (prefixes config's element key) can't be empty.");
             JsonElement json = jsonObject.get(key);
             if (json == null || json instanceof JsonNull) {
-                pathConfigMap.put(key, null);
+                pathConfigMap.put(key, startAndEnd);
                 continue;
             }
 //            if (withMarker || withEnd) {
@@ -751,7 +751,7 @@ public class CommonParams {
                 parseConfigMapFromJson(jsonFile.getJsonObject(), withMarker, withEnd);
             } else if (subPaths != null && !"".equals(subPaths)) {
                 String[] subPathList = ParamsUtils.escapeSplit(subPaths);
-                for (String subPath : subPathList) pathConfigMap.put(subPath, null);
+                for (String subPath : subPathList) pathConfigMap.put(subPath, new HashMap<>());
             }
         } else {
             if (jsonConfigPath != null && !"".equals(jsonConfigPath)) {
@@ -960,15 +960,15 @@ public class CommonParams {
             if (isStorageSource) throw new IOException("self upload only support local file source.");
             fieldsMode = 1; // file 的 parse 方式，字段类型为 field，所以顺序无所谓，mime 和 etag 涉及计算，所以将优先级放在后面
             keys.add("key");
-            keys.add("size");
             keys.add("parent");
+            keys.add("size");
             keys.add("datetime");
             keys.add("mime");
             keys.add("etag");
             if ("".equals(indexes)) {
                 saveFormat = entryParam.getValue("save-format", "tab").trim();
-                if ("yaml".equals(saveFormat)) indexes = "pre-3";
-                else indexes = "pre-2";
+                if ("yaml".equals(saveFormat)) indexes = "pre-2";
+                else indexes = "pre-1";
             } else if (!indexes.startsWith("pre-")) {
                 throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
             }

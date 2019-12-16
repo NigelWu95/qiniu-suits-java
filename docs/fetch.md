@@ -1,7 +1,7 @@
-# 资源异步抓取
+# 资源同步抓取
 
 ## 简介
-对文件列表进行异步抓取保存到目标空间。参考：[七牛异步第三方资源抓取](https://developer.qiniu.com/kodo/api/4097/asynch-fetch)  
+对文件列表进行同步抓取保存到目标空间。参考：[七牛同步抓取接口](https://developer.qiniu.com/kodo/api/1263/fetch)  
 1. **操作需指定数据源，请先[配置数据源](datasource.md)**  
 2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
 3. 单次抓取一个文件请参考[ single 操作](single.md)  
@@ -9,7 +9,7 @@
 
 ## 配置
 ```
-process=asyncfetch
+process=fetch
 ak/qiniu-ak=
 sk/qiniu-sk=
 region/qiniu-region=
@@ -21,18 +21,10 @@ add-prefix=
 rm-prefix=
 to-bucket=
 check=
-host=
-callback-url=
-callback-body=
-callback-body-type=
-callback-host=
-file-type=
-ignore-same-key=
-check-url=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
-|process| 异步抓取操作时设置为 asyncfetch | 表示异步 fetch 操作|  
+|process| 抓取操作时设置为 fetch | 表示同步 fetch 操作|  
 |ak、sk|长度 40 的字符串|抓取到七牛账号的ak、sk，通过七牛控制台个人中心获取|  
 |qiniu-ak、qiniu-sk|长度 40 的字符串|抓取到七牛账号的ak、sk，如果数据源为 qiniu 且目标账号和数据源为同一账号，则无需再设置，如果是跨七牛账号抓取，目标账号的密钥请用 qiniu-ak/qiniu-sk 来设置|  
 |qiniu-zone|存储区域字符串|抓取到七牛空间的区域，不填时则自动判断，如果愿意指定则在目标空间的区域和数据源区域不一致时使用 qiniu-zone 设置|  
@@ -44,22 +36,13 @@ check-url=
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|   
 |to-bucket|字符串| 保存抓取结果的空间名|  
 |check|字符串| 进行文件存在性检查，目前可设置为 `stat`，表示通过 stat 接口检查目标文件名是否存在，如果存在则不进行 fetch，而记录为 `file exsits`|  
-|host| host 字符串|抓取源资源时指定 host|  
-|md5-index| 字符串| 资源 md5 值索引（下标），需要手动指定才会进行解析|  
-|callback-url| 公网可访问的 url 字符串| 设置回调地址|  
-|callback-body| body 字符串| 设置回调 body|  
-|callback-body-type| body-type 字符串| 设置回调 body 类型|  
-|callback-host| 域名字符串| 设置回调 host |  
-|file-type| 0/1| 文件的存储类型，默认为 0 标准存储|  
-|ignore-same-key| true/false|为 false 时表示覆盖同名文件，为 true 表示不覆盖|  
-|check-url| true/false|表示是否在提交任务之前对回调地址进行简单的 post 请求验证（无body的纯post请求），默认为 true，如果无需验证则设置为 false|  
 
-### 关于 url-index 和 md5-index
+### 关于 url-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
-key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，md5-index 为需要进行 md5 校验时输入 md5 值的字段下标，不设置则无效。  
+key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置。  
 
 ### 命令行参数方式
 ```
--process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -protocol= -domain= -host= -callback-url= -callback-body= -callback-body-type= -callback-host= -file-type= -ignore-same-key=
+-process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -protocol= -domain=
 ```
 

@@ -79,7 +79,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
             prefixRight = true;
             if (hasAntiPrefixes && !"upyun".equals(getSourceName())) prefixes = originPrefixList;
         } else {
-            if (prefixesMap.containsKey(null)) throw new IOException("prefixes map can not contain null.");
+            if (prefixesMap.containsKey(null) || prefixesMap.containsValue(null)) throw new IOException("prefixes map can not contain null.");
             this.prefixesMap = new ConcurrentHashMap<>(threads);
             this.prefixesMap.putAll(prefixesMap);
             prefixes = prefixesMap.keySet().stream().sorted().distinct().collect(Collectors.toList());
