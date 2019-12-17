@@ -242,6 +242,7 @@ public class CommonParams {
                 mapLine.put("toKey", entryParam.getValue("to-key", ""));
                 break;
             case "download":
+            case "fetch":
             case "asyncfetch":
             case "avinfo":
             case "qhash":
@@ -256,6 +257,8 @@ public class CommonParams {
 //            case "baiduprivate":
             case "imagecensor":
             case "videocensor":
+            case "cdnrefresh":
+            case "cdnprefetch":
                 String url = entryParam.getValue("url", "").trim();
                 if (!"".equals(url)) {
                     indexMap.put("url", "url");

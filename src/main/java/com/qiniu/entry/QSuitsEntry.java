@@ -397,7 +397,7 @@ public class QSuitsEntry {
             if (!regionName.startsWith("obs.")) regionName = "obs." + regionName;
             endPoint = "http://" + regionName + ".myhuaweicloud.com";
         }
-        HuaweiObsContainer huaweiObsContainer = new HuaweiObsContainer(accessId, secretKey, new ObsConfiguration(), endPoint,
+        HuaweiObsContainer huaweiObsContainer = new HuaweiObsContainer(accessId, secretKey, obsConfiguration, endPoint,
                 bucket, prefixesMap, antiPrefixes, prefixLeft, prefixRight, indexMap, null, unitLen,
                 threads);
         huaweiObsContainer.setSaveOptions(saveTotal, savePath,  saveFormat, saveSeparator, rmFields);
@@ -893,13 +893,10 @@ public class QSuitsEntry {
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String timeout = entryParam.getValue("down-timeout", null);
-        Configuration configuration = null;
-        if (timeout != null) {
-            configuration = new Configuration();
-            configuration.connectTimeout = getQiniuConfig().connectTimeout;
-            configuration.writeTimeout = getQiniuConfig().writeTimeout;
-            configuration.readTimeout = Integer.parseInt(timeout);
-        }
+        Configuration configuration = new Configuration();
+        if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
+        if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
+        if (timeout != null) configuration.readTimeout = Integer.parseInt(timeout);
         String downloadPath = entryParam.getValue("down-path", "").trim();
         if (Boolean.parseBoolean(preDown)) {
             downloadPath = null;
@@ -923,8 +920,9 @@ public class QSuitsEntry {
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String queries = useQuery ? entryParam.getValue("queries", "").trim() : null;
         String[] scenes = entryParam.getValue("scenes").trim().split(",");
-        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, queries, scenes) :
-                new ImageCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, queries, scenes, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new ImageCensor(qiniuAccessKey, qiniuSecretKey, configuration, protocol, domain, urlIndex, queries, scenes) :
+                new ImageCensor(qiniuAccessKey, qiniuSecretKey, configuration, protocol, domain, urlIndex, queries, scenes, savePath);
     }
 
     private ILineProcess<Map<String, String>> getVideoCensor(Map<String, String> indexMap, boolean single) throws IOException {
@@ -939,16 +937,18 @@ public class QSuitsEntry {
         String hookUrl = entryParam.getValue("callback-url", "").trim();
         String checkUrl = entryParam.getValue("check-url", "true").trim();
         if ("true".equals(checkUrl) && !"".equals(hookUrl)) RequestUtils.checkCallbackUrl(hookUrl);
-        return single ? new VideoCensor(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, scenes,
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new VideoCensor(qiniuAccessKey, qiniuSecretKey, configuration, protocol, domain, urlIndex, scenes,
                 Integer.parseInt(interval), saverBucket, saverPrefix, hookUrl) : new VideoCensor(qiniuAccessKey, qiniuSecretKey,
-                getQiniuConfig(), protocol, domain, urlIndex, scenes, Integer.parseInt(interval), saverBucket, saverPrefix, hookUrl,
+                configuration, protocol, domain, urlIndex, scenes, Integer.parseInt(interval), saverBucket, saverPrefix, hookUrl,
                 savePath);
     }
 
     private ILineProcess<Map<String, String>> getCensorResult(Map<String, String> indexMap, boolean single) throws IOException {
         String jobIdIndex = indexMap.containsValue("id") ? "id" : null;
-        return single ? new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), jobIdIndex)
-                : new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), jobIdIndex, savePath);
+        Configuration configuration = qiniuConfig == null ? new Configuration() : qiniuConfig;
+        return single ? new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, configuration, jobIdIndex)
+                : new QueryCensorResult(qiniuAccessKey, qiniuSecretKey, configuration, jobIdIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getQiniuUploadFile(Map<String, String> indexMap, boolean single) throws IOException {
