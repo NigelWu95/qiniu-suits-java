@@ -1147,10 +1147,14 @@ public class CommonParams {
     }
 
     private void setThreads() throws IOException {
-        String defaultValue = "cdnrefresh".equals(process) || "cdnprefetch".equals(process) ? "1" : "50";
-        String threads = entryParam.getValue("threads", defaultValue).trim();
-        ParamsUtils.checked(threads, "threads", "[1-9]\\d*");
-        this.threads = Integer.parseInt(threads);
+        // 刷新预取操作存在 qps 限制，因此不支持自定义线程数
+        if ("cdnrefresh".equals(process) || "cdnprefetch".equals(process)) {
+            this.threads = 1;
+        } else {
+            String threads = entryParam.getValue("threads", "50").trim();
+            ParamsUtils.checked(threads, "threads", "[1-9]\\d*");
+            this.threads = Integer.parseInt(threads);
+        }
     }
 
     private void setBatchSize() throws IOException {
