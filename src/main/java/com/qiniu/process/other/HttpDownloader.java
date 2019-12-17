@@ -72,17 +72,22 @@ public class HttpDownloader {
         }
     }
 
-    public void download(String url, StringMap headers) throws IOException {
+    public Response downloadResponse(String url, StringMap headers) throws IOException {
         Response response = client.get(url, headers);
         if (response.statusCode == 200 || response.statusCode == 206) {
-            byte[] buffer = new byte[4096];
-            try (InputStream inputStream = response.bodyStream()) {
-                while ((inputStream.read(buffer)) > -1);
-            } finally {
-                response.close();
-            }
+            return response;
         } else {
             throw new QiniuException(response);
+        }
+    }
+
+    public void download(String url, StringMap headers) throws IOException {
+        Response response = downloadResponse(url, headers);
+        byte[] buffer = new byte[4096];
+        try (InputStream inputStream = response.bodyStream()) {
+            while ((inputStream.read(buffer)) > -1);
+        } finally {
+            response.close();
         }
     }
 }

@@ -29,6 +29,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     protected int batchSize;
     protected int retryTimes = 5;
     protected boolean autoIncrease;
+    protected int index;
     protected AtomicInteger saveIndex;
     protected String savePath;
     protected FileSaveMapper fileSaveMapper;
@@ -47,6 +48,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     public Base(String processName, String accessKey, String secretKey, String bucket, String savePath, int saveIndex)
             throws IOException {
         this(processName, accessKey, secretKey, bucket);
+        this.index = saveIndex;
         this.saveIndex = new AtomicInteger(saveIndex);
         this.savePath = savePath;
         this.fileSaveMapper = new FileSaveMapper(savePath, processName, String.valueOf(saveIndex));
@@ -277,11 +279,11 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             return singleResult(line);
         } catch (NullPointerException e) {
             if (canceled) {
-                throw new IOException("processor in canceled state.", e);
+                throw new IOException("processor in canceled state.");
             } else if (batchSize < 0) { // 如果是关闭了那么 batchSize 应该小于 0
-                throw new IOException("input is empty or the processor may be already closed.", e);
+                throw new IOException("input is empty or the processor may be already closed.");
             } else {
-                throw new IOException("instance without savePath can not call this batch process method.", e);
+                throw new IOException("instance without savePath can not call this batch process method.");
             }
         } catch (IOException e) {
             throw e;
@@ -303,14 +305,14 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             if (canceled) {
 ////            // nothing to do
             } else if (batchSize < 0) { // 如果是关闭了那么 batchSize 应该小于 0
-                throw new IOException("input is empty or the processor may be already closed.", e);
+                throw new IOException("input is empty or the processor may be already closed.");
             } else {
-                throw new IOException("instance without savePath can not call this batch process method.", e);
+                throw new IOException("instance without savePath can not call this batch process method.");
             }
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+            throw new IOException(e.getMessage());
         }
     }
 

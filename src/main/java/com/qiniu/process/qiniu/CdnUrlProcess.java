@@ -93,6 +93,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 //            cdnUrlProcess.fileSaveMapper.preAddWriter("invalid");
 //        }
 //        return cdnUrlProcess;
+        if (!autoIncrease) saveIndex.addAndGet(1);
         return this;
     }
 
@@ -175,12 +176,15 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 
     @Override
     public void closeResource() {
-        super.closeResource();
-        protocol = null;
-        domain = null;
-        urlIndex = null;
-        batches = null;
-        lines = null;
-        cdnApplier = null;
+        if (saveIndex == null || saveIndex.get() <= index) {
+            super.closeResource();
+            protocol = null;
+            domain = null;
+            urlIndex = null;
+            batches = null;
+            lines = null;
+            cdnApplier = null;
+            if (saveIndex != null) saveIndex.decrementAndGet();
+        }
     }
 }

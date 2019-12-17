@@ -23,17 +23,17 @@ public class QiniuPfop extends Base<Map<String, String>> {
     private OperationManager operationManager;
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex, String savePath,
-                     int saveIndex) throws IOException {
-        super("pfop", accessKey, secretKey, bucket, savePath, saveIndex);
+                     String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
+        super("pfop", accessKey, secretKey, bucket);
         set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
     }
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
-        super("pfop", accessKey, secretKey, bucket);
+                     String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex, String savePath,
+                     int saveIndex) throws IOException {
+        super("pfop", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
         this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);

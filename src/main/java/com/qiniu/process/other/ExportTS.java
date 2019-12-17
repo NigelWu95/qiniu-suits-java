@@ -51,6 +51,7 @@ public class ExportTS extends Base<Map<String, String>> {
         }
     }
 
+    @Override
     public ExportTS clone() throws CloneNotSupportedException {
         ExportTS exportTS = (ExportTS)super.clone();
         exportTS.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);

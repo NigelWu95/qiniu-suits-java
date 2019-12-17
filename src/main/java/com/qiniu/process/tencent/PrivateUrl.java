@@ -57,12 +57,14 @@ public class PrivateUrl extends Base<Map<String, String>> {
         this(secretId, secretKey, bucket, endpoint, expires, queries, savePath, 0);
     }
 
+    @Override
     public void setNextProcessor(ILineProcess<Map<String, String>> nextProcessor) {
         this.nextProcessor = nextProcessor;
         if (nextProcessor != null) processName = String.join("_with_",
                 nextProcessor.getProcessName(), processName);
     }
 
+    @Override
     public PrivateUrl clone() throws CloneNotSupportedException {
         PrivateUrl cosPrivateUrl = (PrivateUrl)super.clone();
         cosPrivateUrl.request = (GeneratePresignedUrlRequest) request.clone();

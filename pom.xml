@@ -6,7 +6,7 @@
 
     <groupId>com.qiniu</groupId>
     <artifactId>qsuits</artifactId>
-    <version>8.3.0</version>
+    <version>8.3.1</version>
     <name>qsuits</name>
     <description>qiniu-suits is a efficient tools for qiniu api implemented by java8.</description>
     <url>https://github.com/NigelWu95/qiniu-suits-java</url>

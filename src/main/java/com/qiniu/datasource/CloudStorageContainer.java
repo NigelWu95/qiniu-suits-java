@@ -453,7 +453,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         }
     }
 
-    private List<String> checkListerInPool(List<IStorageLister<E>> listerList, int cValue, int tiny) {
+    private List<String> checkListerInPool(List<IStorageLister<E>> listerList, int cValue, int initTiny) {
         List<String> extremePrefixes = null;
         int count = 0;
         IStorageLister<E> iLister;
@@ -463,6 +463,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         String start;
         Map<String, String> endMap;
         Map<String, String> prefixMap;
+        int tiny = initTiny;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
                 if (listerList == null) {
@@ -475,6 +476,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                     if(!iLister.hasNext()) iterator.remove();
                 }
                 if (listerList.size() > 0 && listerList.size() <= tiny) {
+                    tiny = initTiny;
                     rootLogger.info("unfinished: {}, cValue: {}, to re-split prefixes...", listerList.size(), cValue);
                     for (IStorageLister<E> lister : listerList) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
@@ -498,6 +500,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                         prefixesMap.put(prefix, prefixMap);
                     }
                 } else if (listerList.size() <= cValue) {
+                    tiny += tiny >> 1;
                     count = 900;
                 } else {
                     count = 0;
@@ -560,8 +563,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         executorPool.shutdown();
         if (threads > 1) {
             int cValue = threads >= 10 ? threads / 2 : 3;
-            int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 30 ? threads / 10 :
-                    threads >= 10 ? 3 : 1;
+            int tiny = threads >= 30 ? threads / 10 : threads >= 10 ? 3 : 1;
             List<String> extremePrefixes = checkListerInPool(listerList, cValue, tiny);
             while (extremePrefixes != null && extremePrefixes.size() > 0) {
                 extremePrefixes.parallelStream().forEach(this::recordListerByPrefix);
