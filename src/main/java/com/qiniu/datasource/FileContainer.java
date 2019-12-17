@@ -452,7 +452,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         return nextDirectories;
     }
 
-    private List<IFileLister<E, File>> checkListerInPool(int cValue, int tiny) {
+    private List<IFileLister<E, File>> checkListerInPool(int cValue, int initTiny) {
         int count = 0;
         IFileLister<E, File> iLister;
         boolean notCheck = true;
@@ -461,6 +461,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         String directory;
         String start;
         Map<String, String> endMap;
+        int tiny = initTiny;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
                 notCheck = false;
@@ -469,6 +470,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                     if(!iLister.hasNext()) iterator.remove();
                 }
                 if (list.size() > 0 && list.size() <= tiny) {
+                    tiny = initTiny;
                     rootLogger.info("unfinished: {}, cValue: {}, to re-split lister list...", list.size(), cValue);
                     for (IFileLister<E, File> lister : list) {
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
@@ -480,6 +482,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                         rootLogger.info("directory: {}, nextFilepath: {}, endMap: {}", directory, start, endMap);
                     }
                 } else if (list.size() <= cValue) {
+                    tiny += tiny >> 1;
                     count = 900;
                 } else {
                     count = 0;
@@ -505,8 +508,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         executorPool.shutdown();
         if (threads > 1) {
             int cValue = threads >= 10 ? threads / 2 : 3;
-            int tiny = threads >= 300 ? 30 : threads >= 200 ? 20 : threads >= 100 ? 10 : threads >= 30 ? threads / 10 :
-                    threads >= 10 ? 3 : 1;
+            int tiny = threads >= 30 ? threads / 10 : threads >= 10 ? 3 : 1;
             List<IFileLister<E, File>> list = checkListerInPool(cValue, tiny);
             while (list.size() > 0) {
                 list.parallelStream().forEach(lister -> recordListerByDirectory(lister.getName() + "-||-0"));

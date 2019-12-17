@@ -10,7 +10,7 @@
 process 提供的参数用法，具体可参见 process 的文档）包括要处理的 data 参数，如 key 或 url 等。  
 **说明：  
 1、`-d` 为新版 qsuits 的 account 用法，参考：[账号设置](../README.md#账号设置)  
-2、 直接使用 qsuits 命令是执行代理器用法，参考：[命令行执行器](../README.md#2、命令行执行器-qsuits)**  
+2、 直接使用 qsuits 命令是执行代理器用法，参考：[命令行执行器](../README.md#2.2-命令行执行器-qsuits)**  
 
 ### process 用法
 ##### 1 删除空间资源 [delete](delete.md)  

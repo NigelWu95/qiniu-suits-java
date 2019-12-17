@@ -89,10 +89,12 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         this.strictError = strictError;
     }
 
+    @Override
     public void setAutoIncrease(boolean autoIncrease) {
         this.autoIncrease = autoIncrease;
     }
 
+    @Override
     public void setNextProcessor(ILineProcess<T> nextProcessor) {
         this.nextProcessor = nextProcessor;
         if (nextProcessor != null) processName = nextProcessor.getProcessName() + "_after_" + processName;
@@ -102,6 +104,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         return nextProcessor;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public FilterProcess<T> clone() throws CloneNotSupportedException {
         FilterProcess<T> mapFilter = (FilterProcess<T>)super.clone();
@@ -119,6 +122,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         return mapFilter;
     }
 
+    @Override
     public void changeSaveOrder(String order) throws IOException {
         try {
             this.fileSaveMapper.changePrefixAndSuffix(processName, order);
@@ -127,6 +131,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         }
     }
 
+    @Override
     public String processLine(T line) throws IOException {
         try {
             if (filter.doFilter(line)) {
@@ -152,6 +157,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         }
     }
 
+    @Override
     public void processLine(List<T> list) throws IOException {
         if (list == null || list.size() == 0) return;
         List<T> filterList = new ArrayList<>();
@@ -183,6 +189,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         }
     }
 
+    @Override
     public void closeResource() {
         filter = null;
         if (nextProcessor != null) nextProcessor.closeResource();
@@ -192,6 +199,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         typeConverter = null;
     }
 
+    @Override
     public void cancel() {
         canceled = true;
         closeResource();

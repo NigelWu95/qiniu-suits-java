@@ -259,6 +259,7 @@ public class CommonParams {
             case "videocensor":
             case "cdnrefresh":
             case "cdnprefetch":
+            case "syncupload":
                 String url = entryParam.getValue("url", "").trim();
                 if (!"".equals(url)) {
                     indexMap.put("url", "url");

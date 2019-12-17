@@ -23,6 +23,7 @@ public final class ProcessUtils {
         add("cdnrefresh");
         add("cdnprefetch");
         add("fetch");
+        add("syncupload");
     }};
     public static Set<String> needToKeyProcesses = new HashSet<String>(){{
         add("copy");
@@ -57,6 +58,7 @@ public final class ProcessUtils {
         add("mime");
         add("metadata");
         add("fetch");
+        add("syncupload");
     }};
     public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
@@ -137,6 +139,7 @@ public final class ProcessUtils {
         add("imagecensor");
         add("videocensor");
         add("fetch");
+        add("syncupload");
     }};
 
     public static boolean needUrl(String process) {
