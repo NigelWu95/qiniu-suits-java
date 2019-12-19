@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class TextContainer<S, T> extends DatasourceActor implements IDataSource<ITextReader<S>, IResultOutput, T> {
+public abstract class TextContainer<T> extends DatasourceActor implements IDataSource<ITextReader, IResultOutput, T> {
 
     protected String path;
     protected String parse;
@@ -103,20 +103,20 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
 
     protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
-    private boolean checkPrefix(String name) {
+    protected boolean checkPrefix(String name) {
         for (String antiPrefix : antiPrefixes) {
             if (name.startsWith(antiPrefix)) return false;
         }
         return true;
     }
 
-    private void recordListerByUri(String prefix) {
+    protected void recordListerByUri(String prefix) {
         Map<String, String> map = urisMap.get(prefix);
         String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
         recordLister(prefix, record);
     }
 
-    public void export(ITextReader<S> reader, IResultOutput saver, ILineProcess<T> processor) throws Exception {
+    public void export(ITextReader reader, IResultOutput saver, ILineProcess<T> processor) throws Exception {
         ITypeConvert<String, T> converter = getNewConverter();
         ITypeConvert<T, String> stringConverter = null;
         if (saveTotal) {
@@ -172,7 +172,7 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
 
     protected abstract IResultOutput getNewResultSaver(String order) throws IOException;
 
-    private void reading(ITextReader<S> reader) {
+    private void reading(ITextReader reader) {
         int order = UniOrderUtils.getOrder();
         String orderStr = String.valueOf(order);
         ILineProcess<T> lineProcessor = null;
@@ -212,13 +212,9 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
         }
     }
 
-    protected abstract ITextReader<S> generateReader(String name) throws IOException;
+    protected abstract ITextReader generateReader(String name) throws IOException;
 
-    protected abstract String getUriFrom(S s);
-
-    protected abstract ITextReader<S> generateReader(S s) throws IOException;
-
-    protected abstract List<S> getUriEntities(String path) throws IOException;
+    protected abstract Stream<ITextReader> getReaders(String path) throws IOException;
 
     public void export() throws Exception {
         String info = processor == null ? String.join(" ", "read lines from path:", path) :
@@ -226,26 +222,15 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tpath\tquantity");
         showdownHook();
-        Stream<ITextReader<S>> readerStream;
+        Stream<ITextReader> readerStream;
         if (uris == null || uris.size() == 0) {
-            List<S> uriEntities = getUriEntities(FileUtils.convertToRealPath(path));
-            if (hasAntiPrefixes) {
-                uriEntities = uriEntities.parallelStream().filter(uriEntity -> checkPrefix(getUriFrom(uriEntity)))
-                        .peek(uriEntity -> recordListerByUri(getUriFrom(uriEntity))).collect(Collectors.toList());
-            } else {
-                uriEntities.parallelStream().forEach(uriEntity -> recordListerByUri(getUriFrom(uriEntity)));
-            }
-            readerStream = uriEntities.parallelStream().map(uriEntity -> {
-                try {
-                    return generateReader(uriEntity);
-                } catch (IOException e) {
-                    errorLogger.error("generate reader failed by {}\t{}", getUriFrom(uriEntity), urisMap.get(getUriFrom(uriEntity)), e);
-                    return null;
-                }
-            });
+            readerStream = getReaders(FileUtils.convertToRealPath(path));
         } else {
             if (hasAntiPrefixes) {
-                uris = uris.parallelStream().filter(this::checkPrefix).peek(this::recordListerByUri).collect(Collectors.toList());
+                uris = uris.parallelStream()
+                        .filter(this::checkPrefix)
+                        .peek(this::recordListerByUri)
+                        .collect(Collectors.toList());
             } else {
                 uris.parallelStream().forEach(this::recordListerByUri);
             }
@@ -270,9 +255,13 @@ public abstract class TextContainer<S, T> extends DatasourceActor implements IDa
                 }
             }).forEach(this::reading);
             executorPool.shutdown();
+            int interval = 300;
             while (!executorPool.isTerminated()) {
                 sleep(1000);
-                rootLogger.info("finished count: {}.", statistics.get());
+                if (interval-- <= 0) {
+                    interval = 300;
+                    rootLogger.info("finished count: {}.", statistics.get());
+                }
             }
             rootLogger.info("{} finished, results in {}.", info, savePath);
             endAction();

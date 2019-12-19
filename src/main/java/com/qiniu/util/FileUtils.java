@@ -247,4 +247,26 @@ public final class FileUtils {
         }
         return new String(accessFile.readLine().getBytes(StandardCharsets.ISO_8859_1));
     }
+
+    /**
+     * 推测 file 文本文件的行平均长度
+     * @param file 输入的文本文件
+     * @return 推测的行平均长度
+     */
+    public static int predictLineSize(File file) throws IOException {
+        String type = FileUtils.contentType(file);
+        if (!type.startsWith("text") && !type.equals("application/octet-stream")) {
+            throw new IOException(file + " may be not a text file");
+        }
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        int times = 5;
+        int size = 0;
+        String line;
+        while ((line = reader.readLine()) != null && times > 0) {
+            times--;
+            size += line.length();
+        }
+        reader.close();
+        return size / (5 - times);
+    }
 }

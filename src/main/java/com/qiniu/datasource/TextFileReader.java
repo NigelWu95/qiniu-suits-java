@@ -9,10 +9,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TextFileReader implements ITextReader<File> {
+public class TextFileReader implements ITextReader {
 
     private String name;
-    private File source;
     private BufferedReader bufferedReader;
 //    private String endPrefix;
     private int limit;
@@ -21,15 +20,8 @@ public class TextFileReader implements ITextReader<File> {
     private long count;
 
     public TextFileReader(File file, String startPrefix, int limit) throws IOException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(file);
-        } catch (IOException e) {
-            throw new IOException("filepath may be incorrect, " + e.getMessage());
-        }
         name = file.getPath();
-        source = file;
-        bufferedReader = new BufferedReader(fileReader);
+        bufferedReader = new BufferedReader(new FileReader(file));
         this.limit = limit;
         line = bufferedReader.readLine();
         if (startPrefix != null) {
@@ -49,14 +41,10 @@ public class TextFileReader implements ITextReader<File> {
     }
 
     @Override
-    public File getOriginal() {
-        return source;
-    }
-
-    @Override
     public List<String> readLines() throws IOException {
         if (line == null) return null;
-        List<String> srcList = new ArrayList<>(lineList);
+        List<String> srcList = new ArrayList<>(limit);
+        srcList.addAll(lineList);
         lineList.clear();
         while (true) {
             if (srcList.size() >= limit) break;

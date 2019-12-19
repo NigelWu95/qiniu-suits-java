@@ -19,8 +19,8 @@ public class TextFileContainerTest {
         Map<String, String> indexMap = new HashMap<String, String>(){{
             put("key", "0");
         }};
-        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, null,
-                null, null, null, indexMap, new ArrayList<String>(){{ add("key");}}, 100, 10);
+        TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, null, null,
+                false, null, null, indexMap, new ArrayList<String>(){{ add("key");}}, 100, 10);
         textFileContainer.export();
     }
 
