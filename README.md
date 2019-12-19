@@ -181,7 +181,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 
 #### file 本地文件读取  
 本地文件数据源分为**两种情况：（1）读取文件内容为数据列表按行输入（2）读取路径下的文件本身，包括目录遍历，得到文件信息作为输入**  
-1. 第一种情况，文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
+1、第一种情况，文件内容为资源列表，可按行读取输入文件的内容获取资源列表，文件行解析参数如下：  
 `parse=tab/json` 表示输入行的格式  
 `separator=\t` 表示输入行的格式分隔符（非 json 时可能需要）  
 `add-keyPrefix=` 数据源中每一行的文件名添加前缀  
@@ -190,7 +190,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `uri-config=` 数据源文件路径及对应文本读取的起始行配置  
 **数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)**  
 
-2. 第二种情况，读取文件本身，用于导出本地的文件列表，也可以进行文件上传，解析参数如下：  
+2、第二种情况，读取文件本身，用于导出本地的文件列表，也可以进行文件上传，解析参数如下：  
 `parse=file` 表示进行文件信息解析格式  
 `directories=` 设置数据源路径下需要读取的目录列表，以 `,` 号分割目录名，不设置默认读取 path 下全部目录下的文件  
 `directory-config=` 数据源文件目录及对应已上传的文件名配置，配置中记录已上传的文件在 path 中的位置标识  
@@ -287,13 +287,13 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 `process=cdnrefresh/cdnprefetch` 表示 CDN 资源的刷新预取操作 [cdn 操作配置](docs/cdn.md)  
 
 **注意**：  
-1. 云存储数据源 + process 操作的情况下通常会涉及两对密钥，数据源一对，process 操作一对，如果是 delete、status 等操作则这两对密钥相同，使用一个密
+1、云存储数据源 + process 操作的情况下通常会涉及两对密钥，数据源一对，process 操作一对，如果是 delete、status 等操作则这两对密钥相同，使用一个密
 钥设置或者一个 account (`-a=<account-name>`) 即可，copy、move 要求针对同一个账号操作或者采用空间授权，因此也只需要一堆密钥，但如果是其他存储
 数据源的数据备份操作 asyncfetch，就需要两对不同的密钥，而 account 只支持设置一个，这时第二对的七牛密钥可以通过同一个 account-name 的设置来获得，
 因为同一个 account-name 可以为不同数据源做密钥设置，如：`-account=ali-test -ali-id= -ali-secret=` 设置了阿里云 test 名称的账号，同时
 `-account=qiniu-test -ak= -sk=` 设置了七牛 test 名称的账号，则通过 `-a=test` 可以同时拿到阿里云和七牛云的 test 账号，因此可以直接通过同一
 个 account-name 来进行操作。但是如果明确指定了另外的 ak，sk，则会使用您设置的这一对七牛密钥。
-2. 也真是因为不同数据源的 account-name 可同名特性，以及支持主动设置密钥来覆盖 account 的密钥，在具体操作时需要注意账号和密钥的使用，以免对另外一
+2、也真是因为不同数据源的 account-name 可同名特性，以及支持主动设置密钥来覆盖 account 的密钥，在具体操作时需要注意账号和密钥的使用，以免对另外一
 个账号执行了操作。  
 
 ### 6 结果持久化
@@ -348,7 +348,7 @@ rm-fields 可选择持久化结果中去除某些字段，未设置的情况下�
 `request-timeout=60` 网络请求超时时间，程序默认 60s  
 
 ### 8 错误及异常
-1. 一般情况下，终端输出异常信息如 socket timeout 超时为正常现象，如：
+1、一般情况下，终端输出异常信息如 socket timeout 超时为正常现象，如：
 ```
 list prefix:<prefix> retrying...
 ...
@@ -356,7 +356,7 @@ java.net.SocketTimeoutException: timeout
 ```
 程序会自动重试，如果比较频繁则可以修改[超时配置](#7-超时设置)重新运行程序，超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
 [ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。  
-2. 常见错误信息：  
+2、常见错误信息：  
 （1）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  
 请使用 java 8 或以上版本的 jdk（jre） 环境来运行该程序。  
 （2）java.lang.OutOfMemoryError: GC overhead limit exceeded  
@@ -368,11 +368,11 @@ java.net.SocketTimeoutException: timeout
 
 ### 9 程序日志
 7.7 版本开始引入了 slf4j+log4j2 来记录运行日志，日志产生在当前路径的 logs 目录下，说明如下：  
-1. 数据源位置记录信息 =\> procedure.log，记录行格式为 json，数据源读取位置打点数据，每一行都是一次数据源位置记录，最后一行即为最后记录下
+1、数据源位置记录信息 =\> procedure.log，记录行格式为 json，数据源读取位置打点数据，每一行都是一次数据源位置记录，最后一行即为最后记录下
 的位置信息，如果信息为 `{}` 表明程序运行完整，没有断点需要再次运行，如果信息中包含具体的字符串，说明这是程序留下的断点，则该行信息可以取出作为断点操
 作的配置内容，具体参考：[断点操作](#10-断点续操作)  
-2. 程序运行过程输出及异常信息，通过终端 Console 和 qsuits.info、qsuits.error 输出。  
-3. 日志输出的默认文件名为 procedure.log、qsuits.info 和 qsuits.error，每次运行前会检查当前路径下是否存在历史日志文件，如果存在则会将文件名加
+2、程序运行过程输出及异常信息，通过终端 Console 和 qsuits.info、qsuits.error 输出。  
+3、日志输出的默认文件名为 procedure.log、qsuits.info 和 qsuits.error，每次运行前会检查当前路径下是否存在历史日志文件，如果存在则会将文件名加
 上数字，如 procedure0.log、qsuits0.info、qsuits0.error 或 procedure1.log、qsuits1.info、qsuits1.error（自动修改日志文件名在 8.0.4
  以上版本支持）。  
 
@@ -380,17 +380,17 @@ java.net.SocketTimeoutException: timeout
 7.1 版本开始支持断点记录，在程序运行后出现异常导致终止或部分数据源路径错误或者是 INT 信号(命令行 Ctrl+C 中断执行)终止程序时，会记录数据导出中断的
 位置，记录的信息可用于下次直接从未完成处继续导出数据，而不需要全部重新开始。尤其在对云存储空间列举文件列表时，特大量文件列表导出耗时可能会比较长，可能
 存在断点续操作的需求，续操作说明：  
-1. 如果存在续操作的需要，程序终止时会输出续操作的记录信息路径，如存储空间文件列举操作终止时可能输出：  
+1、如果存在续操作的需要，程序终止时会输出续操作的记录信息路径，如存储空间文件列举操作终止时可能输出：  
 `please check the prefixes breakpoint in <filename>.json, it can be used for one more time listing remained files.`  
 表示在 \<filename\>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，\<filename\> 表示文件名。
-2. 对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次列举时使用断点文件
+2、对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次列举时使用断点文件
 作为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
-3. 对于 file 数据源读取文件列表时，产生的断点文件记录了读取的文本行，可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，
+3、对于 file 数据源读取文件列表时，产生的断点文件记录了读取的文本行，可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，
 则在下次继续读 file 数据源操作时使用断点文件作为行配置文件: uri-config=<breakpoint_filepath> 即可，参见：[uri-config 配置](docs/datasource.md#uri-config-配置)。 
-4. 对于 file 数据源进行上传的情况，断点信息记录的是目录下已经上传到的文件名位置，产生的断点文件亦可以直接作为下次续操作的操作来使用完成后续上传，如
+4、对于 file 数据源进行上传的情况，断点信息记录的是目录下已经上传到的文件名位置，产生的断点文件亦可以直接作为下次续操作的操作来使用完成后续上传，如
 断点文件为 \<filename\>.json，则在下次继续上传该 path 目录的文件时时使用断点文件作为行配置文件: directory-config=<breakpoint_filepath> 
 即可（注意是 directory-config），参见：[directory-config 配置](docs/uploadfile.md#directory-config-配置)。  
-5. 断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分（7.72 及以下版本中断点参数请和其他参数保持一致放在命令行或配置文件中，7.72 以上
+5、断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分（7.72 及以下版本中断点参数请和其他参数保持一致放在命令行或配置文件中，7.72 以上
 版本无此限制，只要提供断点参数无论是否与其他参数同在命令行或配置文件中均可生效）。  
 
 **注意：如果是系统宕机、断电或者强制关机或者进程强行 kill 等情况，无法得到输出的断点文件提示，因此只能通过[<位置记录日志>](#9-程序日志)来查看最后
