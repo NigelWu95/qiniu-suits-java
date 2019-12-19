@@ -282,11 +282,14 @@ public class QSuitsEntry {
         String filePath = commonParams.getPath();
         String parse = commonParams.getParse();
         String separator = commonParams.getSeparator();
+        String split = entryParam.getValue("auto-split", "false");
+        ParamsUtils.checked(split, "auto-split", "(true|false)");
+        boolean autoSlit = Boolean.parseBoolean(split);
         String addKeyPrefix = commonParams.getAddKeyPrefix();
         String rmKeyPrefix = commonParams.getRmKeyPrefix();
         Map<String, Map<String, String>> urisMap = commonParams.getPathConfigMap();
         TextFileContainer textFileContainer = new TextFileContainer(filePath, parse, separator, urisMap,
-                commonParams.getAntiPrefixes(),addKeyPrefix, rmKeyPrefix, indexMap, null, unitLen, threads);
+                commonParams.getAntiPrefixes(), autoSlit, addKeyPrefix, rmKeyPrefix, indexMap, null, unitLen, threads);
         textFileContainer.setSaveOptions(saveTotal, savePath, saveFormat, saveSeparator, rmFields);
         textFileContainer.setRetryTimes(retryTimes);
         return textFileContainer;

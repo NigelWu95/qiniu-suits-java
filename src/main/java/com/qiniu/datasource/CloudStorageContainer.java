@@ -464,6 +464,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         Map<String, String> endMap;
         Map<String, String> prefixMap;
         int tiny = initTiny;
+        int accUnit = initTiny / 2;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
                 if (listerList == null) {
@@ -500,7 +501,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                         prefixesMap.put(prefix, prefixMap);
                     }
                 } else if (listerList.size() <= cValue) {
-                    tiny += tiny >> 1;
+                    tiny += accUnit;
                     count = 900;
                 } else {
                     count = 0;

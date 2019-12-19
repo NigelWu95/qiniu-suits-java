@@ -462,6 +462,8 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         String start;
         Map<String, String> endMap;
         int tiny = initTiny;
+        int accUnit = initTiny / 2;
+        int interval = 300;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
                 notCheck = false;
@@ -482,7 +484,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                         rootLogger.info("directory: {}, nextFilepath: {}, endMap: {}", directory, start, endMap);
                     }
                 } else if (list.size() <= cValue) {
-                    tiny += tiny >> 1;
+                    tiny += accUnit;
                     count = 900;
                 } else {
                     count = 0;
@@ -490,7 +492,10 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             }
             sleep(1000);
             count++;
-            rootLogger.info("finished count: {}.", statistics.get());
+            if (interval-- <= 0) {
+                interval = 300;
+                rootLogger.info("finished count: {}.", statistics.get());
+            }
         }
         if (notCheck) return new ArrayList<>();
         else return list;
@@ -554,9 +559,13 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 list = checkListerInPool(cValue, tiny);
             }
         }
+        int interval = 300;
         while (!executorPool.isTerminated()) {
             sleep(1000);
-            rootLogger.info("finished count: {}.", statistics.get());
+            if (interval-- <= 0) {
+                interval = 300;
+                rootLogger.info("finished count: {}.", statistics.get());
+            }
         }
     }
 

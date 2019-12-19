@@ -3,11 +3,9 @@ package com.qiniu.interfaces;
 import java.io.IOException;
 import java.util.List;
 
-public interface ITextReader<S> {
+public interface ITextReader {
 
     String getName();
-
-    S getOriginal();
 
     List<String> readLines() throws IOException;
 
