@@ -168,7 +168,7 @@ please input line data to process:
 ```  
 ##### 21 通过 http 下载资源到本地 [downloadfile](downloadfile.md)
 ```
-➜ ~ qsuits -d -i -process=download -url-index=0 -save-path=.
+➜ ~ qsuits -d -i -process=download -url-index=0 -down-path=.
 please input line data to process:
 http://xxx.bkt.clouddn.com/test.go
 test.go	http://xxx.bkt.clouddn.com/test.go	/Users/wubingheng/Downloads/test.go
