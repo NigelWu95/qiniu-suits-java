@@ -292,7 +292,7 @@ filter 详细配置可见[filter 配置说明](docs/filter.md)
 数据源的数据备份操作 asyncfetch，就需要两对不同的密钥，而 account 只支持设置一个，这时第二对的七牛密钥可以通过同一个 account-name 的设置来获得，
 因为同一个 account-name 可以为不同数据源做密钥设置，如：`-account=ali-test -ali-id= -ali-secret=` 设置了阿里云 test 名称的账号，同时
 `-account=qiniu-test -ak= -sk=` 设置了七牛 test 名称的账号，则通过 `-a=test` 可以同时拿到阿里云和七牛云的 test 账号，因此可以直接通过同一
-个 account-name 来进行操作。但是如果明确指定了另外的 ak，sk，则会使用您设置的这一对七牛密钥。
+个 account-name 来进行操作。但是如果明确指定了另外的 ak，sk，则会使用您设置的这一对七牛密钥。  
 2、也真是因为不同数据源的 account-name 可同名特性，以及支持主动设置密钥来覆盖 account 的密钥，在具体操作时需要注意账号和密钥的使用，以免对另外一
 个账号执行了操作。  
 
@@ -309,7 +309,7 @@ rm-fields=
 |-----|-------|-----|  
 |save-total| true/false| 是否直接保存数据源完整输出结果，针对存在下一步处理过程时是否需要保存原始数据|  
 |save-path| local file 相对路径字符串| 表示保存结果的文件路径|  
-|save-format| json/tab/csv| 结果保存格式，将每一条结果记录格式化为对应格式，默认为 tab 格式（减小输出结果的体积）|  
+|save-format| json/tab/csv/yaml| 结果保存格式，将每一条结果记录格式化为对应格式，默认为 tab 格式（减小输出结果的体积）|  
 |save-separator| 字符串| 结果保存为 tab 格式时使用的分隔符，结合 save-format=tab 默认为使用 "\t"|  
 |rm-fields| 字符串列表| 保存结果中去除的字段，为输入行中的实际字段选项，用 "," 做分隔，如 key,hash，表明从结果中去除 key 和 hash 字段再进行保存，不填表示所有字段均保留|  
 
@@ -383,12 +383,12 @@ java.net.SocketTimeoutException: timeout
 1、如果存在续操作的需要，程序终止时会输出续操作的记录信息路径，如存储空间文件列举操作终止时可能输出：  
 `please check the prefixes breakpoint in <filename>.json, it can be used for one more time listing remained files.`  
 表示在 \<filename\>.json 文件（json 格式）中记录了断点信息，断点文件位于 save-path 同级路径中，\<filename\> 表示文件名。
-2、对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次列举时使用断点文件
+2、对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的配置来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次列举时使用断点文件
 作为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
-3、对于 file 数据源读取文件列表时，产生的断点文件记录了读取的文本行，可以直接作为下次续操作的操作来使用完成后续列举，如断点文件为 \<filename\>.json，
+3、对于 file 数据源读取文件列表时，产生的断点文件记录了读取的文本行，可以直接作为下次续操作的配置来使用完成后续列举，如断点文件为 \<filename\>.json，
 则在下次继续读 file 数据源操作时使用断点文件作为行配置文件: uri-config=<breakpoint_filepath> 即可，参见：[uri-config 配置](docs/datasource.md#uri-config-配置)。 
-4、对于 file 数据源进行上传的情况，断点信息记录的是目录下已经上传到的文件名位置，产生的断点文件亦可以直接作为下次续操作的操作来使用完成后续上传，如
-断点文件为 \<filename\>.json，则在下次继续上传该 path 目录的文件时时使用断点文件作为行配置文件: directory-config=<breakpoint_filepath> 
+4、对于 file 数据源进行上传的情况，断点信息记录的是目录下已经上传到的文件名位置，产生的断点文件亦可以直接作为下次续操作的配置来使用完成后续上传，如
+断点文件为 \<filename\>.json，则在下次继续上传该 path 目录的文件时使用断点文件作为行配置文件: directory-config=<breakpoint_filepath> 
 即可（注意是 directory-config），参见：[directory-config 配置](docs/uploadfile.md#directory-config-配置)。  
 5、断点续操作时建议修改下 save-path，便于和上一次保存的结果做区分（7.72 及以下版本中断点参数请和其他参数保持一致放在命令行或配置文件中，7.72 以上
 版本无此限制，只要提供断点参数无论是否与其他参数同在命令行或配置文件中均可生效）。  

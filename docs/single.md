@@ -141,7 +141,7 @@ http://xxx.bkt.clouddn.com/-YVzTgC_I8zlDYIm8eCcPnA76pU=/ltSP7XPbPGviBNjXiZEHX7mp
 ```  
 ##### 21 通过 http 下载资源到本地 [downloadfile](downloadfile.md)
 ```
-➜ ~ qsuits -d -s -process=download -url=http://xxx.bkt.clouddn.com/test.go -save-path=.
+➜ ~ qsuits -d -s -process=download -url=http://xxx.bkt.clouddn.com/test.go -down-path=.
 test.go	http://xxx.bkt.clouddn.com/test.go	/Users/wubingheng/Downloads/test.go
 ```  
 ##### 22 上传文件到七牛存储空间 [uploadfile](uploadfile.md)
