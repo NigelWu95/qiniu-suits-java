@@ -25,4 +25,6 @@ public interface IResultOutput {
     void writeSuccess(String item, boolean flush) throws IOException;
 
     void writeError(String item, boolean flush) throws IOException;
+
+    void clear(String key) throws IOException;
 }

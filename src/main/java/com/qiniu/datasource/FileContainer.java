@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public abstract class FileContainer<E, T> extends DatasourceActor implements IDataSource<IFileLister<E, File>, IResultOutput, T> {
@@ -93,13 +91,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             }
         }
         initPathSize = realPath.split(FileUtils.pathSeparator).length;
-    }
-
-    private void recordListerByDirectory(String name) {
-        String pName = name.split("-\\|\\|-")[0];
-        Map<String, String> map = directoriesMap.get(pName);
-        String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
-        recordLister(name, record);
     }
 
     private void setDirectoriesAndMap(Map<String, Map<String, String>> directoriesMap) throws IOException {
@@ -190,6 +181,12 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         return true;
     }
 
+    private void recordListerByDirectory(String name) {
+        Map<String, String> map = directoriesMap.get(name.split("-\\|\\|-")[0]);
+        String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
+        recordLister(name, record);
+    }
+
     protected abstract IFileLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
 
     protected abstract IFileLister<E, File> getLister(String name, List<E> fileInfoList, String start,
@@ -247,12 +244,12 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                     errorLogger.error("process objects: {}", lister.getName(), e);
                     if (e.response != null) e.response.close();
                 }
-                statistics.addAndGet(convertedList.size());
             }
             if (hasNext) {
                 json.addProperty("start", lister.currentEndFilepath());
                 recordLister(lister.getName(), json.toString());
             }
+            statistics.addAndGet(objects.size());
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
             lister.listForward();
@@ -367,7 +364,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         return nextDirectories;
     }
 
-    private Lock lock = new ReentrantLock();
     private AtomicInteger integer = new AtomicInteger(0);
 
     private List<File> listForNextIteratively(List<File> directories) throws Exception {
@@ -386,7 +382,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                         return null;
                     }
                 });
-                if (future.isDone() && lock.tryLock()) {
+                if (future.isDone()) {
                     try {
                         IFileLister<E, File> futureLister = future.get();
                         if (futureLister != null) {
@@ -405,15 +401,12 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                     } catch (Exception e) {
                         try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                         errorLogger.error("execute lister failed", e);
-                    } finally {
-                        lock.unlock();
                     }
                 } else {
                     integer.incrementAndGet();
                     futures.add(future);
                 }
             } else {
-                while (!lock.tryLock());
                 try {
                     IFileLister<E, File> futureLister = generateLister(directory);
                     if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
@@ -430,8 +423,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 } catch (Exception e) {
                     try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                     errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
-                } finally {
-                    lock.unlock();
                 }
             }
             tempDirectories = loopForFutures(futures);
@@ -463,7 +454,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         Map<String, String> endMap;
         int tiny = initTiny;
         int accUnit = initTiny / 2;
-        int interval = 300;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
                 notCheck = false;
@@ -489,13 +479,10 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 } else {
                     count = 0;
                 }
+                refreshRecordAndStatistics();
             }
             sleep(1000);
             count++;
-            if (interval-- <= 0) {
-                interval = 300;
-                rootLogger.info("finished count: {}.", statistics.get());
-            }
         }
         if (notCheck) return new ArrayList<>();
         else return list;
@@ -507,8 +494,9 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
 //                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
 //        }
         while (directories.size() > 0) {
+            directoriesMap.clear();
             directories = listForNextIteratively(directories);
-            if (progressMap.size() == 0) procedureLogFile.delete();
+            refreshRecordAndStatistics();
         }
         executorPool.shutdown();
         if (threads > 1) {
@@ -559,12 +547,11 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 list = checkListerInPool(cValue, tiny);
             }
         }
-        int interval = 300;
         while (!executorPool.isTerminated()) {
-            sleep(1000);
-            if (interval-- <= 0) {
-                interval = 300;
-                rootLogger.info("finished count: {}.", statistics.get());
+            sleep(2000);
+            if (countInterval-- <= 0) {
+                countInterval = 300;
+                refreshRecordAndStatistics();
             }
         }
     }

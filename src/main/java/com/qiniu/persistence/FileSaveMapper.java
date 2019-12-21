@@ -179,4 +179,30 @@ public class FileSaveMapper implements IResultOutput {
         if (item != null) doWrite("error", item, flush);
         else throw new IOException("can't write empty.");
     }
+
+    public synchronized void clear(String key) throws IOException {
+        int retry = retryTimes;
+        BufferedWriter writer = writerMap.remove(key);
+        if (writer == null) return;
+        File file = new File(savePath, String.join("", prefix, key, suffix, fileExt));
+//        boolean fileExists = file.exists();
+        if (!file.exists()) return;
+        while (retry > 0) {
+            try {
+                writer.close();
+//                if (fileExists && !file.delete()) {
+//                    throw new IOException("clear failed.");
+//                } else {
+//                    fileExists = file.createNewFile();
+//                    if (!fileExists) throw new IOException("create result file " + file + " failed.");
+//                }
+                writer = new BufferedWriter(new FileWriter(file, false));
+                writerMap.put(key, writer);
+                retry = 0;
+            } catch (IOException e) {
+                retry--;
+                if (retry <= 0) throw e;
+            }
+        }
+    }
 }
