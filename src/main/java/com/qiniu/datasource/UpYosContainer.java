@@ -308,11 +308,18 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, Map<String, 
                 executorPool = Executors.newFixedThreadPool(threads);
 //                listForNextIteratively(prefixes);
                 while (prefixes.size() > 0) {
+                    prefixesMap.clear();
                     prefixes = listForNextIteratively(prefixes);
-                    if (progressMap.size() == 0) procedureLogFile.delete();
+                    refreshRecordAndStatistics();
                 }
                 executorPool.shutdown();
-                while (!executorPool.isTerminated()) sleep(1000);
+                while (!executorPool.isTerminated()) {
+                    sleep(2000);
+                    if (countInterval-- <= 0) {
+                        countInterval = 300;
+                        refreshRecordAndStatistics();
+                    }
+                }
             }
             rootLogger.info("{} finished, results in {}.", info, savePath);
             endAction();

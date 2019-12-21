@@ -221,13 +221,13 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                     errorLogger.error("process objects: {}", lister.getPrefix(), e);
                     if (e.response != null) e.response.close();
                 }
-//                statistics.addAndGet(convertedList.size());
             }
             if (hasNext) {
                 json.addProperty("marker", lister.getMarker());
                 recordLister(lister.getPrefix(), json.toString());
             }
             if (map != null) map.put("start", lister.currentEndKey());
+            statistics.addAndGet(objects.size());
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
             retry = retryTimes;
@@ -506,6 +506,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                 } else {
                     count = 0;
                 }
+                refreshRecordAndStatistics();
             }
             sleep(1000);
             count++;
@@ -555,7 +556,6 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         List<IStorageLister<E>> listerList = filteredListerByPrefixes(prefixes.parallelStream());
         while (listerList != null && listerList.size() > 0 && listerList.size() < threads) {
             prefixesMap.clear();
-            if (progressMap.size() == 0) procedureLogFile.delete();
             listerList = computeToNextLevel(listerList);
         }
         if (listerList != null && listerList.size() > 0) {
@@ -581,7 +581,13 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                 extremePrefixes = checkListerInPool(listerList, cValue, tiny);
             }
         } else {
-            while (!executorPool.isTerminated()) sleep(2000);
+            while (!executorPool.isTerminated()) {
+                sleep(2000);
+                if (countInterval-- <= 0) {
+                    countInterval = 300;
+                    refreshRecordAndStatistics();
+                }
+            }
         }
         List<String> phraseLastPrefixes = lastEndedPrefixes();
         if (phraseLastPrefixes.size() > 0) {
@@ -590,7 +596,13 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
             listerList.parallelStream().forEach(lister -> executorPool.execute(() -> listing(lister)));
             executorPool.shutdown();
         }
-        while (!executorPool.isTerminated()) sleep(2000);
+        while (!executorPool.isTerminated()) {
+            sleep(2000);
+            if (countInterval-- <= 0) {
+                countInterval = 300;
+                refreshRecordAndStatistics();
+            }
+        }
     }
 
     /**

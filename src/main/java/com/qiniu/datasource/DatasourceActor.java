@@ -42,8 +42,11 @@ public abstract class DatasourceActor {
     protected ConcurrentMap<String, IResultOutput> saverMap;
     protected ConcurrentMap<String, ILineProcess> processorMap;
     protected boolean stopped;
+    protected int countInterval;
     protected AtomicLong statistics;
     protected ConcurrentMap<String, String> progressMap;
+    protected String breakpointFileName;
+    protected FileSaveMapper breakpointSaver;
 
     public DatasourceActor(int unitLen, int threads) throws IOException {
         if (unitLen <= 1) throw new IOException("unitLen must bigger than 1.");
@@ -51,6 +54,7 @@ public abstract class DatasourceActor {
         this.threads = threads;
         saverMap = new ConcurrentHashMap<>(threads);
         processorMap = new ConcurrentHashMap<>(threads);
+        countInterval = 300;
         statistics = new AtomicLong(0);
         progressMap = new ConcurrentHashMap<>(threads);
     }
@@ -58,6 +62,12 @@ public abstract class DatasourceActor {
     public void setSaveOptions(boolean saveTotal, String savePath, String format, String separator, List<String> rmFields)
             throws IOException {
         this.saveTotal = saveTotal;
+        if (this.savePath != null && !"".equals(this.savePath)) {
+            breakpointSaver.closeWriters();
+            File file = new File(breakpointFileName + ".json");
+            boolean success = file.delete();
+            if (!success) success = file.delete();
+        }
         this.savePath = savePath;
         this.saveFormat = format;
         if (!lineFormats.contains(saveFormat)) throw new IOException("please check your format for map to string.");
@@ -66,6 +76,12 @@ public abstract class DatasourceActor {
         if (rmFields != null && rmFields.size() > 0) {
             this.fields = ConvertingUtils.getFields(fields, rmFields);
         }
+        String path = new File(savePath).getCanonicalPath();
+        breakpointSaver = new FileSaveMapper(new File(path).getParent());
+        breakpointSaver.setAppend(false);
+        breakpointSaver.setFileExt(".json");
+        breakpointFileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1);
+        breakpointSaver.addWriter(breakpointFileName);
     }
 
     public void setRetryTimes(int retryTimes) {
@@ -78,7 +94,20 @@ public abstract class DatasourceActor {
         procedureLogger.info("{}-|-{}", key, record);
     }
 
-    protected void sleep(long millis) {
+    void refreshRecordAndStatistics() {
+        rootLogger.info("finished count: {}.", statistics.get());
+        if (procedureLogFile.length() > 52428800) {
+            try {
+                breakpointSaver.clear(breakpointFileName);
+                breakpointSaver.writeToKey(breakpointFileName, JsonUtils.toJsonWithoutUrlEscape(progressMap), true);
+                procedureLogFile.delete();
+            } catch (IOException e) {
+                errorLogger.info("record breakpoint failed", e);
+            }
+        }
+    }
+
+    void sleep(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ignored) {
@@ -87,7 +116,7 @@ public abstract class DatasourceActor {
         }
     }
 
-    protected void endAction() throws IOException {
+    void endAction() throws IOException {
         ILineProcess processor;
         for (Map.Entry<String, IResultOutput> saverEntry : saverMap.entrySet()) {
             saverEntry.getValue().closeWriters();
@@ -96,22 +125,21 @@ public abstract class DatasourceActor {
         }
         String record = "{}";
         if (progressMap.size() > 0) {
-            String path = new File(savePath).getCanonicalPath();
-            FileSaveMapper saveMapper = new FileSaveMapper(new File(path).getParent());
-            saveMapper.setAppend(false);
-            saveMapper.setFileExt(".json");
-            String fileName = path.substring(path.lastIndexOf(FileUtils.pathSeparator) + 1);
-            saveMapper.addWriter(fileName);
             record = JsonUtils.toJsonWithoutUrlEscape(progressMap);
-            saveMapper.writeToKey(fileName, record, true);
-            saveMapper.closeWriters();
-            rootLogger.info("please check the lines breakpoint in {}.json, " +
-                            "it can be used for one more time reading remained lines", fileName);
+            breakpointSaver.writeToKey(breakpointFileName, record, true);
+            breakpointSaver.closeWriters();
+            rootLogger.info("please check the lines breakpoint in {}.json, it can be used for one more time reading " +
+                    "remained lines", breakpointFileName);
+        } else {
+            breakpointSaver.closeWriters();
+            File file = new File(breakpointFileName + ".json");
+            boolean success = file.delete();
+            if (!success) success = file.delete();
         }
         procedureLogger.info(record);
     }
 
-    protected void showdownHook() {
+    void showdownHook() {
         SignalHandler handler = signal -> {
             try {
                 stopped = true;
@@ -130,8 +158,8 @@ public abstract class DatasourceActor {
 
     protected abstract void export() throws Exception;
 
-    protected final Object object = new Object();
-    protected LocalDateTime pauseDateTime = LocalDateTime.MAX;
+    final Object object = new Object();
+    LocalDateTime pauseDateTime = LocalDateTime.MAX;
 
     public void export(LocalDateTime startTime, long pauseDelay, long duration) throws Exception {
         if (startTime != null) {

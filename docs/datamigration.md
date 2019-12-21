@@ -1,7 +1,7 @@
 # 数据备份/迁移
 
 ## 简介
-对不同数据源向七牛存储空间进行数据迁移。  
+对不同数据源向七牛存储空间进行数据同步。  
 1. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置数据源的密钥，参考：[账号设置](../README.md#账号设置)  
 
 ## 迁移说明
@@ -53,7 +53,7 @@ ali-id=
 ali-secret=
 #region 可省略，即采用自动判断
 region=
-# private 参数用来指定该数据源空间为私有，需要进行访问签名
+# 当数据源空间为私有 bucket 时，private 参数用来指定需要进行访问签名的类型，如果空间为公开空间则不需要该参数
 private=aliyun
 
 # 迁移配置（七牛的账号、空间等参数）
@@ -72,7 +72,7 @@ ten-id=
 ten-secret=
 #region 可省略，即采用自动判断
 region=
-# private 参数用来指定该数据源空间为私有，需要进行访问签名
+# 当数据源空间为私有 bucket 时，private 参数用来指定需要进行访问签名的类型，如果空间为公开空间则不需要该参数
 private=tencent
 
 # 迁移配置（七牛的账号、空间等参数）
@@ -91,7 +91,7 @@ s3-id=
 s3-secret=
 #region 可省略，即采用自动判断
 region=
-# private 参数用来指定该数据源空间为私有，需要进行访问签名
+# 当数据源空间为私有 bucket 时，private 参数用来指定需要进行访问签名的类型，如果空间为公开空间则不需要该参数
 private=s3
 
 # 迁移配置（七牛的账号、空间等参数）
@@ -128,7 +128,7 @@ hua-id=
 hua-secret=
 #region 可省略，即采用自动判断
 region/hua-region=
-# private 参数用来指定该数据源空间为私有，需要进行访问签名
+# 当数据源空间为私有 bucket 时，private 参数用来指定需要进行访问签名的类型，如果空间为公开空间则不需要该参数
 private=huawei
 
 # 迁移配置（七牛的账号、空间等参数）
@@ -147,7 +147,7 @@ bai-id=
 bai-secret=
 #region 可省略，即采用自动判断
 region/bai-region=
-# private 参数用来指定该数据源空间为私有，需要进行访问签名
+# 当数据源空间为私有 bucket 时，private 参数用来指定需要进行访问签名的类型，如果空间为公开空间则不需要该参数
 private=baidu
 
 # 迁移配置（七牛的账号、空间等参数）
@@ -166,7 +166,7 @@ ak=
 sk=
 # region 可省略，即采用自动判断
 region=
-# private 参数用来指定该数据源空间为私有，需要进行访问签名
+# 当数据源空间为私有 bucket 时，private 参数用来指定需要进行访问签名的类型，如果空间为公开空间则不需要该参数
 private=qiniu
 
 # 迁移配置（七牛的目标账号、空间等参数）
@@ -185,6 +185,8 @@ to-bucket=
 path=<localpath>
 parse=
 separator=
+# 当数据源 url 为私有空间的资源裸链接时，private 参数用来指定该需要进行访问签名的类型，如果空间为公开空间则不需要该参数
+private=aliyun/qiniu/tencent/s3/huawei/baidu
 
 # 迁移配置（七牛的账号、空间等参数）
 process=asyncfetch/fetch/mirror/syncupload/qupload

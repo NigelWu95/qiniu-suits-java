@@ -247,12 +247,12 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                     errorLogger.error("process objects: {}", lister.getName(), e);
                     if (e.response != null) e.response.close();
                 }
-                statistics.addAndGet(convertedList.size());
             }
             if (hasNext) {
                 json.addProperty("start", lister.currentEndFilepath());
                 recordLister(lister.getName(), json.toString());
             }
+            statistics.addAndGet(objects.size());
             if (stopped) break;
 //            objects.clear(); 上次其实不能做 clear，会导致 lister 中的列表被清空
             lister.listForward();
@@ -463,7 +463,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         Map<String, String> endMap;
         int tiny = initTiny;
         int accUnit = initTiny / 2;
-        int interval = 300;
         while (!executorPool.isTerminated()) {
             if (count >= 1200) {
                 notCheck = false;
@@ -489,13 +488,10 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 } else {
                     count = 0;
                 }
+                refreshRecordAndStatistics();
             }
             sleep(1000);
             count++;
-            if (interval-- <= 0) {
-                interval = 300;
-                rootLogger.info("finished count: {}.", statistics.get());
-            }
         }
         if (notCheck) return new ArrayList<>();
         else return list;
@@ -507,8 +503,9 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
 //                    .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(null);
 //        }
         while (directories.size() > 0) {
+            directoriesMap.clear();
             directories = listForNextIteratively(directories);
-            if (progressMap.size() == 0) procedureLogFile.delete();
+            refreshRecordAndStatistics();
         }
         executorPool.shutdown();
         if (threads > 1) {
@@ -559,12 +556,11 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 list = checkListerInPool(cValue, tiny);
             }
         }
-        int interval = 300;
         while (!executorPool.isTerminated()) {
-            sleep(1000);
-            if (interval-- <= 0) {
-                interval = 300;
-                rootLogger.info("finished count: {}.", statistics.get());
+            sleep(2000);
+            if (countInterval-- <= 0) {
+                countInterval = 300;
+                refreshRecordAndStatistics();
             }
         }
     }

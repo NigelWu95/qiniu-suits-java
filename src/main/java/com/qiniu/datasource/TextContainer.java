@@ -146,6 +146,7 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
                     if (retry == 0) throw e;
                 }
             }
+            if (srcList != null) statistics.addAndGet(srcList.size());
             convertedList = converter.convertToVList(srcList);
             if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
             if (stringConverter != null) {
@@ -155,15 +156,16 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
                     saver.writeToKey("failed", stringConverter.errorLines(), false);
             }
             // 如果抛出异常需要检测下异常是否是可继续的异常，如果是程序可继续的异常，忽略当前异常保持数据源读取过程继续进行
-            try {
-                if (processor != null) processor.processLine(convertedList);
-            } catch (QiniuException e) {
-                // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
-                // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
-                if (HttpRespUtils.checkException(e, 2) < -1) throw e;
-                if (e.response != null) e.response.close();
+            if (processor != null) {
+                try {
+                    processor.processLine(convertedList);
+                } catch (QiniuException e) {
+                    // 这里其实逻辑上没有做重试次数的限制，因为返回的 retry 始终大于等于 -1，所以不是必须抛出的异常则会跳过，process 本身会
+                    // 保存失败的记录，除非是 process 出现 599 状态码才会抛出异常
+                    if (HttpRespUtils.checkException(e, 2) < -1) throw e;
+                    if (e.response != null) e.response.close();
+                }
             }
-            statistics.addAndGet(convertedList.size());
             lastLine = reader.currentEndLine();
             json.addProperty("start", lastLine);
             recordLister(reader.getName(), json.toString());
@@ -255,12 +257,11 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
                 }
             }).forEach(this::reading);
             executorPool.shutdown();
-            int interval = 300;
             while (!executorPool.isTerminated()) {
-                sleep(1000);
-                if (interval-- <= 0) {
-                    interval = 300;
-                    rootLogger.info("finished count: {}.", statistics.get());
+                sleep(2000);
+                if (countInterval-- <= 0) {
+                    countInterval = 300;
+                    refreshRecordAndStatistics();
                 }
             }
             rootLogger.info("{} finished, results in {}.", info, savePath);
