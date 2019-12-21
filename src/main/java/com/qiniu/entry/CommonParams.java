@@ -698,10 +698,17 @@ public class CommonParams {
                     index = line.indexOf("-|-");
                     map.put(line.substring(0, index), line.substring(index));
                 }
+                Map<String, String> configMap;
                 for (String key : map.keySet()) {
                     value = map.get(key);
                     if (!"".equals(value)) {
-                        pathConfigMap.put(key, JsonUtils.fromJson(value, map.getClass()));
+                        try {
+                            configMap = JsonUtils.fromJson(value, map.getClass());
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+                            continue;
+                        }
+                        pathConfigMap.put(key, configMap);
                     }
                 }
             }

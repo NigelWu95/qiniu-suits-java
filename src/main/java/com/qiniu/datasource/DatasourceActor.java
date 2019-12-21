@@ -96,7 +96,7 @@ public abstract class DatasourceActor {
 
     void refreshRecordAndStatistics() {
         rootLogger.info("finished count: {}.", statistics.get());
-        if (procedureLogFile.length() > 52428800) {
+        if (procedureLogFile.length() > 536870912) { // 超过 512M 就处理一次
             try {
                 breakpointSaver.clear(breakpointFileName);
                 breakpointSaver.writeToKey(breakpointFileName, JsonUtils.toJsonWithoutUrlEscape(progressMap), true);
