@@ -122,7 +122,7 @@ public class TextFileContainer extends TextContainer<Map<String, String>> {
                         lock.unlock();
                         return dirs;
                     }).filter(Objects::nonNull)
-                            .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(new ArrayList<>());
+                      .reduce((list1, list2) -> { list1.addAll(list2); return list1; }).orElse(new ArrayList<>());
                 }
             } else {
                 if (autoSplit) return splitSingleFile(file).parallelStream();
@@ -143,7 +143,7 @@ public class TextFileContainer extends TextContainer<Map<String, String>> {
         }
         return finalFiles.parallelStream().map(pFile -> {
             try {
-                return new TextFileReader(file, null, unitLen);
+                return new TextFileReader(pFile, null, unitLen);
             } catch (IOException e) {
                 errorLogger.error("generate reader failed by {}\t{}", pFile.getPath(), urisMap.get(pFile.getPath()), e);
                 return null;
