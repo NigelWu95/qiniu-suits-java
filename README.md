@@ -6,13 +6,13 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 云存储空间的资源列表(支持**七牛云/阿里云/腾讯云/AWS S3/又拍云/华为云/百度云等**，支持 S3 接口的均可以通过 S3 数据源的方式来导出)，同时支持对包含
 资源列表的本地数据源并发进行批量处理，处理功能主要包括对七牛云存储资源进行增/删/改/查/转码、以及云存储迁移和公网资源内容审核等，以及本地数据源下大规模
 文件上传或者导出文件列表，非常适合大量文件处理和存储空间资源直接管理的场景，同时也支持[交互模式](docs/interactive.md)和[单行模式](docs/single.md)
-（直接调用接口处理命令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8（及以上）环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#2.2-命令行执行器-qsuits)）。  
+（直接调用接口处理命令行的一次输入）运行。该 tools 基于 Java8 编写，可基于 jdk8（及以上）环境在命令行或 ide 中运行，命令行运行推荐使用执行器 [qsuits](#（2）命令行执行器-qsuits)）。  
 
 ### 功能列表：
 - [x] 云存储[资源列举](docs/datasource.md#3-storage-云存储列举)，支持并发、过滤及指定前缀、开始及最大结束文件名或 marker 等参数  
 - [x] 文件[迁移/备份](docs/datamigration.md)，针对不同数据源（云存储空间、http 链接列表）向七牛存储空间导入文件  
 - [x] 资源文件[过滤](docs/filter.md)，按照日期范围、文件名(前缀、后缀、包含)、mime 类型等字段正向及反向筛选目标文件  
-- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](#特殊特征匹配过滤-f-check[-x])，过滤异常文件列表  
+- [x] 检查云存储资源文件后缀名 ext 和 mime-type 类型是否匹配 [check](#特殊特征匹配过滤-f-check*)，过滤可疑文件列表  
 - [x] 上传文件到存储空间 [qupload 配置](docs/uploadfile.md)  
 - [x] 同步 url 内容直传到存储空间 [syncupload 配置](docs/syncupload.md)  
 - [x] 删除空间资源 [delete 配置](docs/delete.md)  
@@ -86,10 +86,10 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 ##### （3）单行模式：从命令行输入数据时，process 支持[单行模式](docs/single.md)运行，一次启动，指定 data 参数，直接一次处理并返回结果。  
 
 ### 2 运行方式  
-提供命令行运行工具 [qsuits](#2.2-命令行执行器-qsuits)（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
+提供命令行运行工具 [qsuits](#（2）命令行执行器-qsuits)（或可执行 jar 包）和 maven artifact，使用时建议直接使用或者更新到最新版本。
 以下的 x.x.x 表示版本号，最新版本见 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases)  
 
-#### 2.1 命令行直接运行 jar 包  
+####（1）命令行直接运行 jar 包  
 在 [Release](https://github.com/NigelWu95/qiniu-suits-java/releases) 页面下载[最新 jar 包](https://github.com/NigelWu95/qiniu-suits-java/releases/download/v8.0.11/qsuits-8.0.11.jar)
 （**maven 仓库中的 \<version\>.jar 包不支持命令行运行，请下载 \<version\>-jar-with-dependencies.jar 包**），使用命令行参数 
 [-config=\<filepath\>] 指定配置文件路径，运行命令形如：
@@ -114,7 +114,7 @@ java -jar qsuits-x.x.x.jar -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 中，而在 7.73 开始的版本中命令行参数与配置文件参数可同时使用，参数名相同时命令行参数值会覆盖配置文件参数值，且为默认原则。**【推荐使用配置文件方式，
 一是安全性，二是参数历史可保留且修改方便；推荐使用 -account 提前设置好账号，安全性更高，使用时 -a=\<account-name\> 即可，不必再暴露密钥】**  
 
-#### 2.2 命令行执行器 qsuits  
+####（2）命令行执行器 qsuits  
 由于 qsuits-java 基于 java 编写，命令行运行时需要使用 `java -jar` 命令，为了简化操作运行方式及增加环境和版本管理，提供直接的命令行可执行工具
 [qsuits 执行器](https://github.com/NigelWu95/qsuits-exec-go)（使用 golang 编写和编译）来代理 qsuits-java 的功能，支持 qsuits-java
 所有参数配置，命令和配置文件用法完全相同，工具下载地址如下：  
@@ -140,7 +140,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 **注意**：qsuits 执行器依然依赖 java 环境（8 或以上），但是执行器会去检测本地 java 环境，在无匹配的 java 环境时会提示推荐的安装方法。并且该执行
 器在运行时默认会选择最新的 qsuits-java 版本，其他选项参考 qsuits-exec-go 的文档：https://github.com/NigelWu95/qsuits-exec-go  
 
-#### 2.3 程序依赖 jar  
+####（3）程序依赖 jar  
 引入 jar 包（[下载 jar 包](https://search.maven.org/search?q=a:qsuits)或者 [使用 maven 仓库](https://mvnrepository.com/artifact/com.qiniu/qsuits)），
 可以重写或新增 processor 接口实现类进行自定义功能，maven:
 ```
@@ -161,8 +161,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 `path=huawei://<bucket>` 表示从华为云存储空间列举出资源列表，参考[华为数据源示例](docs/datasource.md#6-华为云存储)  
 `path=baidu://<bucket>` 表示从百度云存储空间列举出资源列表，参考[百度数据源示例](docs/datasource.md#7-百度云存储)  
 `path=<path>` 表示从本地目录（或文件）中读取资源列表，参考[本地文件数据源示例](docs/datasource.md#8-local-files)  
-未设置数据源时则默认从七牛空间进行列举，数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)，配置文件示例可参考
-[配置模板](resources/application.config)  
+未设置数据源时则默认从七牛空间进行列举，数据源详细参数配置和说明及可能涉及的高级用法见：[数据源配置](docs/datasource.md)，配置文件示例可参考[配置模板](resources/application.config)  
 
 #### storage 云存储列举  
 支持从不同的云存储上列举出空间文件，默认线程数(threads 参数)为 50，千万以内文件数量通可以不增加线程，建议阅读[并发列举](docs/datasource.md#并发列举)
@@ -231,7 +230,7 @@ qsuits -path=qiniu://<bucket> -ak=<ak> -sk=<sk>
 用命令行来设置，注意日期值包含空格的情况（date 日期和时刻中间含有空格分隔符），故在设置时需要使用引号 `'` 或者 `"`，
 如 `-f-date-scale="[0,2018-08-01 12:30:00]"`，配置文件则不需要引号。  
 
-#### 特殊特征匹配过滤 f-check[-x]
+#### 特殊特征匹配过滤 f-check*
 根据资源的字段关系选择某个特征下的文件，目前支持 `ext-mime` 检查，程序内置的默认特征配置见：[check 默认配置](resources/check.json)，运行
 参数选项如下：  
 `f-check=ext-mime` 表示进行**后缀名 ext** 和 **mimeType**（即 content-type）匹配性检查，不符合规范的疑似异常文件将被筛选出来  
@@ -336,8 +335,8 @@ rm-fields=
 
 #### 关于 rm-fields  
 rm-fields 可选择持久化结果中去除某些字段，未设置的情况下保留所有原始字段，数据源导出的每一行信息以目标格式 save-format 保存在 save-path 的文件
-中。file 数据源输入字段完全取决于 indexes 和其他的一些 index 设置，可参考 [indexes 索引](datasource.md#关于-indexes-索引)，而其他 index
-设置与数据处理类型有关，比如 url-index 来输入 url 信息。对于云储存数据源，不使用 indexes 规定输入字段的话默认是保留所有字段，字段定义可参考[关于文件信息字段](docs/datasource.md#关于文件信息字段)   
+中。file 数据源输入字段完全取决于 indexes 和其他的一些 index 设置，可参考 [indexes 索引](docs/datasource.md#关于-indexes-索引)，而其他 index
+设置与数据处理类型有关，比如 url-index 来输入 url 信息。对于云储存数据源，不使用 indexes 规定输入字段的话默认是保留所有字段，字段定义可参考[关于文件信息字段](docs/datasource.md#关于文件信息字段)。  
 
 详细配置说明见 [持久化配置](docs/resultsave.md)。  
 
