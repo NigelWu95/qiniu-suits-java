@@ -75,7 +75,7 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
                 if (uri == null || uri.equals("")) {
                     throw new IOException("uris can not contain empty item.");
                 } else {
-                    uris.add(uri);
+                    uris.add(uri.split("-\\|\\|-")[0]);
                 }
             }
         }
@@ -103,15 +103,15 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
 
     protected abstract ITypeConvert<T, String> getNewStringConverter() throws IOException;
 
-    protected boolean checkPrefix(String name) {
+    boolean checkPrefix(String name) {
         for (String antiPrefix : antiPrefixes) {
             if (name.startsWith(antiPrefix)) return false;
         }
         return true;
     }
 
-    protected void recordListerByUri(String prefix) {
-        Map<String, String> map = urisMap.get(prefix);
+    void recordListerByUri(String prefix) {
+        Map<String, String> map = urisMap.get(prefix.split("-\\|\\|-")[0]);
         String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
         recordLister(prefix, record);
     }

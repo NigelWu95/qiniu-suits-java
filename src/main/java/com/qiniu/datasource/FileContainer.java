@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public abstract class FileContainer<E, T> extends DatasourceActor implements IDataSource<IFileLister<E, File>, IResultOutput, T> {
@@ -93,13 +91,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             }
         }
         initPathSize = realPath.split(FileUtils.pathSeparator).length;
-    }
-
-    private void recordListerByDirectory(String name) {
-        String pName = name.split("-\\|\\|-")[0];
-        Map<String, String> map = directoriesMap.get(pName);
-        String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
-        recordLister(name, record);
     }
 
     private void setDirectoriesAndMap(Map<String, Map<String, String>> directoriesMap) throws IOException {
@@ -188,6 +179,12 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             if (directory.getPath().startsWith(antiPrefix)) return false;
         }
         return true;
+    }
+
+    private void recordListerByDirectory(String name) {
+        Map<String, String> map = directoriesMap.get(name.split("-\\|\\|-")[0]);
+        String record = map == null ? "{}" : JsonUtils.toJsonObject(map).toString();
+        recordLister(name, record);
     }
 
     protected abstract IFileLister<E, File> getLister(File directory, String start, String end, int unitLen) throws IOException;
@@ -367,7 +364,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
         return nextDirectories;
     }
 
-    private Lock lock = new ReentrantLock();
     private AtomicInteger integer = new AtomicInteger(0);
 
     private List<File> listForNextIteratively(List<File> directories) throws Exception {
@@ -386,7 +382,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                         return null;
                     }
                 });
-                if (future.isDone() && lock.tryLock()) {
+                if (future.isDone()) {
                     try {
                         IFileLister<E, File> futureLister = future.get();
                         if (futureLister != null) {
@@ -405,15 +401,12 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                     } catch (Exception e) {
                         try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                         errorLogger.error("execute lister failed", e);
-                    } finally {
-                        lock.unlock();
                     }
                 } else {
                     integer.incrementAndGet();
                     futures.add(future);
                 }
             } else {
-                while (!lock.tryLock());
                 try {
                     IFileLister<E, File> futureLister = generateLister(directory);
                     if (futureLister.getDirectories() != null && futureLister.getDirectories().size() > 0) {
@@ -430,8 +423,6 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
                 } catch (Exception e) {
                     try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
                     errorLogger.error("generate lister failed by {}\t{}", directory.getPath(), directoriesMap.get(directory.getPath()), e);
-                } finally {
-                    lock.unlock();
                 }
             }
             tempDirectories = loopForFutures(futures);
