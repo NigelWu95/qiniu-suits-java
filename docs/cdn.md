@@ -8,7 +8,7 @@
 4. 交互式操作随时输入 key/url 进行刷新/预取请参考[ interactive 操作](interactive.md)  
 
 ## 配置
-### CDN 刷新缓存配置
+### CDN 刷新缓存
 ```
 process=cdnrefresh
 ak=
@@ -38,7 +38,7 @@ is-dir=
 -process=cdnrefresh -ak= -sk= -bucket= 
 ```
 
-### CDN 资源预取配置参数
+### CDN 资源预取
 ```
 process=cdnprefetch
 ak=
