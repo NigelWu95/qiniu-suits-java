@@ -57,7 +57,6 @@ public final class ProcessUtils {
         add("qupload");
         add("mime");
         add("metadata");
-        add("fetch");
         add("syncupload");
     }};
     public static Set<String> canBatchProcesses = new HashSet<String>(){{
@@ -100,6 +99,7 @@ public final class ProcessUtils {
     }};
     public static Set<String> needQiniuAuthProcesses = new HashSet<String>(){{
         addAll(qiniuProcessesWithBucket);
+        add("fetch");
         add("asyncfetch");
         add("privateurl");
         add("imagecensor");
