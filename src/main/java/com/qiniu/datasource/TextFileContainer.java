@@ -66,7 +66,7 @@ public class TextFileContainer extends TextContainer<Map<String, String>> {
     private List<ITextReader> splitSingleFile(File file) throws IOException {
         int lineSize = FileUtils.predictLineSize(file);
         long linesNumber = file.length() / lineSize;
-        if (linesNumber < threads) {
+        if (linesNumber < threads * 2) {
             return new ArrayList<ITextReader>(){{ add(new TextFileReader(file, null, unitLen)); }};
         }
         long avgLines = linesNumber / threads;

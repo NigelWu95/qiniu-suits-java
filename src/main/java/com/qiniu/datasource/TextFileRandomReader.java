@@ -28,7 +28,7 @@ public class TextFileRandomReader implements ITextReader {
         this.end = "".equals(end) ? null : end;
         if (originalLine != null) {
             line = new String(originalLine.getBytes(StandardCharsets.ISO_8859_1));
-            if (this.end != null && this.end.compareTo(line) >= 0) lineList.add(line);
+            lineList.add(line);
         }
     }
 
@@ -43,7 +43,9 @@ public class TextFileRandomReader implements ITextReader {
         List<String> srcList = new ArrayList<>(limit);
         srcList.addAll(lineList);
         lineList.clear();
-        if (end != null) {
+        if (line.equals(this.end)) {
+            line = null;
+        } else if (end != null) {
             while (true) {
                 if (srcList.size() >= limit) {
                     line = null;

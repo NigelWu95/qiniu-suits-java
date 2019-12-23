@@ -146,7 +146,7 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
                     if (retry == 0) throw e;
                 }
             }
-            if (srcList != null) statistics.addAndGet(srcList.size());
+            statistics.addAndGet(srcList.size());
             convertedList = converter.convertToVList(srcList);
             if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
             if (stringConverter != null) {
