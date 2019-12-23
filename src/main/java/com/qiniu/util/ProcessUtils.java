@@ -47,7 +47,6 @@ public final class ProcessUtils {
         add("status");
         add("type");
         add("lifecycle");
-        add("mirror");
         add("delete");
         add("copy");
         add("rename");
@@ -57,7 +56,6 @@ public final class ProcessUtils {
         add("qupload");
         add("mime");
         add("metadata");
-        add("syncupload");
     }};
     public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
@@ -99,8 +97,10 @@ public final class ProcessUtils {
     }};
     public static Set<String> needQiniuAuthProcesses = new HashSet<String>(){{
         addAll(qiniuProcessesWithBucket);
+        add("mirror");
         add("fetch");
         add("asyncfetch");
+        add("syncupload");
         add("privateurl");
         add("imagecensor");
         add("videocensor");

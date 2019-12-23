@@ -15,10 +15,10 @@
 fetch 具体操作说明和详细配置见[ fetch 配置](fetch.md)。  
 3、**镜像源 mirror 操作：`process=mirror`**，对设置了镜像源的空间执行镜像同步操作（对要迁移的源站可以先使用其 IP 或者域名设置为目标空间的镜像
 源），根据文件名即可直接从镜像源地址进行资源的同步（以同样的文件名保存到目标空间），优点与 fetch 操作相同。mirror 具体操作说明和详细配置见[ mirror 配置](mirror.md)。  
-4、**文件上传 qupload 操作：`process=qupload`**，读取本地目录下的文件进行上传操作，主要针对本地数据源，支持大规模目录下文件的上传，该方式也可以
-实现对 NAS 等数据的上传，只需将其挂载到本地即可。qupload 具体操作说明和详细配置见[ qupload 配置](uploadfile.md)。  
-5、**url 同步上传 syncupload 操作：`process=syncupload`**，根据 url 进行上传操作，通过 url 请求到内容直接上传到目标空间，并根据原 url 的
+4、**url 同步上传 syncupload 操作：`process=syncupload`**，根据 url 进行上传操作，通过 url 请求到内容直接上传到目标空间，并根据原 url 的
 path 来设置保存的文件名，主要可用于内网下载再上传的场景，达到节省流量的效果。syncupload 具体操作说明和详细配置见[ syncupload 配置](syncupload.md)。  
+5、**文件上传 qupload 操作：`process=qupload`**，读取本地目录下的文件进行上传操作，主要针对本地数据源，支持大规模目录下文件的上传，该方式也可以
+实现对 NAS 等数据的上传，只需将其挂载到本地即可。qupload 具体操作说明和详细配置见[ qupload 配置](uploadfile.md)。  
 6、特殊的，如果是七牛的同区域存储空间之间做备份/迁移，请使用【[copy](copy.md)/[move](move.md) 操作】），如果是跨账号，请先进行[空间授权](https://developer.qiniu.com/kodo/manual/3647/authorization-of-the-space)。
 
 ### 过滤和检查
@@ -61,7 +61,7 @@ process=asyncfetch/fetch/mirror/syncupload
 ak=
 sk=
 to-bucket=
-# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
+# region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -80,7 +80,7 @@ process=asyncfetch/fetch/mirror/syncupload
 ak=
 sk=
 to-bucket=
-# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
+# region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -99,7 +99,7 @@ process=asyncfetch/fetch/mirror/syncupload
 ak=
 sk=
 to-bucket=
-# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
+# region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -114,7 +114,7 @@ process=asyncfetch/fetch/mirror/syncupload
 ak=
 sk=
 to-bucket=
-# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
+# region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开（不过又拍云存储目前还没有区域概念，可以直接使用 region 设置七牛目标 bucket 的区域）
 # qiniu-region=z0/z1/qvm-z0/...
 
 # 又拍云没有直接对资源名进行私有签名的操作，必须提供公开访问域名才能进行迁移
@@ -136,7 +136,7 @@ process=asyncfetch/fetch/mirror/syncupload
 ak=
 sk=
 to-bucket=
-# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
+# region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -155,7 +155,7 @@ process=asyncfetch/fetch/mirror/syncupload
 ak=
 sk=
 to-bucket=
-# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
+# region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -176,7 +176,7 @@ process=asyncfetch/fetch/mirror/syncupload
 qiniu-ak=
 qiniu-sk=
 to-bucket=
-# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
+# region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
 ```
 
@@ -189,15 +189,16 @@ separator=
 private=aliyun/qiniu/tencent/s3/huawei/baidu
 
 # 迁移配置（七牛的账号、空间等参数）
-process=asyncfetch/fetch/mirror/syncupload/qupload
+process=asyncfetch/fetch/mirror/syncupload
 ak=
 sk=
 to-bucket=
-# region 可以不设置则自动判断，如愿指定则使用 qiniu-region，便于和数据源的 region 区分开
+# region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开（不过 local file 数据源是没有区域设置的，除非使用了带 region 的数据源的私有签名 private 设置）
 # qiniu-region=z0/z1/qvm-z0/...
 
 # 本地的文件列表为文件名时需要提供能公开访问的 domain，为 url 时需要提供每一行中 url 的坐标名
 domain=
 url-index=
 ```  
-本地的文件列表作为数据源时需要考虑解析方式和字段下标，参考：[本地文件数据源](datasource.md#2-file-本地文件读取)  
+（1）如是对文件执行上传，请参考[ qupload 配置](uploadfile.md)。  
+（2）本地的文件列表作为数据源时需要考虑解析方式和字段下标，参考：[本地文件数据源](datasource.md#2-file-本地文件读取)  

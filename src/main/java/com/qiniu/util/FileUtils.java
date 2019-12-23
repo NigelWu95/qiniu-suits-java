@@ -252,6 +252,7 @@ public final class FileUtils {
      * 推测 file 文本文件的行平均长度
      * @param file 输入的文本文件
      * @return 推测的行平均长度
+     * @throws IOException 非 text 文件抛出异常
      */
     public static int predictLineSize(File file) throws IOException {
         String type = FileUtils.contentType(file);

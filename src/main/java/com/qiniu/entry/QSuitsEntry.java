@@ -733,8 +733,29 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
-        return single ? new MirrorFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket)
-                : new MirrorFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, savePath);
+        String ak = qiniuAccessKey == null || qiniuAccessKey.isEmpty() ?
+                entryParam.getValue("qiniu-ak").trim() : qiniuAccessKey;
+        String sk = qiniuSecretKey == null || qiniuSecretKey.isEmpty() ?
+                entryParam.getValue("qiniu-sk").trim() : qiniuSecretKey;
+        String toBucket = entryParam.getValue("to-bucket").trim();
+        if (toBucket.equals(bucket) && "qiniu".equals(source))
+            throw new IOException("the to-bucket can not be same as bucket if source is qiniu.");
+        String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
+        com.qiniu.storage.Region region = "".equals(regionStr) ?
+                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, toBucket))
+                : CloudApiUtils.getQiniuRegion(regionStr);
+        String rsDomain = entryParam.getValue("rs-domain", null);
+        String apiDomain = entryParam.getValue("api-domain", null);
+        if (rsDomain != null || apiDomain != null) {
+            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
+            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
+            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
+        }
+        Configuration configuration = new Configuration(region);
+        if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
+        if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
+        if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        return single ? new MirrorFile(ak, sk, configuration, toBucket) : new MirrorFile(ak, sk, configuration, toBucket, savePath);
     }
 
     private ILineProcess<Map<String, String>> getExportTs(Map<String, String> indexMap, boolean single) throws IOException {
@@ -1082,6 +1103,13 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getSyncUpload(Map<String, String> indexMap, boolean single) throws IOException {
+        String ak = qiniuAccessKey == null || qiniuAccessKey.isEmpty() ?
+                entryParam.getValue("qiniu-ak").trim() : qiniuAccessKey;
+        String sk = qiniuSecretKey == null || qiniuSecretKey.isEmpty() ?
+                entryParam.getValue("qiniu-sk").trim() : qiniuSecretKey;
+        String toBucket = entryParam.getValue("to-bucket").trim();
+        if (toBucket.equals(bucket) && "qiniu".equals(source))
+            throw new IOException("the to-bucket can not be same as bucket if source is qiniu.");
         String protocol = entryParam.getValue("protocol", "http").trim();
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
@@ -1103,9 +1131,23 @@ public class QSuitsEntry {
                 params.put(entry.getKey().substring(7), entry.getValue().trim());
             }
         }
-        return single ? new SyncUpload(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, host,
-                addPrefix, rmPrefix, bucket, expires, policy, params)
-                : new SyncUpload(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), protocol, domain, urlIndex, host,
-                addPrefix, rmPrefix, bucket, expires, policy, params, savePath);
+        String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
+        com.qiniu.storage.Region region = "".equals(regionStr) ?
+                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, toBucket))
+                : CloudApiUtils.getQiniuRegion(regionStr);
+        String rsDomain = entryParam.getValue("rs-domain", null);
+        String apiDomain = entryParam.getValue("api-domain", null);
+        if (rsDomain != null || apiDomain != null) {
+            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
+            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
+            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
+        }
+        Configuration configuration = new Configuration(region);
+        if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
+        if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
+        if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        return single ? new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex, host, addPrefix, rmPrefix,
+                toBucket, expires, policy, params) : new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex,
+                host, addPrefix, rmPrefix, toBucket, expires, policy, params, savePath);
     }
 }
