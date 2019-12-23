@@ -11,6 +11,9 @@
 ## 配置
 ```
 process=syncupload
+ak/qiniu-ak=
+sk/qiniu-sk=
+region/qiniu-region=
 protocol=
 domain=
 indexes=
@@ -18,9 +21,7 @@ url-index=
 host=
 add-prefix=
 rm-prefix=
-ak=
-sk=
-bucket=
+to-bucket=
 expires=
 policy.[]=
 params.[]=
@@ -30,6 +31,9 @@ private=
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process|同步 url 内容至存储空间时设置为 syncupload | 表示同步上传 url 内容资源的操作|  
+|ak、sk|长度 40 的字符串|抓取到七牛账号的ak、sk，通过七牛控制台个人中心获取|  
+|qiniu-ak、qiniu-sk|长度 40 的字符串|抓取到七牛账号的 ak、sk，如果数据源为 qiniu 且目标账号和数据源为同一账号，则无需再设置，如果是跨七牛账号抓取，目标账号的密钥请用 qiniu-ak/qiniu-sk 来设置|  
+|region/qiniu-region|存储区域字符串|七牛目标空间的区域，不填时则自动判断，如果选择填写且数据源为七牛另一区域 bucket 时，则目标空间的区域使用 qiniu-region 设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行下载（默认 http）|  
 |domain| 域名字符串| 当数据源数据的资源为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
@@ -37,8 +41,7 @@ private=
 |host| 域名字符串| 下载源资源时指定 host|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|  
-|ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取|  
-|bucket| 字符串| 上传到的资源原空间名称|  
+|to-bucket| 字符串| 上传资源的目标空间名称|  
 |expires| 整型数字| 单个文件上传操作的鉴权有效期，单位 s(秒)，默认为 3600|  
 |policy.[]| 字符串/整型数字| 可以设置一些上传策略参数，如 policy.deleteAfterDays=7 表示七天之后自动删除文件，其他参数可参考[七牛上传策略](https://developer.qiniu.com/kodo/manual/1206/put-policy)|  
 |params.[]| 字符串| 上传时设置的一些变量参数，如 params.x:user=138300 表示 x:user 的信息为 138300，可参考[七牛上传自定义变量](https://developer.qiniu.com/kodo/manual/1235/vars#xvar)|  
@@ -64,6 +67,6 @@ key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes �
 
 ### 命令行参数方式
 ```
--process=syncupload -ak= -sk= -bucket= -url-index= ...
+-process=syncupload -ak= -sk= -to-bucket= -url-index= ...
 ```
 

@@ -47,10 +47,7 @@ public class TextFileRandomReader implements ITextReader {
             line = null;
         } else if (end != null) {
             while (true) {
-                if (srcList.size() >= limit) {
-                    line = null;
-                    break;
-                }
+                if (srcList.size() >= limit) break;
                 try {
                     // 避免文件过大，行数过多，使用 lines() 的 stream 方式直接转换可能会导致内存泄漏，故使用 readLine() 的方式
                     originalLine = accessFile.readLine();

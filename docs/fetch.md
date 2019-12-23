@@ -26,8 +26,8 @@ check=
 |-----|-------|-----|  
 |process| 抓取操作时设置为 fetch | 表示同步 fetch 操作|  
 |ak、sk|长度 40 的字符串|抓取到七牛账号的ak、sk，通过七牛控制台个人中心获取|  
-|qiniu-ak、qiniu-sk|长度 40 的字符串|抓取到七牛账号的ak、sk，如果数据源为 qiniu 且目标账号和数据源为同一账号，则无需再设置，如果是跨七牛账号抓取，目标账号的密钥请用 qiniu-ak/qiniu-sk 来设置|  
-|qiniu-zone|存储区域字符串|抓取到七牛空间的区域，不填时则自动判断，如果愿意指定则在目标空间的区域和数据源区域不一致时使用 qiniu-zone 设置|  
+|qiniu-ak、qiniu-sk|长度 40 的字符串|抓取到七牛账号的ak、sk，如果数据源为 qiniu 且目标账号和数据源为同一账号，则无需再设置，如果是跨七牛账号抓取，目标账号的密钥请用 qiniu-ak/qiniu-sk 来设置| 
+|region/qiniu-region|存储区域字符串|七牛目标空间的区域，不填时则自动判断，如果选择填写且数据源为七牛另一区域 bucket 时，则目标空间的区域使用 qiniu-region 设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
 |domain| 域名字符串| 当数据源数据为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
