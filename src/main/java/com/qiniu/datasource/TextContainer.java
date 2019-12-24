@@ -255,7 +255,7 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
                     generated.close();
                     return false;
                 }
-            }).forEach(this::reading);
+            }).forEach(reader -> executorPool.execute(() -> reading(reader)));
             executorPool.shutdown();
             while (!executorPool.isTerminated()) {
                 sleep(2000);

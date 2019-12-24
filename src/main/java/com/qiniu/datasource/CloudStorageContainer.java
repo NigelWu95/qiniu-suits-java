@@ -408,7 +408,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         return prefixesLister;
     }
 
-    void processNodeLister(IStorageLister<E> lister) {
+    private void processNodeLister(IStorageLister<E> lister) {
         if (lister.currents().size() > 0 || lister.hasNext()) {
             executorPool.execute(() -> listing(lister));
         } else {
