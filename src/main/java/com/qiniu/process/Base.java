@@ -171,7 +171,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
      * @throws IOException 处理失败可能抛出的异常
      */
     private void batchProcess(List<T> lineList, int batchSize, int retryTimes) throws IOException {
-        int times = lineList.size()/batchSize + 1;
+        int times = (lineList.size() + batchSize - 1) / batchSize;
         List<T> processList;
         int retry;
         String message = null;
