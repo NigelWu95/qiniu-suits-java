@@ -395,7 +395,7 @@ java.net.SocketTimeoutException: timeout
 **注意：  
 （1）如果是系统宕机、断电或者强制关机或者进程强行 kill 等情况，无法得到输出的断点文件提示，因此只能通过[<位置记录日志>](#9-程序日志)来查看最后
 的断点信息，在 8.2.1 版本以上设置了 log 参数可用于启用日志记录的断点，即取出运行路径下 logs 目录中的 procedure[x].log 日志，将该日志文件设置
-为 `-log=<procedure[x].log's path>` 再运行可完成断点续操作。
+为 `-log=<procedure[x].log's path>` 再运行可完成断点续操作。  
 （2）如果原任务包含 process 过程（只有数据源读取不包含 process 操作可以不考虑该问题），执行断点操作时，由于断点日志粒度按照 unit-len 来记录的，
 当 unit-len 比较大（默认一般都是 1000 以上，甚至是 10000）时，可能存在记录的断点比实际 process 的进度要滞后很多条记录，因此对于一些不希望存在数
 据重复执行的 process，如 qupload/syncupload/mirror/fetch/asyncfetch 等，数据重复执行会影响效率和增加流量消耗，那么建议操作断点时设置一些

@@ -45,12 +45,12 @@ public class UpYunClient {
     }
 
     public FileItem getFileInfo(String bucket, String key) throws IOException {
-        String uri = "/" + bucket + "/" + URLUtils.getEncodedURI(key);
+        String uri = String.join("/", "", bucket, URLUtils.getEncodedURI(key));
         HttpURLConnection conn;
-        URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
+        URL url = new URL(config.getApiAddress() + uri);
         conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(config.connectTimeout);
-        conn.setReadTimeout(config.readTimeout);
+        conn.setConnectTimeout(config.getConnectTimeout());
+        conn.setReadTimeout(config.getReadTimeout());
         conn.setRequestMethod(UpYunConfig.METHOD_HEAD);
         conn.setUseCaches(false);
         String date = DatetimeUtils.getGMTDate();
@@ -75,7 +75,7 @@ public class UpYunClient {
     }
 
     public long getBucketUsage(String bucket) throws IOException {
-        String result = HttpGetAction("/" + bucket + "/?usage", null);
+        String result = HttpGetAction(String.join(bucket, "/", "/?usage"), null);
         try {
             return Long.parseLong(result.trim());
         } catch (Exception e) {
@@ -84,10 +84,10 @@ public class UpYunClient {
     }
 
     private String HttpGetAction(String uri, Map<String, String> headers) throws IOException {
-        URL url = new URL("http://" + UpYunConfig.apiDomain + uri);
+        URL url = new URL(config.getApiAddress() + uri);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(config.connectTimeout);
-        conn.setReadTimeout(config.readTimeout);
+        conn.setConnectTimeout(config.getConnectTimeout());
+        conn.setReadTimeout(config.getReadTimeout());
         conn.setRequestMethod(UpYunConfig.METHOD_GET);
         conn.setUseCaches(false);
         String date = DatetimeUtils.getGMTDate();

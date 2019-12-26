@@ -43,6 +43,7 @@ public class CommonParams {
     private String huaweiSecretKey;
     private String baiduAccessId;
     private String baiduSecretKey;
+    private boolean httpsForConfigEnabled;
     private String bucket;
     private String logFilepath;
     private Map<String, Map<String, String>> pathConfigMap;
@@ -330,6 +331,10 @@ public class CommonParams {
         connectTimeout = Integer.parseInt(entryParam.getValue("connect-timeout", "60").trim());
         readTimeout = Integer.parseInt(entryParam.getValue("read-timeout", "120").trim());
         requestTimeout = Integer.parseInt(entryParam.getValue("request-timeout", "60").trim());
+    }
+
+    private void setHttpsConfigEnabled() throws IOException {
+        String enabled = entryParam.getValue("config-https", "true");
     }
 
     private void setSource() throws IOException {
@@ -1407,6 +1412,10 @@ public class CommonParams {
         this.baiduSecretKey = baiduSecretKey;
     }
 
+    public void setHttpsForConfigEnabled(boolean httpsForConfigEnabled) {
+        this.httpsForConfigEnabled = httpsForConfigEnabled;
+    }
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -1605,6 +1614,10 @@ public class CommonParams {
 
     public String getBaiduSecretKey() {
         return baiduSecretKey;
+    }
+
+    public boolean isHttpsForConfigEnabled() {
+        return httpsForConfigEnabled;
     }
 
     public String getBucket() {

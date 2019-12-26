@@ -31,7 +31,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         request.setExpires(expires);
         if (queries != null) {
             for (Map.Entry<String, String> entry : queries.entrySet())
-                queries.put(entry.getKey(), entry.getValue());
+                this.queries.put(entry.getKey(), entry.getValue());
         }
         request.setQueryParams(this.queries);
         configuration = new ObsConfiguration();
@@ -51,7 +51,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         request.setExpires(expires);
         if (queries != null) {
             for (Map.Entry<String, String> entry : queries.entrySet())
-                queries.put(entry.getKey(), entry.getValue());
+                this.queries.put(entry.getKey(), entry.getValue());
         }
         request.setQueryParams(this.queries);
         configuration = new ObsConfiguration();
@@ -73,15 +73,16 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     @Override
     public PrivateUrl clone() throws CloneNotSupportedException {
-        PrivateUrl ossPrivateUrl = (PrivateUrl)super.clone();
-        ossPrivateUrl.queries = new HashMap<>(queries);
-        ossPrivateUrl.request = new TemporarySignatureRequest();
-        ossPrivateUrl.request.setBucketName(bucket);
-        ossPrivateUrl.request.setObjectKey("");
-        ossPrivateUrl.request.setExpires(expires);
-        ossPrivateUrl.obsClient = new ObsClient(accessId, secretKey, configuration);
-        if (nextProcessor != null) ossPrivateUrl.nextProcessor = nextProcessor.clone();
-        return ossPrivateUrl;
+        PrivateUrl privateUrl = (PrivateUrl)super.clone();
+//        privateUrl.queries = new HashMap<>(queries);
+        privateUrl.request = new TemporarySignatureRequest();
+        privateUrl.request.setBucketName(bucket);
+        privateUrl.request.setObjectKey("");
+        privateUrl.request.setExpires(expires);
+        privateUrl.request.setQueryParams(this.queries);
+        privateUrl.obsClient = new ObsClient(accessId, secretKey, configuration);
+        if (nextProcessor != null) privateUrl.nextProcessor = nextProcessor.clone();
+        return privateUrl;
     }
 
     @Override
