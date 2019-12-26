@@ -24,6 +24,7 @@ public class CommonParams {
     private int connectTimeout;
     private int readTimeout;
     private int requestTimeout;
+    private boolean httpsForConfigEnabled;
     private String path;
     private String source;
     private boolean isStorageSource;
@@ -43,11 +44,9 @@ public class CommonParams {
     private String huaweiSecretKey;
     private String baiduAccessId;
     private String baiduSecretKey;
-    private boolean httpsForConfigEnabled;
     private String bucket;
     private String logFilepath;
     private Map<String, Map<String, String>> pathConfigMap;
-    private List<String> antiDirectories;
     private List<String> antiPrefixes;
     private boolean prefixLeft;
     private boolean prefixRight;
@@ -165,6 +164,7 @@ public class CommonParams {
         setTimeout();
         path = entryParam.getValue("path", "");
         setSource();
+        setHttpsConfigEnabled();
         accountInit();
         logFilepath = entryParam.getValue("log", null);
         if (isStorageSource) {
@@ -212,6 +212,7 @@ public class CommonParams {
         this.entryParam = new ParamsConfig(paramsMap);
         setTimeout();
         source = "terminal";
+        setHttpsConfigEnabled();
         accountInit();
         setParse();
         setSeparator();
@@ -333,10 +334,6 @@ public class CommonParams {
         requestTimeout = Integer.parseInt(entryParam.getValue("request-timeout", "60").trim());
     }
 
-    private void setHttpsConfigEnabled() throws IOException {
-        String enabled = entryParam.getValue("config-https", "true");
-    }
-
     private void setSource() throws IOException {
         if (entryParam.getValue("interactive", "").trim().equals("true")) {
             source = "terminal";
@@ -387,6 +384,16 @@ public class CommonParams {
             source = "local";
         }
         isStorageSource = CloudApiUtils.isStorageSource(source);
+    }
+
+    private void setHttpsConfigEnabled() throws IOException {
+        String enabled = entryParam.getValue("config-https", "").trim();
+        if ("".equals(enabled)) {
+            if ("qiniu".equals(source) || "huawei".equals(source)) httpsForConfigEnabled = true;
+        } else {
+            ParamsUtils.checked(enabled, "config-https", "(true|false)");
+            httpsForConfigEnabled = Boolean.parseBoolean(enabled);
+        }
     }
 
     private void setParse() throws IOException {
@@ -1348,6 +1355,10 @@ public class CommonParams {
         this.requestTimeout = requestTimeout;
     }
 
+    public void setHttpsForConfigEnabled(boolean httpsForConfigEnabled) {
+        this.httpsForConfigEnabled = httpsForConfigEnabled;
+    }
+
     public void setPath(String path) {
         this.path = path;
     }
@@ -1412,20 +1423,12 @@ public class CommonParams {
         this.baiduSecretKey = baiduSecretKey;
     }
 
-    public void setHttpsForConfigEnabled(boolean httpsForConfigEnabled) {
-        this.httpsForConfigEnabled = httpsForConfigEnabled;
-    }
-
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
 
     public void setPathConfigMap(Map<String, Map<String, String>> pathConfigMap) {
         this.pathConfigMap = pathConfigMap;
-    }
-
-    public void setAntiDirectories(List<String> antiDirectories) {
-        this.antiDirectories = antiDirectories;
     }
 
     public void setAntiPrefixes(List<String> antiPrefixes) {
@@ -1552,6 +1555,10 @@ public class CommonParams {
         return requestTimeout;
     }
 
+    public boolean isHttpsForConfigEnabled() {
+        return httpsForConfigEnabled;
+    }
+
     public String getPath() {
         return path;
     }
@@ -1616,20 +1623,12 @@ public class CommonParams {
         return baiduSecretKey;
     }
 
-    public boolean isHttpsForConfigEnabled() {
-        return httpsForConfigEnabled;
-    }
-
     public String getBucket() {
         return bucket;
     }
 
     public Map<String, Map<String, String>> getPathConfigMap() {
         return pathConfigMap;
-    }
-
-    public List<String> getAntiDirectories() {
-        return antiDirectories;
     }
 
     public List<String> getAntiPrefixes() {

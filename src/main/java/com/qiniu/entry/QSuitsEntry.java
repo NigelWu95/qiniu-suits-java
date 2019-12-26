@@ -328,7 +328,7 @@ public class QSuitsEntry {
     public DefaultFileContainer getDefaultFileContainer() throws IOException {
         String path = commonParams.getPath();
         Map<String, Map<String, String>> directoriesMap = commonParams.getPathConfigMap();
-        List<String> antiDirectories = commonParams.getAntiDirectories();
+        List<String> antiDirectories = commonParams.getAntiPrefixes();
         boolean keepDir = commonParams.getKeepDir();
         DefaultFileContainer defaultFileContainer = new DefaultFileContainer(path, directoriesMap, antiDirectories,
                 keepDir, indexMap, null, unitLen, threads);
@@ -805,9 +805,9 @@ public class QSuitsEntry {
         if (region == null || "".equals(region)) region = CloudApiUtils.getTenCosRegion(secretId, secretKey, tenBucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, tenBucket, region,
+        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, tenBucket, region, httpsConfigEnabled,
                 1000 * Long.parseLong(expires), getQueriesMap()) : new com.qiniu.process.tencent.PrivateUrl(secretId,
-                secretKey, tenBucket, region, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
+                secretKey, tenBucket, region, httpsConfigEnabled,1000 * Long.parseLong(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
@@ -821,8 +821,11 @@ public class QSuitsEntry {
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getAliOssRegion(accessId, accessSecret, aliBucket);
         if (!endPoint.matches("https?://.+")) {
-            if (endPoint.startsWith("oss-")) endPoint = "http://" + endPoint + ".aliyuncs.com";
-            else endPoint = "http://oss-" + endPoint + ".aliyuncs.com";
+            if (endPoint.startsWith("oss-")) {
+                endPoint = String.join(endPoint, httpsConfigEnabled ? "https://" : "http://", ".aliyuncs.com");
+            } else {
+                endPoint = String.join(endPoint, httpsConfigEnabled ? "https://oss-" : "http://oss-", ".aliyuncs.com");
+            }
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
@@ -845,9 +848,9 @@ public class QSuitsEntry {
             region = CloudApiUtils.getS3Region(accessId, secretKey, s3Bucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region,
+        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region, httpsConfigEnabled,
                 1000 * Long.parseLong(expires), getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId,
-                secretKey, s3Bucket, endpoint, region, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
+                secretKey, s3Bucket, endpoint, region, httpsConfigEnabled, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.huawei.PrivateUrl getHuaweiPrivateUrl(boolean single) throws IOException {
@@ -861,8 +864,11 @@ public class QSuitsEntry {
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getHuaweiObsRegion(accessId, secretKey, huaweiBucket);
         if (!endPoint.matches("https?://.+")) {
-            if (endPoint.startsWith("obs.")) endPoint = "http://" + endPoint + ".myhuaweicloud.com";
-            else endPoint = "http://obs." + endPoint + ".myhuaweicloud.com";
+            if (endPoint.startsWith("obs.")) {
+                endPoint = String.join(endPoint, httpsConfigEnabled ? "https://" : "http://", ".myhuaweicloud.com");
+            } else {
+                endPoint = String.join(endPoint, httpsConfigEnabled ? "https://obs." : "http://obs.", ".myhuaweicloud.com");
+            }
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
@@ -883,7 +889,7 @@ public class QSuitsEntry {
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getBaiduBosRegion(accessId, secretKey, baiduBucket);
         if (!endPoint.matches("https?://.+")) {
-            endPoint = "http://" + endPoint + ".bcebos.com";
+            endPoint = String.join(endPoint, httpsConfigEnabled ? "https://" : "http://", ".bcebos.com");
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
@@ -1060,8 +1066,9 @@ public class QSuitsEntry {
         String dir = entryParam.getValue("is-dir", "false").trim();
         ParamsUtils.checked(dir, "is-dir", "(true|false)");
         boolean isDir = Boolean.parseBoolean(dir);
-        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, isDir, false)
-                : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, isDir, false, savePath);
+        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
+                isDir, false) : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
+                domain, urlIndex, isDir, false, savePath);
     }
 
     private ILineProcess<Map<String, String>> getCdnPrefetch(Map<String, String> indexMap, boolean single) throws IOException {
@@ -1069,8 +1076,9 @@ public class QSuitsEntry {
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, false, true)
-                : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, false, true, savePath);
+        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
+                false, true) : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
+                domain, urlIndex, false, true, savePath);
     }
 
     private ILineProcess<Map<String, String>> getFetch(Map<String, String> indexMap, boolean single) throws IOException {

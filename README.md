@@ -340,11 +340,12 @@ rm-fields 可选择持久化结果中去除某些字段，未设置的情况下�
 
 详细配置说明见 [持久化配置](docs/resultsave.md)。  
 
-### 7 超时设置
-多数数据源或者操作涉及网络请求，因此提供超时时间设置，默认的超时时间一般能够满足要求，特殊需要的情况下可以修改各超时时间：  
+### 7 网络设置
+多数数据源或者操作涉及网络请求，因此提供超时时间和协议设置，默认设置一般能够满足要求，特殊需要的情况下可以修改各超时时间和协议：  
 `connect-timeout=60` 网络连接超时时间，程序默认 60s  
 `read-timeout=120` socket 读取超时时间，程序默认 120s  
 `request-timeout=60` 网络请求超时时间，程序默认 60s  
+`config-https=true/false` 对数据源或 process 涉及的公共 api 是否使用 https 来请求，七牛云/华为云数据源或者七牛的 process 均默认使用 https  
 
 ### 8 错误及异常
 1、一般情况下，终端输出异常信息如 socket timeout 超时为正常现象，如：
@@ -353,7 +354,7 @@ list prefix:<prefix> retrying...
 ...
 java.net.SocketTimeoutException: timeout
 ```
-程序会自动重试，如果比较频繁则可以修改[超时配置](#7-超时设置)重新运行程序，超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
+程序会自动重试，如果比较频繁则可以修改[超时配置](#7-网络设置)重新运行程序，超过重试次数或者其他非预期异常发生时程序会退出，可以将异常信息反馈在 
 [ISSUE列表](https://github.com/NigelWu95/qiniu-suits-java/issues) 中。  
 2、常见错误信息：  
 （1）java.lang.UnsupportedClassVersionError: Unsupported major.minor version ...  

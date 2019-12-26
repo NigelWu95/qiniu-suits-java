@@ -13,6 +13,7 @@ process=qupload
 path=
 directories=
 directory-config=
+anti-prefixes=
 ak=
 sk=
 bucket=
@@ -36,6 +37,7 @@ check=
 |path| 本地路径| path 是数据源选项，可以通过设置本地路径来指定要上传的文件，为目录时会遍历目录下（包括内层目录）除隐藏文件外的所有文件|  
 |directories| 文件目录列表| 如果希望上传 path 下的几个目录中文件，可设置 path 路径下需要读取的目录列表，以 `,` 号分割目录名，不设置默认读取 path 下全部目录进行文件的上传|  
 |directory-config| 配置文件路径|数据源文件目录及对应已上传的文件名配置，配置中记录已上传的文件在 path 中的位置标识，配置格式为 json，参考[ directory-config 配置文件](#directory-config-配置)，该配置不需要自行编写|  
+|anti-prefixes| 文件目录列表| 表示上传目录下文件时排除某些名称前缀的子目录，支持以 `,` 分隔的列表，特殊字符同样需要转义符|  
 |ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取|  
 |bucket| 字符串| 上传到的资源原空间名称|  
 |filepath-index| 文件路径索引| 非必填字端，当直接上传 path 路径中的文件时无需设置，如果是通过读取文本文件每一行中的路径信息则需要设置|  
@@ -72,7 +74,7 @@ directory-config 中的目录名可以采取相对 path 路径下的目录名。
 |value| 表示数据源中某一行的内容，如 "qiniu_success_1.txt" 表示 "/Users/wubingheng/Projects/Github/test" 目录中可能存在该文件名|  
 
 ### 上传超时时间
-timeout 参数可以通过全局的 timeout 来设置，参考：[超时设置](../README.md#7-超时设置)  
+timeout 参数可以通过全局的 timeout 来设置，参考：[网络设置](../README.md#7-网络设置)  
 
 ### 关于上传的文件路径
 上传文件的操作可以直接上传通过 path 指定的目录下的文件，也支持传通过文件列表中提供的 filepath 的文件，如：  

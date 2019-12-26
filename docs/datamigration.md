@@ -178,7 +178,20 @@ qiniu-sk=
 to-bucket=
 # region 可以不设置则自动判断，如选择自行指定则使用 qiniu-region，便于和数据源的 region 区分开
 # qiniu-region=z0/z1/qvm-z0/...
+```  
+
+##### 七牛云私有存储
+按需要增加如下参数设置 API 的域名即可：  
 ```
+rsf-domain=rsf-z0.qiniu.com
+#rsf-domain=rsf-z1.qiniu.com
+rs-domain=rs-z0.qiniu.com
+#rs-domain=rs-z1.qiniu.com
+api-domain=api.qiniu.com
+#api-domain=api-z1.qiniu.com
+#是否使用 https 对上述设置的域名进行请求
+config-https=true/false
+```  
 
 #### 8. 本地文件列表
 ```
