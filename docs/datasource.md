@@ -309,7 +309,8 @@ threads=300
 prefixes=
 #region=
 ```  
-**使用七牛数据源除了可以自行指定 region（建议您自行指定 region 较好），也可以单独指定 rsf,rs,api 域名（一般不需要用到），如**：  
+**使用七牛数据源除了可以自行指定 region（建议您自行指定 region 较好），也可以单独指定 rsf,rs,api 域名（一般不需要用到），如下所示，一般可用在七
+牛私有存储的场景中**：  
 ```
 rsf-domain=rsf-z0.qiniu.com
 #rsf-domain=rsf-z1.qiniu.com
@@ -317,6 +318,8 @@ rs-domain=rs-z0.qiniu.com
 #rs-domain=rs-z1.qiniu.com
 api-domain=api.qiniu.com
 #api-domain=api-z1.qiniu.com
+#是否使用 https 对上述设置的域名进行请求
+config-https=true/false
 ```  
 
 ### 2 腾讯云存储

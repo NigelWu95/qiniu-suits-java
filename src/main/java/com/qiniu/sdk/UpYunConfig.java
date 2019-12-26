@@ -17,18 +17,59 @@ public class UpYunConfig implements Cloneable {
     public static final String X_UPYUN_FILE_DATE = "x-upyun-file-date";
 
     // 默认的超时时间：30秒
-    public static int DEFAULT_CONNECT_TIMEOUT = 30 * 1000;
-    public static int DEFAULT_READ_TIMEOUT = 30 * 1000;
-    public static int DEFAULT_WRITE_TIMEOUT = 30 * 1000;
+    public static final int DEFAULT_CONNECT_TIMEOUT = 30 * 1000;
+    public static final int DEFAULT_READ_TIMEOUT = 30 * 1000;
+    public static final int DEFAULT_WRITE_TIMEOUT = 30 * 1000;
 
-    public int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
-    public int readTimeout = DEFAULT_READ_TIMEOUT;
-    public int writeTimeout = DEFAULT_WRITE_TIMEOUT;
+    private String apiAddress;
+    private boolean useHttps = false;
+    private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+    private int readTimeout = DEFAULT_READ_TIMEOUT;
+    private int writeTimeout = DEFAULT_WRITE_TIMEOUT;
 
-    public UpYunConfig() {}
+    public UpYunConfig() {
+        apiAddress = "http://" + apiDomain;
+    }
+
+    public UpYunConfig(boolean useHttps) {
+        this.useHttps = useHttps;
+        apiAddress = (useHttps ? "https://" : "http://") + apiDomain;
+    }
 
     @Override
     public UpYunConfig clone() throws CloneNotSupportedException {
         return (UpYunConfig) super.clone();
+    }
+
+    public String getApiAddress() {
+        return apiAddress;
+    }
+
+    public boolean isUseHttps() {
+        return useHttps;
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    public void setWriteTimeout(int writeTimeout) {
+        this.writeTimeout = writeTimeout;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    public int getWriteTimeout() {
+        return writeTimeout;
     }
 }

@@ -6,6 +6,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.qiniu.interfaces.ICdnApplier;
 import com.qiniu.process.Base;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.*;
 
 import java.io.IOException;
@@ -25,11 +26,11 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
     private List<Map<String, String>> lines;
     private ICdnApplier cdnApplier;
 
-    public CdnUrlProcess(String accessKey, String secretKey, String protocol, String domain, String urlIndex, boolean isDir,
-                         boolean prefetch) throws IOException {
+    public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
+                         String urlIndex, boolean isDir, boolean prefetch) throws IOException {
         super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null);
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth);
+        CdnHelper cdnHelper = new CdnHelper(auth, configuration.clone());
         this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
                 dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
         CloudApiUtils.checkQiniu(auth);
@@ -49,14 +50,14 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 //        this.prefetch = prefetch;
     }
 
-    public CdnUrlProcess(String accessKey, String secretKey, String protocol, String domain, String urlIndex, boolean isDir,
-                         boolean prefetch, String savePath, int saveIndex) throws IOException {
+    public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
+                         String urlIndex, boolean isDir, boolean prefetch, String savePath, int saveIndex) throws IOException {
         super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null, savePath, saveIndex);
         this.batchSize = 30;
         this.batches = new ArrayList<>(30);
         this.lines = new ArrayList<>();
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth);
+        CdnHelper cdnHelper = new CdnHelper(auth, configuration.clone());
         this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
                 dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
         CloudApiUtils.checkQiniu(auth);
@@ -77,9 +78,9 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
         this.fileSaveMapper.preAddWriter("invalid");
     }
 
-    public CdnUrlProcess(String accessKey, String secretKey, String protocol, String domain, String urlIndex, boolean isDir,
-                         boolean prefetch, String savePath) throws IOException {
-        this(accessKey, secretKey, protocol, domain, urlIndex, isDir, prefetch, savePath, 0);
+    public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
+                         String urlIndex, boolean isDir, boolean prefetch, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, protocol, domain, urlIndex, isDir, prefetch, savePath, 0);
     }
 
     @Override

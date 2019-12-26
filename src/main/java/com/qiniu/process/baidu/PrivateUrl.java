@@ -80,17 +80,17 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     @Override
     public PrivateUrl clone() throws CloneNotSupportedException {
-        PrivateUrl ossPrivateUrl = (PrivateUrl)super.clone();
-        ossPrivateUrl.request = new GeneratePresignedUrlRequest(bucket, "");
-        ossPrivateUrl.request.setExpiration(expires);
+        PrivateUrl privateUrl = (PrivateUrl)super.clone();
+        privateUrl.request = new GeneratePresignedUrlRequest(bucket, "");
+        privateUrl.request.setExpiration(expires);
         if (queries != null) {
             for (Map.Entry<String, String> entry : queries.entrySet())
-                ossPrivateUrl.request.addRequestParameter(entry.getKey(), entry.getValue());
+                privateUrl.request.addRequestParameter(entry.getKey(), entry.getValue());
         }
-        ossPrivateUrl.bosClient = new BosClient(configuration);
+        privateUrl.bosClient = new BosClient(configuration);
         try {
-            if (nextProcessor != null) ossPrivateUrl.nextProcessor = nextProcessor.clone();
-            return ossPrivateUrl;
+            if (nextProcessor != null) privateUrl.nextProcessor = nextProcessor.clone();
+            return privateUrl;
         } catch (Exception e) {
             bosClient.shutdown();
             throw e;

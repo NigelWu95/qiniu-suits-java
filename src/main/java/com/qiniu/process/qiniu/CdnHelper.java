@@ -4,6 +4,7 @@ import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
 import com.qiniu.http.Response;
+import com.qiniu.storage.Configuration;
 import com.qiniu.util.Auth;
 import com.qiniu.util.Json;
 
@@ -19,6 +20,11 @@ public class CdnHelper {
     public CdnHelper(Auth auth) {
         this.auth = auth;
         this.client = new Client();
+    }
+
+    public CdnHelper(Auth auth, Configuration configuration) {
+        this.auth = auth;
+        this.client = new Client(configuration);
     }
 
     public Response refresh(String[] urls, String[] dirs) throws QiniuException {

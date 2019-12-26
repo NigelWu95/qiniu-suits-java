@@ -1,10 +1,12 @@
 package com.qiniu.entry;
 
 import com.aliyun.oss.ClientConfiguration;
+import com.aliyun.oss.common.comm.Protocol;
 import com.baidubce.services.bos.BosClientConfiguration;
 import com.google.gson.JsonObject;
 import com.obs.services.ObsConfiguration;
 import com.qcloud.cos.ClientConfig;
+import com.qcloud.cos.http.HttpProtocol;
 import com.qcloud.cos.region.Region;
 import com.qiniu.common.Constants;
 import com.qiniu.common.SuitsException;
@@ -35,6 +37,7 @@ public class QSuitsEntry {
     private com.amazonaws.ClientConfiguration s3ClientConfig;
     private ObsConfiguration obsConfiguration;
     private BosClientConfiguration bosClientConfiguration;
+    private boolean httpsConfigEnabled;
     private String source;
     private String qiniuAccessKey;
     private String qiniuSecretKey;
@@ -98,6 +101,7 @@ public class QSuitsEntry {
         this.connectTimeout = commonParams.getConnectTimeout();
         this.readTimeout = commonParams.getReadTimeout();
         this.requestTimeout = commonParams.getRequestTimeout();
+        this.httpsConfigEnabled = commonParams.isHttpsForConfigEnabled();
         this.source = commonParams.getSource();
         this.qiniuAccessKey = commonParams.getQiniuAccessKey();
         this.qiniuSecretKey = commonParams.getQiniuSecretKey();
@@ -132,30 +136,47 @@ public class QSuitsEntry {
             qiniuAccessKey = entryParam.getValue("ak").trim();
             qiniuSecretKey = entryParam.getValue("sk").trim();
         }
-        com.qiniu.storage.Region region = (regionName == null || "".equals(regionName)) ?
-                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(qiniuAccessKey, qiniuSecretKey, bucket))
-                : CloudApiUtils.getQiniuRegion(regionName);
+        return getDefaultQiniuConfig(qiniuAccessKey, qiniuSecretKey, regionName);
+    }
+
+    private Configuration getDefaultQiniuConfig(String ak, String sk, String regionName) throws IOException {
+        com.qiniu.storage.Region region = null;
         String rsfDomain = entryParam.getValue("rsf-domain", null);
         String rsDomain = entryParam.getValue("rs-domain", null);
         String apiDomain = entryParam.getValue("api-domain", null);
         if (rsfDomain != null || rsDomain != null || apiDomain != null) {
-            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
+            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder();
             if (rsfDomain != null) region = builder.rsfHost(rsfDomain).build();
             if (rsDomain != null) region = builder.rsHost(rsDomain).build();
             if (apiDomain != null) region = builder.apiHost(apiDomain).build();
         }
+        if (region == null) region = (regionName == null || "".equals(regionName)) ?
+                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, bucket))
+                : CloudApiUtils.getQiniuRegion(regionName);
         Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
         if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        configuration.useHttpsDomains = httpsConfigEnabled;
         return configuration;
     }
 
     private Configuration getNewQiniuConfig() {
-        Configuration configuration = new Configuration();
+        com.qiniu.storage.Region region = null;
+        String rsfDomain = entryParam.getValue("rsf-domain", null);
+        String rsDomain = entryParam.getValue("rs-domain", null);
+        String apiDomain = entryParam.getValue("api-domain", null);
+        if (rsfDomain != null || rsDomain != null || apiDomain != null) {
+            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder();
+            if (rsfDomain != null) region = builder.rsfHost(rsfDomain).build();
+            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
+            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
+        }
+        Configuration configuration = region == null ? new Configuration() : new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
         if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        configuration.useHttpsDomains = httpsConfigEnabled;
         return configuration;
     }
 
@@ -173,6 +194,8 @@ public class QSuitsEntry {
             clientConfig.setSocketTimeout(1000 * readTimeout);
         if (1000 * requestTimeout > clientConfig.getConnectionRequestTimeout())
             clientConfig.setConnectionRequestTimeout(1000 * requestTimeout);
+        if (httpsConfigEnabled) clientConfig.setHttpProtocol(HttpProtocol.https);
+        else clientConfig.setHttpProtocol(HttpProtocol.http);
         return clientConfig;
     }
 
@@ -188,6 +211,8 @@ public class QSuitsEntry {
             clientConfig.setSocketTimeout(1000 * readTimeout);
         if (1000 * requestTimeout > clientConfig.getConnectionRequestTimeout())
             clientConfig.setConnectionRequestTimeout(1000 * requestTimeout);
+        if (httpsConfigEnabled) clientConfig.setProtocol(Protocol.HTTPS);
+        else clientConfig.setProtocol(Protocol.HTTP);
         return clientConfig;
     }
 
@@ -196,11 +221,11 @@ public class QSuitsEntry {
     }
 
     private UpYunConfig getDefaultUpYunConfig() {
-        UpYunConfig upYunConfig = new UpYunConfig();
-        if (1000 * connectTimeout > upYunConfig.connectTimeout)
-            upYunConfig.connectTimeout = 1000 * connectTimeout;
-        if (1000 * readTimeout > upYunConfig.readTimeout)
-            upYunConfig.readTimeout = 1000 * readTimeout;
+        UpYunConfig upYunConfig = new UpYunConfig(httpsConfigEnabled);
+        if (1000 * connectTimeout > upYunConfig.getConnectTimeout())
+            upYunConfig.setConnectTimeout(1000 * connectTimeout);
+        if (1000 * readTimeout > upYunConfig.getReadTimeout())
+            upYunConfig.setReadTimeout(1000 * readTimeout);
         return upYunConfig;
     }
 
@@ -216,6 +241,8 @@ public class QSuitsEntry {
             clientConfig.setSocketTimeout(1000 * readTimeout);
         if (1000 * requestTimeout > clientConfig.getRequestTimeout())
             clientConfig.setRequestTimeout(1000 * requestTimeout);
+        if (httpsConfigEnabled) clientConfig.setProtocol(com.amazonaws.Protocol.HTTPS);
+        else clientConfig.setProtocol(com.amazonaws.Protocol.HTTP);
         return clientConfig;
     }
 
@@ -231,6 +258,7 @@ public class QSuitsEntry {
             obsConfiguration.setSocketTimeout(1000 * readTimeout);
 //        if (1000 * requestTimeout > obsConfiguration.getConnectionRequestTimeout())
 //            obsConfiguration.setConnectionRequestTimeout(1000 * requestTimeout);
+        obsConfiguration.setHttpsOnly(httpsConfigEnabled);
         return obsConfiguration;
     }
 
@@ -244,6 +272,8 @@ public class QSuitsEntry {
             bosClientConfiguration.setConnectionTimeoutInMillis(1000 * connectTimeout);
         if (1000 * readTimeout > bosClientConfiguration.getSocketTimeoutInMillis())
             bosClientConfiguration.setSocketTimeoutInMillis(1000 * readTimeout);
+        if (httpsConfigEnabled) bosClientConfiguration.setProtocol(com.baidubce.Protocol.HTTPS);
+        else bosClientConfiguration.setProtocol(com.baidubce.Protocol.HTTP);
         return bosClientConfiguration;
     }
 
@@ -298,7 +328,7 @@ public class QSuitsEntry {
     public DefaultFileContainer getDefaultFileContainer() throws IOException {
         String path = commonParams.getPath();
         Map<String, Map<String, String>> directoriesMap = commonParams.getPathConfigMap();
-        List<String> antiDirectories = commonParams.getAntiDirectories();
+        List<String> antiDirectories = commonParams.getAntiPrefixes();
         boolean keepDir = commonParams.getKeepDir();
         DefaultFileContainer defaultFileContainer = new DefaultFileContainer(path, directoriesMap, antiDirectories,
                 keepDir, indexMap, null, unitLen, threads);
@@ -630,20 +660,7 @@ public class QSuitsEntry {
         String ignore = entryParam.getValue("ignore-same-key", "false").trim();
         ParamsUtils.checked(ignore, "ignore-same-key", "(true|false)");
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        com.qiniu.storage.Region region = "".equals(regionStr) ?
-                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, toBucket))
-                : CloudApiUtils.getQiniuRegion(regionStr);
-        String rsDomain = entryParam.getValue("rs-domain", null);
-        String apiDomain = entryParam.getValue("api-domain", null);
-        if (rsDomain != null || apiDomain != null) {
-            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
-            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
-            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
-        }
-        Configuration configuration = new Configuration(region);
-        if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
-        if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
-        if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr);
         AsyncFetch processor = single ? new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix) : new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix, savePath);
@@ -741,20 +758,7 @@ public class QSuitsEntry {
         if (toBucket.equals(bucket) && "qiniu".equals(source))
             throw new IOException("the to-bucket can not be same as bucket if source is qiniu.");
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        com.qiniu.storage.Region region = "".equals(regionStr) ?
-                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, toBucket))
-                : CloudApiUtils.getQiniuRegion(regionStr);
-        String rsDomain = entryParam.getValue("rs-domain", null);
-        String apiDomain = entryParam.getValue("api-domain", null);
-        if (rsDomain != null || apiDomain != null) {
-            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
-            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
-            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
-        }
-        Configuration configuration = new Configuration(region);
-        if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
-        if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
-        if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr);
         return single ? new MirrorFile(ak, sk, configuration, toBucket) : new MirrorFile(ak, sk, configuration, toBucket, savePath);
     }
 
@@ -801,9 +805,9 @@ public class QSuitsEntry {
         if (region == null || "".equals(region)) region = CloudApiUtils.getTenCosRegion(secretId, secretKey, tenBucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, tenBucket, region,
+        return single ? new com.qiniu.process.tencent.PrivateUrl(secretId, secretKey, tenBucket, region, httpsConfigEnabled,
                 1000 * Long.parseLong(expires), getQueriesMap()) : new com.qiniu.process.tencent.PrivateUrl(secretId,
-                secretKey, tenBucket, region, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
+                secretKey, tenBucket, region, httpsConfigEnabled,1000 * Long.parseLong(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.aliyun.PrivateUrl getAliyunPrivateUrl(boolean single) throws IOException {
@@ -817,8 +821,11 @@ public class QSuitsEntry {
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getAliOssRegion(accessId, accessSecret, aliBucket);
         if (!endPoint.matches("https?://.+")) {
-            if (endPoint.startsWith("oss-")) endPoint = "http://" + endPoint + ".aliyuncs.com";
-            else endPoint = "http://oss-" + endPoint + ".aliyuncs.com";
+            if (endPoint.startsWith("oss-")) {
+                endPoint = String.join(endPoint, httpsConfigEnabled ? "https://" : "http://", ".aliyuncs.com");
+            } else {
+                endPoint = String.join(endPoint, httpsConfigEnabled ? "https://oss-" : "http://oss-", ".aliyuncs.com");
+            }
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
@@ -841,9 +848,9 @@ public class QSuitsEntry {
             region = CloudApiUtils.getS3Region(accessId, secretKey, s3Bucket);
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
-        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region,
+        return single ? new com.qiniu.process.aws.PrivateUrl(accessId, secretKey, s3Bucket, endpoint, region, httpsConfigEnabled,
                 1000 * Long.parseLong(expires), getQueriesMap()) : new com.qiniu.process.aws.PrivateUrl(accessId,
-                secretKey, s3Bucket, endpoint, region, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
+                secretKey, s3Bucket, endpoint, region, httpsConfigEnabled, 1000 * Long.parseLong(expires), getQueriesMap(), savePath);
     }
 
     private com.qiniu.process.huawei.PrivateUrl getHuaweiPrivateUrl(boolean single) throws IOException {
@@ -857,8 +864,11 @@ public class QSuitsEntry {
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getHuaweiObsRegion(accessId, secretKey, huaweiBucket);
         if (!endPoint.matches("https?://.+")) {
-            if (endPoint.startsWith("obs.")) endPoint = "http://" + endPoint + ".myhuaweicloud.com";
-            else endPoint = "http://obs." + endPoint + ".myhuaweicloud.com";
+            if (endPoint.startsWith("obs.")) {
+                endPoint = String.join(endPoint, httpsConfigEnabled ? "https://" : "http://", ".myhuaweicloud.com");
+            } else {
+                endPoint = String.join(endPoint, httpsConfigEnabled ? "https://obs." : "http://obs.", ".myhuaweicloud.com");
+            }
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
@@ -879,7 +889,7 @@ public class QSuitsEntry {
         String endPoint = regionName == null || regionName.isEmpty() ? entryParam.getValue("region", regionName) : regionName;
         if (endPoint == null || "".equals(endPoint)) endPoint = CloudApiUtils.getBaiduBosRegion(accessId, secretKey, baiduBucket);
         if (!endPoint.matches("https?://.+")) {
-            endPoint = "http://" + endPoint + ".bcebos.com";
+            endPoint = String.join(endPoint, httpsConfigEnabled ? "https://" : "http://", ".bcebos.com");
         }
         String expires = entryParam.getValue("expires", "3600").trim();
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
@@ -1056,8 +1066,9 @@ public class QSuitsEntry {
         String dir = entryParam.getValue("is-dir", "false").trim();
         ParamsUtils.checked(dir, "is-dir", "(true|false)");
         boolean isDir = Boolean.parseBoolean(dir);
-        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, isDir, false)
-                : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, isDir, false, savePath);
+        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
+                isDir, false) : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
+                domain, urlIndex, isDir, false, savePath);
     }
 
     private ILineProcess<Map<String, String>> getCdnPrefetch(Map<String, String> indexMap, boolean single) throws IOException {
@@ -1065,8 +1076,9 @@ public class QSuitsEntry {
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
         String urlIndex = indexMap.containsValue("url") ? "url" : null;
-        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, false, true)
-                : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, false, true, savePath);
+        return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
+                false, true) : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
+                domain, urlIndex, false, true, savePath);
     }
 
     private ILineProcess<Map<String, String>> getFetch(Map<String, String> indexMap, boolean single) throws IOException {
@@ -1084,20 +1096,7 @@ public class QSuitsEntry {
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        com.qiniu.storage.Region region = "".equals(regionStr) ?
-                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, toBucket))
-                : CloudApiUtils.getQiniuRegion(regionStr);
-        String rsDomain = entryParam.getValue("rs-domain", null);
-        String apiDomain = entryParam.getValue("api-domain", null);
-        if (rsDomain != null || apiDomain != null) {
-            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
-            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
-            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
-        }
-        Configuration configuration = new Configuration(region);
-        if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
-        if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
-        if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr);
         return single ? new FetchFile(ak, sk, configuration, toBucket, protocol, domain, urlIndex, addPrefix, rmPrefix)
                 : new FetchFile(ak, sk, configuration, toBucket, protocol, domain, urlIndex, addPrefix, rmPrefix, savePath);
     }
@@ -1132,20 +1131,7 @@ public class QSuitsEntry {
             }
         }
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        com.qiniu.storage.Region region = "".equals(regionStr) ?
-                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, toBucket))
-                : CloudApiUtils.getQiniuRegion(regionStr);
-        String rsDomain = entryParam.getValue("rs-domain", null);
-        String apiDomain = entryParam.getValue("api-domain", null);
-        if (rsDomain != null || apiDomain != null) {
-            com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder(region);
-            if (rsDomain != null) region = builder.rsHost(rsDomain).build();
-            if (apiDomain != null) region = builder.apiHost(apiDomain).build();
-        }
-        Configuration configuration = new Configuration(region);
-        if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
-        if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
-        if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
+        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr);
         return single ? new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex, host, addPrefix, rmPrefix,
                 toBucket, expires, policy, params) : new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex,
                 host, addPrefix, rmPrefix, toBucket, expires, policy, params, savePath);

@@ -49,7 +49,7 @@ private=
 |private| 数据源私有类型|是否是对私有空间资源进行同步访问上传，选择对应的私有类型，参考[私有访问](#资源需要私有签名)|  
 
 ### 超时时间
-timeout 参数可以通过全局的 timeout 来设置，参考：[超时设置](../README.md#7-超时设置)  
+timeout 参数可以通过全局的 timeout 来设置，参考：[网络设置](../README.md#7-网络设置)  
 
 ### 关于 url-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
