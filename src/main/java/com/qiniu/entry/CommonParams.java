@@ -1142,14 +1142,14 @@ public class CommonParams {
     private void setUnitLen() throws IOException {
         String unitLen = entryParam.getValue("unit-len", "-1").trim();
         if (unitLen.startsWith("-")) {
-            if (isSelfUpload) this.unitLen = 3;
-            if ("qiniu".equals(source) || "local".equals(source)) this.unitLen = 10000;
+            if (isSelfUpload) this.unitLen = 20;
+            else if ("qiniu".equals(source)) this.unitLen = 10000;
             else this.unitLen = 1000;
         } else {
             ParamsUtils.checked(unitLen, "unit-len", "\\d+");
             this.unitLen = Integer.parseInt(unitLen);
             if (isSelfUpload && this.unitLen > 100) {
-                throw new IOException("file upload shouldn't has too big unit-len, suggest setting unit-len smaller than 100.");
+                throw new IOException("file upload shouldn't have too big unit-len, suggest to set unit-len smaller than 100.");
             }
         }
     }
@@ -1243,20 +1243,17 @@ public class CommonParams {
         } else {
             File file = new File(savePath);
             File[] files = file.listFiles();
-            boolean isOk = false;
+            boolean isOk;
             if (files != null && files.length > 0) {
-                for (File file1 : files) {
-                    if (file1.length() > 0) {
-                        if (file1.getName().startsWith(source) || (!"".equals(process) && file1.getName().startsWith(process))) {
-                            isOk = true;
-                            break;
-                        }
-                    }
+                if ("".equals(process)) {
+                    isOk = Arrays.asList(files).parallelStream().anyMatch(f -> f.getName().startsWith(source));
+                } else {
+                    isOk = Arrays.asList(files).parallelStream().anyMatch(f -> f.getName().startsWith(source) || f.getName().startsWith(process));
                 }
                 if (isOk) {
                     if (pathConfigMap == null || pathConfigMap.size() <= 0) {
                         throw new IOException(String.format("please change the save-path \"%s\", " +
-                                "because there are last listed files, for not cover them.", savePath));
+                                "because there are remained files from last job, for not cover them.", savePath));
                     }
                 } else {
                     throw new IOException(String.format("please change save-path \"%s\" because it's not empty.", savePath));

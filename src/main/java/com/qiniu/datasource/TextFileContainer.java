@@ -69,7 +69,7 @@ public class TextFileContainer extends TextContainer<Map<String, String>> {
         if (linesNumber < threads * 2) {
             return new ArrayList<ITextReader>(){{ add(new TextFileReader(file, null, unitLen)); }};
         }
-        long avgLines = linesNumber / threads;
+        long avgLines = (linesNumber + threads - 1) / threads;
         long avgSize = avgLines * lineSize;
         RandomAccessFile[] accessFiles = new RandomAccessFile[threads];
         accessFiles[0] = new RandomAccessFile(file, "r");

@@ -131,6 +131,7 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
         Map<String, String> map = urisMap.get(reader.getName());
         JsonObject json = map != null ? JsonUtils.toJsonObject(map) : (lastLine != null ? new JsonObject() : null);
         while (lastLine != null) {
+            if (stopped) break;
             if (LocalDateTime.now(DatetimeUtils.clock_Default).isAfter(pauseDateTime)) {
                 synchronized (object) {
                     object.wait();
@@ -146,7 +147,6 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
                     if (retry == 0) throw e;
                 }
             }
-            statistics.addAndGet(srcList.size());
             convertedList = converter.convertToVList(srcList);
             if (converter.errorSize() > 0) saver.writeError(converter.errorLines(), false);
             if (stringConverter != null) {
@@ -166,6 +166,8 @@ public abstract class TextContainer<T> extends DatasourceActor implements IDataS
                     if (e.response != null) e.response.close();
                 }
             }
+            statistics.addAndGet(srcList.size());
+            if (stopped) break;
             lastLine = reader.currentEndLine();
             json.addProperty("start", lastLine);
             recordLister(reader.getName(), json.toString());
