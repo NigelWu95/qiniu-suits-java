@@ -136,11 +136,11 @@ public class QSuitsEntry {
             qiniuAccessKey = entryParam.getValue("ak").trim();
             qiniuSecretKey = entryParam.getValue("sk").trim();
         }
-        return getDefaultQiniuConfig(qiniuAccessKey, qiniuSecretKey, regionName);
+        return getDefaultQiniuConfig(qiniuAccessKey, qiniuSecretKey, regionName, bucket);
     }
 
-    private Configuration getDefaultQiniuConfig(String ak, String sk, String regionName) throws IOException {
-        com.qiniu.storage.Region region = null;
+    private Configuration getDefaultQiniuConfig(String ak, String sk, String regionName, String bucket) throws IOException {
+        com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionName);
         String rsfDomain = entryParam.getValue("rsf-domain", null);
         String rsDomain = entryParam.getValue("rs-domain", null);
         String apiDomain = entryParam.getValue("api-domain", null);
@@ -149,10 +149,11 @@ public class QSuitsEntry {
             if (rsfDomain != null) region = builder.rsfHost(rsfDomain).build();
             if (rsDomain != null) region = builder.rsHost(rsDomain).build();
             if (apiDomain != null) region = builder.apiHost(apiDomain).build();
+        } else {
+            region = (regionName == null || "".equals(regionName)) ?
+                    CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, bucket))
+                    : CloudApiUtils.getQiniuRegion(regionName);
         }
-        if (region == null) region = (regionName == null || "".equals(regionName)) ?
-                CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, bucket))
-                : CloudApiUtils.getQiniuRegion(regionName);
         Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
@@ -161,8 +162,8 @@ public class QSuitsEntry {
         return configuration;
     }
 
-    private Configuration getNewQiniuConfig() {
-        com.qiniu.storage.Region region = null;
+    private Configuration getNewQiniuConfig() throws IOException {
+        com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionName);
         String rsfDomain = entryParam.getValue("rsf-domain", null);
         String rsDomain = entryParam.getValue("rs-domain", null);
         String apiDomain = entryParam.getValue("api-domain", null);
@@ -172,7 +173,7 @@ public class QSuitsEntry {
             if (rsDomain != null) region = builder.rsHost(rsDomain).build();
             if (apiDomain != null) region = builder.apiHost(apiDomain).build();
         }
-        Configuration configuration = region == null ? new Configuration() : new Configuration(region);
+        Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
         if (readTimeout> Constants.READ_TIMEOUT) configuration.readTimeout = readTimeout;
         if (requestTimeout > Constants.WRITE_TIMEOUT) configuration.writeTimeout = requestTimeout;
@@ -660,7 +661,7 @@ public class QSuitsEntry {
         String ignore = entryParam.getValue("ignore-same-key", "false").trim();
         ParamsUtils.checked(ignore, "ignore-same-key", "(true|false)");
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr);
+        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr, toBucket);
         AsyncFetch processor = single ? new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix) : new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix, savePath);
@@ -758,7 +759,7 @@ public class QSuitsEntry {
         if (toBucket.equals(bucket) && "qiniu".equals(source))
             throw new IOException("the to-bucket can not be same as bucket if source is qiniu.");
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr);
+        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr, toBucket);
         return single ? new MirrorFile(ak, sk, configuration, toBucket) : new MirrorFile(ak, sk, configuration, toBucket, savePath);
     }
 
@@ -1096,7 +1097,7 @@ public class QSuitsEntry {
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr);
+        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr, toBucket);
         return single ? new FetchFile(ak, sk, configuration, toBucket, protocol, domain, urlIndex, addPrefix, rmPrefix)
                 : new FetchFile(ak, sk, configuration, toBucket, protocol, domain, urlIndex, addPrefix, rmPrefix, savePath);
     }
@@ -1131,7 +1132,7 @@ public class QSuitsEntry {
             }
         }
         String regionStr = entryParam.getValue("qiniu-region", regionName).trim();
-        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr);
+        Configuration configuration = getDefaultQiniuConfig(ak, sk, regionStr, toBucket);
         return single ? new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex, host, addPrefix, rmPrefix,
                 toBucket, expires, policy, params) : new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex,
                 host, addPrefix, rmPrefix, toBucket, expires, policy, params, savePath);

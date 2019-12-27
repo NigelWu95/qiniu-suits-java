@@ -16,6 +16,9 @@ public class DefaultFileContainer extends FileContainer<FileInfo, Map<String, St
                                 List<String> antiDirectories, boolean keepDir, Map<String, String> indexMap,
                                 List<String> fields, int unitLen, int threads) throws IOException {
         super(path, directoriesMap, antiDirectories, keepDir, indexMap, fields, unitLen, threads);
+        FileInfo test = new FileInfo();
+        test.filepath = "test";
+        ConvertingUtils.toPair(test, indexMap, new StringMapPair());
     }
 
     @Override

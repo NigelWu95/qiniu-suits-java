@@ -277,7 +277,7 @@ public final class CloudApiUtils {
     }
 
     public static Region getQiniuRegion(String regionName) throws IOException {
-        if (regionName == null) return Region.autoRegion();
+        if (regionName == null || "".equals(regionName)) return Region.autoRegion();
         switch (regionName) {
             case "z0":
             case "huadong":
