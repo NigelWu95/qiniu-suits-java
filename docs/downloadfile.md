@@ -42,6 +42,9 @@ private=
 queries 参数用于设置 url 的后缀或 ?+参数部分，资源下载可能需要下载不同格式或尺寸的如图片文件，因此可以通过一些图片处理样式或参数来设置对处理之后的
 图片进行下载。当设置 private（私有签名）的情况下，该参数会使用在 privateurl 操作中（因为 privateurl 操作在前，当前操作在后）。  
 
+### 下载超时时间
+timeout 参数可以通过全局的 timeout 来设置，参考：[网络设置](../README.md#7-网络设置)  
+
 ### 关于 url-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
 key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置。  
