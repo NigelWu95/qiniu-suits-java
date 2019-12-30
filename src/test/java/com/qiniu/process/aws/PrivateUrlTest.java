@@ -20,7 +20,7 @@ public class PrivateUrlTest {
         String bucket = "7zmz4b";
         String region = "cn-east-1";
         String endpoint = "http://s3-cn-east-1.qiniucs.com";
-        PrivateUrl privateUrl = new PrivateUrl(accessKeyId, accessKeySecret, bucket, endpoint, region, 3600000, null, "~/Downloads");
+        PrivateUrl privateUrl = new PrivateUrl(accessKeyId, accessKeySecret, bucket, endpoint, region, false, 3600000, null, "~/Downloads");
         String result = privateUrl.singleResult(new HashMap<String, String>(){{
             put("key", "0000021");
         }});

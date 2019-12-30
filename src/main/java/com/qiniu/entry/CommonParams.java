@@ -1249,6 +1249,8 @@ public class CommonParams {
             savePath = "local".equals(source) ? (path.endsWith(FileUtils.pathSeparator) ?
                     path.substring(0, path.length() - 1) : path) + "-result" : bucket;
             savePath = savePath.substring(savePath.lastIndexOf(FileUtils.pathSeparator) + 1);
+        } else {
+            savePath = FileUtils.convertToRealPath(savePath);
         }
         if (CloudApiUtils.isFileSource(source) && FileUtils.convertToRealPath(path).equals(FileUtils.convertToRealPath(savePath))) {
             throw new IOException(String.format("the save-path \"%s\" can not be same as path.", savePath));

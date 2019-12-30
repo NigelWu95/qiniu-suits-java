@@ -19,7 +19,7 @@ public class PrivateUrlTest {
         String accessKeySecret = propertiesFile.getValue("ten-secret");
         String bucket = propertiesFile.getValue("bucket");
         String region = "ap-shanghai";
-        PrivateUrl privateUrl = new PrivateUrl(accessKeyId, accessKeySecret, bucket, region, 3600, null, "~/Downloads");
+        PrivateUrl privateUrl = new PrivateUrl(accessKeyId, accessKeySecret, bucket, region, false, 3600, null, "~/Downloads");
         String result = privateUrl.singleResult(new HashMap<String, String>(){{
             put("key", "24790f63-0936-44c4-8695-a6d6b1dd8d91.jpg");
         }});

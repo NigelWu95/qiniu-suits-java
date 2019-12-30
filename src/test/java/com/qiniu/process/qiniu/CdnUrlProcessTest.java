@@ -1,6 +1,7 @@
 package com.qiniu.process.qiniu;
 
 import com.qiniu.config.PropertiesFile;
+import com.qiniu.storage.Configuration;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class CdnUrlProcessTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
-        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, null, null, "url", false, false);
+        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, new Configuration(), null, null, "url", false, false);
         String result = cdnUrlProcess.singleResult(new HashMap<String, String>(){{
             put("url", "http://xxx.cn/upload/24790f63-0936-44c4-8695-a6d6b1dd8d91.jpg");
         }});
@@ -30,7 +31,7 @@ public class CdnUrlProcessTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
-        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, null, null, "url", true, false,
+        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, new Configuration(), null, null, "url", true, false,
                 "/Users/wubingheng/Downloads/refresh");
         List<Map<String, String>> list = new ArrayList<>();
 //        list.add(new HashMap<String, String>(){{
@@ -64,7 +65,7 @@ public class CdnUrlProcessTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
-        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, null, null, "url", false, true,
+        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, new Configuration(), null, null, "url", false, true,
                 "/Users/wubingheng/Downloads/refresh");
         List<Map<String, String>> list = new ArrayList<>();
         list.add(new HashMap<String, String>(){{
@@ -85,7 +86,7 @@ public class CdnUrlProcessTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
-        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, null, null, "url", false, true,
+        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, new Configuration(), null, null, "url", false, true,
                 "/Users/wubingheng/Downloads/refresh");
         System.out.println(cdnUrlProcess);
         CdnUrlProcess cdnUrlProcess1 = cdnUrlProcess.clone();
