@@ -125,7 +125,8 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
     @Override
     public void changeSaveOrder(String order) throws IOException {
         try {
-            this.fileSaveMapper.changePrefixAndSuffix(processName, order);
+            if (nextProcessor != null) nextProcessor.changeSaveOrder(order);
+            else fileSaveMapper.changePrefixAndSuffix(processName, order);
         } catch (NullPointerException e) {
             throw new IOException("instance without savePath can not call changeSaveOrder method.");
         }
@@ -148,7 +149,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
             } else if (filter == null) { // 如果是关闭了那么 filter 应该为 null
                 throw new IOException("input is empty or the processor may be already closed.");
             } else {
-                throw new IOException("instance without savePath can not call this batch process method.");
+                throw new IOException(e.getMessage());
             }
         } catch (IOException e) {
             throw e;
@@ -182,8 +183,22 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         // 默认在不进行进一步处理的情况下直接保存结果，如果需要进一步处理则不保存过滤的结果。
         if (nextProcessor == null) {
             List<String> writeList = typeConverter.convertToVList(filterList);
-            if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
-            if (typeConverter.errorSize() > 0) fileSaveMapper.writeError(typeConverter.errorLines(), false);
+            try {
+                if (writeList.size() > 0) fileSaveMapper.writeSuccess(String.join("\n", writeList), false);
+                if (typeConverter.errorSize() > 0) fileSaveMapper.writeError(typeConverter.errorLines(), false);
+            } catch (NullPointerException e) {
+                if (canceled) {
+    //                // nothing to do
+                } else if (filter == null) { // 如果是关闭了那么 filter 应该为 null
+                    throw new IOException("input is empty or the processor may be already closed.");
+                } else {
+                    throw new IOException("instance without savePath can not call this batch process method.");
+                }
+            } catch (IOException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IOException(e.getMessage());
+            }
         } else {
             nextProcessor.processLine(filterList);
         }
@@ -194,6 +209,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         filter = null;
         if (nextProcessor != null) nextProcessor.closeResource();
         savePath = null;
+        saveIndex = null;
         if (fileSaveMapper != null) fileSaveMapper.closeWriters();
         fileSaveMapper = null;
         typeConverter = null;
