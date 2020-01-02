@@ -40,7 +40,7 @@ public class StatFile extends Base<Map<String, String>> {
                     String format, String separator, List<String> rmFields, int saveIndex) throws IOException {
         super("stat", accessKey, secretKey, bucket, savePath, saveIndex);
         set(configuration, rmFields, format, separator);
-        this.batchSize = 1000;
+        this.batchSize = 100;
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());

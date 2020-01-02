@@ -185,7 +185,9 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             batches = null;
             lines = null;
             cdnApplier = null;
-            if (saveIndex != null) saveIndex.decrementAndGet();
+            saveIndex = null;
+        } else {
+            saveIndex.decrementAndGet();
         }
     }
 }
