@@ -11,3 +11,11 @@ release_jar_to_devtools:
 
 clean_logs:
 	rm -rf logs*
+
+clean:
+	mvn clean
+
+build:
+	mvn package -Dmaven.test.skip=true
+	[ -d ~/.qsuits ] || mkdir ~/.qsuits
+	cp target/qsuits-$(version)-jar-with-dependencies.jar ~/.qsuits/qsuits-$(version).jar
