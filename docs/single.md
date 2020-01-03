@@ -55,7 +55,7 @@ process 提供的参数用法，具体可参见 process 的文档）包括要处
 ```
 ##### 9 对设置了镜像源的空间资源进行镜像更新 [mirror](mirror.md)  
 ```
-➜ ~ qsuits -s -d -process=mirror -bucket=temp -key=10.mp4
+➜ ~ qsuits -s -d -process=mirror -to-bucket=temp -key=10.mp4
 Exception in thread "main" com.qiniu.common.QiniuException: https://iovip.qbox.me/prefetch/dGVtcDoxMC5tcDQ=  
 {ResponseInfo:com.qiniu.http.Response@365c30cc,status:478, reqId:vewAAAAqlUx1-qQV, xlog:X-Log, xvia:, adress:iovip.qbox.me/218.98.28.24:443, duration:0.000000 s, error:httpGet url failed: E502}  
 {"error":"httpGet url failed: E502"}
@@ -158,4 +158,11 @@ test.py	200
 ```
 ➜ ~ qsuits -d -s -process=metadata -bucket=temp -key=test.py -meta.Cache-Control="public, max-age=3600"
 test.py	200
+```  
+##### 25 CDN 预取和刷新 [cdn](cdn.md)
+```
+➜ ~ qsuits -d -s -url=http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar -process=cdnprefetch
+http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar	{"code":200,"error":"success","requestId":"5e0f9363d308f632d9ac7cd2","taskIds":{"http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar":"5e0f9363d308f632d9ac7cd3"},"invalidUrls":null,"quotaDay":100,"surplusDay":89}
+➜ ~ qsuits -d -s -url=http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar -process=cdnrefresh
+http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar	{"code":200,"error":"success","requestId":"5e0f94ba43d72330d2ac2d64","taskIds":{"http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar":"5e0f94ba43d72330d2ac2d65"},"invalidUrls":null,"invalidDirs":null,"urlQuotaDay":100,"urlSurplusDay":89,"dirQuotaDay":100,"dirSurplusDay":100}
 ```  

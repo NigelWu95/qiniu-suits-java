@@ -1253,7 +1253,7 @@ public class CommonParams {
         savePath = entryParam.getValue("save-path", "").trim();
         if ("".equals(savePath)) {
             savePath = "local".equals(source) ? (path.endsWith(FileUtils.pathSeparator) ?
-                    path.substring(0, path.length() - 1) : path) + "-result" : bucket;
+                    path.substring(0, path.length() - 1) : path) + "-result" : (bucket == null ? "" : bucket);
             savePath = savePath.substring(savePath.lastIndexOf(FileUtils.pathSeparator) + 1);
         } else {
             savePath = FileUtils.convertToRealPath(savePath);
