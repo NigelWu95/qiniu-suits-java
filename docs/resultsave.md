@@ -22,9 +22,8 @@ rm-fields=
 ### 关于 save-total  
 （1）用于选择是否直接保存数据源完整输出结果，针对存在过滤条件或下一步处理过程时是否需要保存原始数据，如 bucket 的 list 操作需要在列举出结果之后再针
     对字段进行过滤或者做删除，save-total=true 则表示保存列举出来的完整数据，而过滤的结果会单独保存，如果只需要过滤之后的数据，则设置为 false，如
-    果是删除等操作，通常删除结果会直接保存文件名和删除结果，原始数据也不需要保存。  
-（1）本地文件数据源时默认如果存在 process 或者 filter 则设置 save-total=false，反之则设置 save-total=true（说明可能是单纯格式转换）。  
-（2）云存储数据源时默认设置 save-total=true。  
+    果是删除等操作，通常删除结果会直接保存文件名和删除结果，原始数据也不需要保存则设置 save-total=false。  
+（2）如果存在 process 或者 filter 则默认设置 save-total=false，反之则 save-total=true（说明可能是单纯列举云存储资源或者本地数据格式转换）。  
 （3）保存结果的路径 **默认（save-path）使用 <bucket\>（云存储数据源情况下）名称或者 <path\>-result 来创建目录**。  
 
 ### 关于 save-format  

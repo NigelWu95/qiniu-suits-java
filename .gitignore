@@ -26,4 +26,4 @@ resources/.*
 assembly/
 .DS_Store
 
-logs/
+logs*

@@ -66,8 +66,8 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
     public void setBatchSize(int batchSize) throws IOException {
         if (!ProcessUtils.canBatch(processName)) {
             throw new IOException(processName + " is not support batch operation.");
-        } else if (batchSize > 1000 || batchSize < 1) {
-            throw new IOException("batch size must less than 1000 and more than 1.");
+        } else if (batchSize > 1000 || batchSize < 0) {
+            throw new IOException("batch size must less than 1000 and more than 0.");
         } else {
             this.batchSize = batchSize;
         }

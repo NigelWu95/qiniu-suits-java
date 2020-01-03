@@ -559,7 +559,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
     @Override
     public void export() throws Exception {
         String info = processor == null ? String.join(" ", "list files from path:", path) :
-                String.join(" ", "read files from path: ", path, "and", processor.getProcessName());
+                String.join(" ", "read files from path:", path, "and", processor.getProcessName());
         rootLogger.info("{} running...", info);
         rootLogger.info("order\tprefix\tquantity");
         showdownHook();

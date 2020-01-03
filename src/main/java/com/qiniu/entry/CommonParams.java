@@ -239,9 +239,9 @@ public class CommonParams {
             case "copy":
             case "move":
             case "rename":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key", ""));
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
                 indexMap.put("toKey", "toKey");
-                mapLine.put("toKey", entryParam.getValue("to-key", ""));
+                mapLine.put("toKey", entryParam.getValue("to-key", entryParam.getParamsMap().containsKey("to-key") ? "" : null));
                 break;
             case "download":
             case "fetch":
@@ -305,13 +305,13 @@ public class CommonParams {
                 setSaveSeparator();
                 break;
             case "qupload":
-                String key = entryParam.getValue("key", "");
+                String key = entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null);
                 if (!fromLine) mapLine.put("key", key);
-                String filepath = entryParam.getValue("filepath", "");
+                String filepath = entryParam.getValue("filepath", entryParam.getValue("path", ""));
                 if (!"".equals(filepath)) {
                     indexMap.put("filepath", "filepath");
                     mapLine.put("filepath", filepath);
-                } else if ("".equals(key)) {
+                } else if (key == null || "".equals(key)) {
                     throw new IOException("filepath and key shouldn't all be empty, file must be found with them.");
                 }
                 break;
@@ -1218,29 +1218,35 @@ public class CommonParams {
     private void setSaveTotal() throws IOException {
         String saveTotal = entryParam.getValue("save-total", "").trim();
         if ("".equals(saveTotal)) {
-            if (isStorageSource) {
-                saveTotal = "true";
-//（2）云存储数据源时如果无 process 则为 true，如果存在 process 但不包含 filter 设置时为 false，既存在 process 同时包含 filter 设置时为 true。
-//                if (process == null || "".equals(process)) {
-//                    saveTotal = "true";
-//                } else {
-//                    if (baseFilter != null || seniorFilter != null) saveTotal = "true";
-//                    else saveTotal = "false";
-//                }
+            if ((process != null && !"".equals(process))) {
+                this.saveTotal = "delete".equals(process);
             } else {
+                this.saveTotal = baseFilter == null && seniorFilter == null;
+            }
+//            if (isStorageSource) {
+//                this.saveTotal = true;
+//（2）云存储数据源时如果无 process 则 saveTotal 默认为 true，如果存在 process 则 saveTotal 默认为 false。
+//                if (process == null || "".equals(process)) {
+//                    this.saveTotal = true;
+//                } else {
+//                    if (baseFilter != null || seniorFilter != null) this.saveTotal = true;
+//                    else this.saveTotal = false;
+//                }
+//            } else {
 //                if (isSelfUpload) { // 自上传时将上传路径的路径等信息做下保存
-//                    saveTotal = "true";
+//                    this.saveTotal = true;
 //                }
 //                else
-                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) {
-                    saveTotal = "false";
-                } else {
-                    saveTotal = "true";
-                }
-            }
+//                if ((process != null && !"".equals(process)) || baseFilter != null || seniorFilter != null) {
+//                    this.saveTotal = false;
+//                } else {
+//                    this.saveTotal = true;
+//                }
+//            }
+        } else {
+            ParamsUtils.checked(saveTotal, "save-total", "(true|false)");
+            this.saveTotal = Boolean.parseBoolean(saveTotal);
         }
-        ParamsUtils.checked(saveTotal, "save-total", "(true|false)");
-        this.saveTotal = Boolean.parseBoolean(saveTotal);
     }
 
     private void setSavePath() throws IOException {
