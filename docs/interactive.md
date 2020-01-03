@@ -110,7 +110,7 @@ please input line data to process:
 
 ##### 14 对设置了镜像源的空间资源进行镜像更新 [mirror](mirror.md)  
 ```
-➜ ~ qsuits -i -d -process=mirror -bucket=temp
+➜ ~ qsuits -i -d -process=mirror -to-bucket=temp
 please input line data to process: 
 10.mp4
 https://iovip.qbox.me/prefetch/dGVtcDoxMC5tcDQ=	{ResponseInfo:com.qiniu.http.Response@453da22c,status:478, reqId:Zd8AAAATETyxqqQV, xlog:X-Log, xvia:, adress:iovip.qbox.me/115.231.100.199:443, duration:0.000000 s, error:httpGet url failed: E502}  	{"error":"httpGet url failed: E502"}
@@ -201,3 +201,13 @@ please input line data to process:
 test.py
 test.py	200
 ```  
+##### 25 CDN 预取和刷新 [cdn](cdn.md)
+```
+➜ ~ qsuits -d -i -process=cdnprefetch -url-index=0
+http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar
+http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar	{"code":200,"error":"success","requestId":"5e0f983e43d72330d2ac4066","taskIds":{"http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar":"5e0f983e43d72330d2ac4067"},"invalidUrls":null,"quotaDay":100,"surplusDay":88}
+➜ ~ qsuits -d -i -process=cdnrefresh -url-index=0
+http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar
+http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar	{"code":200,"error":"success","requestId":"5e0f987fae4f8427daac2612","taskIds":{"http://devtools.qiniu.com/qsuits-8.3.12-jar-with-dependencies.jar":"5e0f987fae4f8427daac2613"},"invalidUrls":null,"invalidDirs":null,"urlQuotaDay":100,"urlSurplusDay":88,"dirQuotaDay":100,"dirSurplusDay":100}
+```  
+
