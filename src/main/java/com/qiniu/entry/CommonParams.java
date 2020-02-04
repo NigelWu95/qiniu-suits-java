@@ -1275,9 +1275,11 @@ public class CommonParams {
                         throw new IOException(String.format("please change the save-path \"%s\", " +
                                 "because there are remained files from last job, for not cover them.", savePath));
                     }
-                } else {
-                    throw new IOException(String.format("please change save-path \"%s\" because it's not empty.", savePath));
                 }
+//                取消目录非空校验，因为结果文件的前缀也可以区分
+//                else {
+//                    throw new IOException(String.format("please change save-path \"%s\" because it's not empty.", savePath));
+//                }
             }
         }
     }
