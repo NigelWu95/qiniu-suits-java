@@ -236,12 +236,31 @@ public class CommonParams {
             mapLine = new HashMap<>();
         }
         switch (process) {
+            case "delete":
+            case "status":
+            case "lifecycle":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
+                break;
             case "copy":
             case "move":
             case "rename":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
                 indexMap.put("toKey", "toKey");
                 mapLine.put("toKey", entryParam.getValue("to-key", entryParam.getParamsMap().containsKey("to-key") ? "" : null));
+                break;
+            case "stat":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
+                saveFormat = entryParam.getValue("save-format", "tab").trim();
+                ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
+                setSaveSeparator();
+                break;
+            case "mime":
+                if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
+                String mime = entryParam.getValue("mime", "").trim();
+                if (!"".equals(mime)) {
+                    indexMap.put("mime", "mime");
+                    mapLine.put("mime", mime);
+                }
                 break;
             case "download":
             case "fetch":
@@ -298,12 +317,6 @@ public class CommonParams {
                     mapLine.put("id", id);
                 }
                 break;
-            case "stat":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
-                saveFormat = entryParam.getValue("save-format", "tab").trim();
-                ParamsUtils.checked(saveFormat, "save-format", "(csv|tab|json)");
-                setSaveSeparator();
-                break;
             case "qupload":
                 String key = entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null);
                 if (!fromLine) mapLine.put("key", key);
@@ -313,14 +326,6 @@ public class CommonParams {
                     mapLine.put("filepath", filepath);
                 } else if (key == null || "".equals(key)) {
                     throw new IOException("filepath and key shouldn't all be empty, file must be found with them.");
-                }
-                break;
-            case "mime":
-                if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
-                String mime = entryParam.getValue("mime", "").trim();
-                if (!"".equals(mime)) {
-                    indexMap.put("mime", "mime");
-                    mapLine.put("mime", mime);
                 }
                 break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
