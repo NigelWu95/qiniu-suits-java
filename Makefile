@@ -1,4 +1,4 @@
-version=8.3.14
+version=8.3.15
 
 package_no_test:
 	mvn package -Dmaven.test.skip=true
@@ -18,6 +18,6 @@ clean:
 	mvn clean
 
 build:
-	mvn package -Dmaven.test.skip=true
 	[ -d ~/.qsuits ] || mkdir ~/.qsuits
-	cp target/qsuits-$(version)-jar-with-dependencies.jar ~/.qsuits/qsuits-$(version).jar
+	[ -f target/qsuits-$(version)-jar-with-dependencies.jar ] || mvn package -Dmaven.test.skip=true
+	[ -f ~/.qsuits/qsuits-$(version).jar ] || cp target/qsuits-$(version)-jar-with-dependencies.jar ~/.qsuits/qsuits-$(version).jar

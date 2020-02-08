@@ -65,6 +65,7 @@ public class EntryMain {
         }
         if (paramsMap.containsKey("verify")) processVerify = Boolean.parseBoolean(paramsMap.get("verify"));
         boolean single = paramsMap.containsKey("single") && Boolean.parseBoolean(paramsMap.get("single"));
+        if (!single && paramsMap.containsKey("key") && !paramsMap.containsKey("path")) single = true;
         boolean interactive = paramsMap.containsKey("interactive") && Boolean.parseBoolean(paramsMap.get("interactive"));
         CommonParams commonParams = single ? new CommonParams(paramsMap) : new CommonParams(entryParam);
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
@@ -74,7 +75,13 @@ public class EntryMain {
             String process = processor.getProcessName();
             if (processor.getNextProcessor() != null) process = processor.getNextProcessor().getProcessName();
             if (ProcessUtils.isDangerous(process)) {
-                System.out.println("your last process is " + process + ", are you sure? (y/n): ");
+                if (single) {
+                    System.out.println("your process is " + process + ", are you sure? (y/n): ");
+                } else {
+                    String path = paramsMap.get("path");
+                    if (path == null || "".equals(path)) path = "qiniu://" + paramsMap.get("bucket");
+                    System.out.println("your last process is " + process + " for " + path + ", are you sure? (y/n): ");
+                }
                 Scanner scanner = new Scanner(System.in);
                 String an = scanner.next();
                 if (!an.equalsIgnoreCase("y") && !an.equalsIgnoreCase("yes")) {
