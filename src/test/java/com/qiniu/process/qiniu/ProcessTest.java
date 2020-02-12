@@ -25,7 +25,7 @@ public class ProcessTest {
 //                propertiesFile.getValue("bucket");
         moveFile = new MoveFile(accessKey, secretKey, new Configuration(), bucket, bucket, "to-key", null, null, true);
         statFile = new StatFile(accessKey, secretKey, new Configuration(), bucket, "tab", "\t", null);
-        qiniuPfop = new QiniuPfop(accessKey, secretKey, new Configuration(), bucket, null, null, null, "1");
+        qiniuPfop = new QiniuPfop(accessKey, secretKey, new Configuration(), bucket, null, null, false, null, null, "1");
     }
 
     @Test
