@@ -23,32 +23,37 @@ public class QiniuPfop extends Base<Map<String, String>> {
     private OperationManager operationManager;
 
     public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
-        super("pfop", accessKey, secretKey, bucket);
-        set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
-        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
-    }
-
-    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex, String savePath,
-                     int saveIndex) throws IOException {
-        super("pfop", accessKey, secretKey, bucket, savePath, saveIndex);
-        set(configuration, pipeline, pfopJsonPath, pfopConfigs, fopsIndex);
-        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
-        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
-    }
-
-    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
-                     String pfopJsonPath, List<JsonObject> pfopConfigs, String fopsIndex, String savePath)
-            throws IOException {
-        this(accessKey, secretKey, configuration, bucket, pipeline, pfopJsonPath, pfopConfigs, fopsIndex, savePath, 0);
-    }
-
-    private void set(Configuration configuration, String pipeline, String pfopJsonPath, List<JsonObject> pfopConfigs,
+                     String notifyURL, boolean force, String pfopJsonPath, List<JsonObject> pfopConfigs,
                      String fopsIndex) throws IOException {
+        super("pfop", accessKey, secretKey, bucket);
+        set(configuration, pipeline, notifyURL, force, pfopJsonPath, pfopConfigs, fopsIndex);
+        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
+    }
+
+    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
+                     String notifyURL, boolean force, String pfopJsonPath, List<JsonObject> pfopConfigs,
+                     String fopsIndex, String savePath, int saveIndex) throws IOException {
+        super("pfop", accessKey, secretKey, bucket, savePath, saveIndex);
+        set(configuration, pipeline, notifyURL, force, pfopJsonPath, pfopConfigs, fopsIndex);
+        this.operationManager = new OperationManager(Auth.create(accessKey, secretKey), configuration.clone());
+        CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
+    }
+
+    public QiniuPfop(String accessKey, String secretKey, Configuration configuration, String bucket, String pipeline,
+                     String notifyURL, boolean force, String pfopJsonPath, List<JsonObject> pfopConfigs,
+                     String fopsIndex, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, bucket, pipeline, notifyURL, force, pfopJsonPath, pfopConfigs,
+                fopsIndex, savePath, 0);
+    }
+
+    private void set(Configuration configuration, String pipeline, String notifyURL, boolean force, String pfopJsonPath,
+                     List<JsonObject> pfopConfigs, String fopsIndex) throws IOException {
         this.configuration = configuration;
-        this.pfopParams = new StringMap().putNotEmpty("pipeline", pipeline);
+        this.pfopParams = new StringMap()
+                .putNotEmpty("pipeline", pipeline)
+                .putNotEmpty("notifyURL", notifyURL)
+                .putWhen("force", 1, force);
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             this.pfopConfigs = pfopConfigs;
         } else if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {

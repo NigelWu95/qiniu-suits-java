@@ -15,6 +15,8 @@ sk=
 bucket=
 indexes=
 pipeline=
+notifyURL=
+force=
 force-public=
 fops-index=
 pfop-config=
@@ -28,7 +30,9 @@ pfop-config=
 |bucket| 字符串| 操作的资源原空间，当数据源为 qiniu 时无需再设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |pipeline| 字符串| 进行持久化数据处理的队列名称|  
-|force-public| true/false| 是否强制使用共有队列（会有性能影响）|  
+|notifyURL| URL 字符串| 进行持久化结果回调的服务器通知地址，接受七牛的 POST 回调请求|  
+|force| true/false| 持久化生成的文件名如果空间中已存在是否进行强制覆盖，默认为 false|  
+|force-public| true/false| 是否强制使用共有队列（会有性能影响），未指定 pipeline 的情况需要设置为 true|  
 |fops-index| 字符串| 转码命令索引（下标），pfop 操作时指定，明确指定文件名对应的转码命令，建议命令中携带 saveas 重命名指令否则使用默认名|  
 |pfop-config| 文件路径字符串| 进行转码和另存规则设置的 json 配置文件路径，可设置多个转码条件和指令，该配置会覆盖 fops-index 设置的转码命令，[配置写法](#pfop-config-配置文件)|  
 |cmd| 字符串| pfop 命令，如 avthumb/mp4，和 pfop-config 中的 cmd 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas 设置的方式|  

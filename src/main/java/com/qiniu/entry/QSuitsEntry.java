@@ -689,7 +689,7 @@ public class QSuitsEntry {
         String size = entryParam.getValue("size", "false").trim();
         ParamsUtils.checked(size, "size", "(true|false)");
         String combine = entryParam.getValue("combine", "true").trim();
-        ParamsUtils.checked(size, "combine", "(true|false)");
+        ParamsUtils.checked(combine, "combine", "(true|false)");
         String configJson = entryParam.getValue("pfop-config", "").trim();
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
         return single ? new PfopCommand(getNewQiniuConfig(), avinfoIndex, Boolean.parseBoolean(duration), Boolean.parseBoolean(size),
@@ -700,6 +700,9 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getPfop(Map<String, String> indexMap, boolean single) throws IOException {
         String pipeline = entryParam.getValue("pipeline", "").trim();
+        String notifyURL = entryParam.getValue("notifyURL", "").trim();
+        String force = entryParam.getValue("force", "false").trim();
+        ParamsUtils.checked(force, "force", "(true|false)");
         String forcePublic = entryParam.getValue("force-public", "false").trim();
         if (pipeline.isEmpty() && !"true".equals(forcePublic)) {
             throw new IOException("please set pipeline, if you don't want to use" +
@@ -708,10 +711,10 @@ public class QSuitsEntry {
         String configJson = entryParam.getValue("pfop-config", "").trim();
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
         String fopsIndex = indexMap.containsValue("fops") ? "fops" : null;
-        return single ? new QiniuPfop(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pipeline, configJson,
-                pfopConfigs, fopsIndex)
-                : new QiniuPfop(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pipeline, configJson, pfopConfigs,
-                fopsIndex, savePath);
+        return single ? new QiniuPfop(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pipeline, notifyURL,
+                Boolean.parseBoolean(force), configJson, pfopConfigs, fopsIndex)
+                : new QiniuPfop(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, pipeline, notifyURL,
+                Boolean.parseBoolean(force), configJson, pfopConfigs, fopsIndex, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfopResult(Map<String, String> indexMap, boolean single) throws IOException {
