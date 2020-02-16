@@ -26,7 +26,7 @@ rm-prefix=
 |bucket| 字符串| 操作的资源原空间，当数据源为 qiniu 时无需再设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |to-bucket| 字符串| 复制资源保存的目标空间|  
-|toKey-index| 字符串| copy 操作可选择设置的目标文件名索引（下标），需要手动指定才会进行解析|  
+|toKey-index| 字符串| copy 操作可选择设置的目标文件名索引（下标），未设置任何索引时根据 parse 类型默认为 1 或 "toKey"|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 copy 之后保存的文件名|  
 

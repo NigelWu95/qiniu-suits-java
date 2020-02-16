@@ -18,7 +18,7 @@ id-index=
 |-----|-------|-----|  
 |process=censorresult| 查询censor 内容审核结果时设置为censorresult| 表示查询 censor 内容审核结果操作|  
 |ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取|  
-|id-index| 字符串| 转码结果查询所需 jobId 的索引（下标），censorresult 操作时必须指定 |  
+|id-index| 字符串| 转码结果查询所需 jobId 的索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "id"|  
 
 ### 命令行方式
 ```

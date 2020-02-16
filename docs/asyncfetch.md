@@ -39,7 +39,7 @@ check-url=
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
 |domain| 域名字符串| 当数据源数据为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
-|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），需要手动指定才会进行解析|  
+|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "url"|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将得到的目标文件名去除存在的指定前缀后再作为保存的文件名|   
 |to-bucket|字符串| 保存抓取结果的空间名|  
@@ -55,7 +55,7 @@ check-url=
 |check-url| true/false|表示是否在提交任务之前对回调地址进行简单的 post 请求验证（无body的纯post请求），默认为 true，如果无需验证则设置为 false|  
 
 ### 关于 url-index 和 md5-index
-当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
+当使用 file 数据源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中含 url 的字段索引，未设置的情况下则使用
 key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，md5-index 为需要进行 md5 校验时输入 md5 值的字段下标，不设置则无效。  
 
 ### 命令行参数方式

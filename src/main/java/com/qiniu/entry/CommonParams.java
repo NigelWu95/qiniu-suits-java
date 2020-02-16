@@ -1000,6 +1000,7 @@ public class CommonParams {
             } else if (!indexes.startsWith("pre-")) {
                 throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
             }
+            indexMap.put(entryParam.getValue("filepath-index", "filepath").trim(), "filepath");
         } else { // 存储数据源的 keys 定义
             keys.addAll(ConvertingUtils.defaultFileFields);
             if ("upyun".equals(source)) {
@@ -1024,55 +1025,51 @@ public class CommonParams {
                 || "".equals(parse) || "object".equals(parse) || "file".equals(parse);
         setIndexes(keys, indexes, fieldIndex);
         boolean useDefault = "".equals(indexes);
-        if (ProcessUtils.needUrl(process))
-            setIndex(entryParam.getValue("url-index", "").trim(), "url");
-        if (ProcessUtils.needToKey(process)) {
-            setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
-            if (fieldIndex) {
-                if ("".equals(indexes) && !indexMap.containsKey("key")) indexMap.put("key", "key");
-            } else {
-                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
-            }
-        }
-        if (ProcessUtils.needFops(process)) {
-            setIndex(entryParam.getValue("fops-index", "").trim(), "fops");
-            if (fieldIndex) {
-                if (!indexMap.containsKey("key")) indexMap.put("key", "key");
-            } else {
-                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
-            }
-        }
-        if (ProcessUtils.needId(process))
-            setIndex(entryParam.getValue("id-index", "").trim(), "id");
-        if (ProcessUtils.needAvinfo(process)) {
-            setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
-            if (fieldIndex) {
-                if (!indexMap.containsKey("key")) indexMap.put("key", "key");
-            } else {
-                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
-            }
-        }
-        if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
-            setIndex(entryParam.getValue("filepath-index", fieldIndex ? "filepath" : "").trim(), "filepath");
-//            setIndex("parent", "parent");
-        }
-        if (indexMap.size() == 0) {
-//            useDefault = true;
-            if (isStorageSource) {
+        boolean zeroUsed = false;
+        if (useDefault) {
+            if (isStorageSource || isSelfUpload) {
                 for (String key : keys) indexMap.put(key, key);
-            } else if (isSelfUpload) {
-                for (int i = 0; i < keys.size(); i++) indexMap.put(String.valueOf(i), keys.get(i));
-            } else if (fieldIndex) {
-                indexMap.put("key", "key");
+            } else if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
+                String filepathIndex = entryParam.getValue("filepath-index", "").trim();
+                if ("".equals(filepathIndex)) {
+                    setIndex(fieldIndex ? "filepath" : "0", "filepath");
+                } else {
+                    zeroUsed = true;
+                    setIndex(filepathIndex, "filepath");
+                }
+            } else if (ProcessUtils.needUrl(process)) {
+                String urlIndex = entryParam.getValue("url-index", "").trim();
+                if ("".equals(urlIndex)) {
+                    setIndex(fieldIndex ? "url" : "0", "url");
+                } else {
+                    zeroUsed = true;
+                    setIndex(urlIndex, "url");
+                }
+            } else if (ProcessUtils.needId(process)) {
+                String idIndex = entryParam.getValue("id-index", "").trim();
+                if ("".equals(idIndex)) {
+                    setIndex(fieldIndex ? "id" : "0", "id");
+                } else {
+                    zeroUsed = true;
+                    setIndex(idIndex, "id");
+                }
             } else {
-                indexMap.put("0", "key");
+                if (fieldIndex) indexMap.put("key", "key");
+                else indexMap.put("0", "key");
+                if (ProcessUtils.needToKey(process))
+                    setIndex(entryParam.getValue("toKey-index", fieldIndex ? "toKey" : "1").trim(), "toKey");
+                if (ProcessUtils.needFops(process))
+                    setIndex(entryParam.getValue("fops-index", fieldIndex ? "fops" : "1").trim(), "fops");
+                if (ProcessUtils.needAvinfo(process))
+                    setIndex(entryParam.getValue("avinfo-index", fieldIndex ? "avinfo" : "1").trim(), "avinfo");
             }
         }
 
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "key" : "0", "key");
+                    if (zeroUsed) setIndex(fieldIndex ? "key" : "0", "key");
+                    else indexMap.put(fieldIndex ? "key" : "0", "key");
                 } else {
                     throw new IOException("f-[x] about key filter for file key must get the key's index in indexes settings.");
                 }
@@ -1116,7 +1113,8 @@ public class CommonParams {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
                     if (useDefault) {
-                        indexMap.put(fieldIndex ? "key" : "0", "key");
+                        if (zeroUsed) setIndex(fieldIndex ? "key" : "0", "key");
+                        else indexMap.put(fieldIndex ? "key" : "0", "key");
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                     }

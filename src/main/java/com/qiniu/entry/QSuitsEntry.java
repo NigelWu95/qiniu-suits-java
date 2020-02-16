@@ -650,7 +650,7 @@ public class QSuitsEntry {
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String host = entryParam.getValue("host", "").trim();
-        String md5Index = indexMap.containsValue("md5") ? "md5" : null;
+        String md5Index = entryParam.getValue("md5-index", "").trim();
         String callbackUrl = entryParam.getValue("callback-url", "").trim();
         String checkUrl = entryParam.getValue("check-url", "true").trim();
         if ("true".equals(checkUrl) && !"".equals(callbackUrl)) RequestUtils.checkCallbackUrl(callbackUrl);
@@ -665,7 +665,7 @@ public class QSuitsEntry {
         AsyncFetch processor = single ? new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix) : new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix, savePath);
-        if (!host.isEmpty() || md5Index != null || !callbackUrl.isEmpty() || !callbackBody.isEmpty() ||
+        if (!host.isEmpty() || !md5Index.isEmpty() || !callbackUrl.isEmpty() || !callbackBody.isEmpty() ||
                 !callbackBodyType.isEmpty() || !callbackHost.isEmpty() || "1".equals(type) || "true".equals(ignore)) {
             processor.setFetchArgs(host, md5Index, callbackUrl, callbackBody,
                     callbackBodyType, callbackHost, Integer.parseInt(type), Boolean.parseBoolean(ignore));
