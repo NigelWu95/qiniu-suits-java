@@ -40,7 +40,7 @@ check=
 |anti-prefixes| 文件目录列表| 表示上传目录下文件时排除某些名称前缀的子目录，支持以 `,` 分隔的列表，特殊字符同样需要转义符|  
 |ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取|  
 |bucket| 字符串| 上传到的资源原空间名称|  
-|filepath-index| 文件路径索引| 非必填字端，当直接上传 path 路径中的文件时无需设置，如果是通过读取文本文件每一行中的路径信息则需要设置|  
+|filepath-index| 文件路径索引| 非必填字端，当直接上传 path 路径中的文件时无需设置，如果是通过读取文本文件每一行中的路径信息则需要设置，未设置任何索引时根据 parse 类型默认为 0 或 "filepath"|  
 |parent-path|上级目录| 该参数通常和 filepath-index 同时使用，用于规定文本中的路径值拼接上层目录得到要上传的文件路径，通过 path 自动读取文件的情况下不需要设置该参数|  
 |record| true/false| 对于大于 4M 的文件会自动使用分片上传，该参数用于规定分片上传是否记录上传进度信息（断点续传作用），默认不开启|  
 |keep-path| true/false| 上传到空间的文件名（资源 key）是否保存从 path 开始的完整路径，默认为 true，则使用文件完整路径作为空间的资源 key|  
@@ -117,7 +117,7 @@ indexes=1
 
 ### 关于 filepath-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。filepath-index 表示输入行含 filepath 形式的文件路径，未设置的情
-况下则使用 key 字段加上 parent-path 的方式访问文件路径，key 下标用 indexes 参数设置。  
+况下则使用 key 字段加上 parent-path 的方式访问文件路径，key 下标用 indexes 参数设置，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
 
 ### 命令行参数方式
 ```

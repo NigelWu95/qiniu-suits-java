@@ -529,6 +529,7 @@ public class QSuitsEntry {
             case "qhash": processor = getQueryHash(indexes, single); break;
             case "stat": processor = getStatFile(single); break;
             case "privateurl": processor = getPrivateUrl(indexes, single); break;
+            case "publicurl": processor = getPublicUrl(single); break;
             case "mirror": processor = getMirrorFile(single); break;
             case "exportts": processor = getExportTs(indexes, single); break;
             case "tenprivate": processor = getTencentPrivateUrl(single); break;
@@ -545,9 +546,12 @@ public class QSuitsEntry {
             case "metadata": processor = getChangeMetadata(single); break;
             case "cdnrefresh": processor = getCdnRefresh(indexes, single); break;
             case "cdnprefetch": processor = getCdnPrefetch(indexes, single); break;
+            case "refreshquery": processor = getRefreshQuery(indexes, single); break;
+            case "prefetchquery": processor = getPrefetchQuery(indexes, single); break;
             case "fetch": processor = getFetch(indexes, single); break;
             case "syncupload": processor = getSyncUpload(indexes, single); break;
             case "filter": case "": break;
+            case "domainsofbucket": processor = getDomainsOfBucket(single); break;
             default: throw new IOException("unsupported process: " + process);
         }
         if (processor != null) {
@@ -650,7 +654,7 @@ public class QSuitsEntry {
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
         String host = entryParam.getValue("host", "").trim();
-        String md5Index = indexMap.containsValue("md5") ? "md5" : null;
+        String md5Index = entryParam.getValue("md5-index", "").trim();
         String callbackUrl = entryParam.getValue("callback-url", "").trim();
         String checkUrl = entryParam.getValue("check-url", "true").trim();
         if ("true".equals(checkUrl) && !"".equals(callbackUrl)) RequestUtils.checkCallbackUrl(callbackUrl);
@@ -665,7 +669,7 @@ public class QSuitsEntry {
         AsyncFetch processor = single ? new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix) : new AsyncFetch(ak, sk, configuration, toBucket, protocol, domain, urlIndex,
                 addPrefix, rmPrefix, savePath);
-        if (!host.isEmpty() || md5Index != null || !callbackUrl.isEmpty() || !callbackBody.isEmpty() ||
+        if (!host.isEmpty() || !md5Index.isEmpty() || !callbackUrl.isEmpty() || !callbackBody.isEmpty() ||
                 !callbackBodyType.isEmpty() || !callbackHost.isEmpty() || "1".equals(type) || "true".equals(ignore)) {
             processor.setFetchArgs(host, md5Index, callbackUrl, callbackBody,
                     callbackBodyType, callbackHost, Integer.parseInt(type), Boolean.parseBoolean(ignore));
@@ -751,6 +755,15 @@ public class QSuitsEntry {
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.parseLong(expires))
                 : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.parseLong(expires), savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getPublicUrl(boolean single) throws IOException {
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String queries = entryParam.getValue("queries", "").trim();
+        return single ? new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, queries)
+                : new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, queries, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
@@ -1085,6 +1098,26 @@ public class QSuitsEntry {
                 domain, urlIndex, false, true, savePath);
     }
 
+    private ILineProcess<Map<String, String>> getRefreshQuery(Map<String, String> indexMap, boolean single) throws IOException {
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        return single ? new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
+                false) : new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
+                domain, urlIndex, false, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getPrefetchQuery(Map<String, String> indexMap, boolean single) throws IOException {
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        return single ? new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
+                true) : new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
+                domain, urlIndex, true, savePath);
+    }
+
     private ILineProcess<Map<String, String>> getFetch(Map<String, String> indexMap, boolean single) throws IOException {
         String ak = qiniuAccessKey == null || qiniuAccessKey.isEmpty() ?
                 entryParam.getValue("qiniu-ak").trim() : qiniuAccessKey;
@@ -1139,5 +1172,10 @@ public class QSuitsEntry {
         return single ? new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex, host, addPrefix, rmPrefix,
                 toBucket, expires, policy, params) : new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex,
                 host, addPrefix, rmPrefix, toBucket, expires, policy, params, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getDomainsOfBucket(boolean single) throws IOException {
+        return single ? new DomainsOfBucket(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig())
+                : new DomainsOfBucket(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), savePath);
     }
 }

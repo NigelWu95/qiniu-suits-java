@@ -31,7 +31,8 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 - [x] 根据音视频资源的 avinfo 信息来生成转码指令 [pfopcmd 配置](docs/pfopcmd.md)  
 - [x] 对空间资源执行 pfop 请求 [pfop 配置](docs/pfop.md)  
 - [x] 通过 persistentId 查询 pfop 的结果 [pfopresult 配置](docs/pfopresult.md)  
-- [x] 对私有空间资源进行签名 [privateurl 配置](docs/privateurl.md)  
+- [x] 对私有空间资源进行签名，导出私有 url [privateurl 配置](docs/privateurl.md)  
+- [x] 对资源生成 url，导出公开 url [privateurl 配置](docs/publicurl.md)  
 - [x] 对 m3u8 的 http 资源进行读取导出其中的 ts 文件列表 [exportts 配置](docs/exportts.md)  
 - [x] 通过 http 下载资源到本地 [download 配置](docs/downloadfile.md)  
 - [x] 图片类型资源内容审核 [imagecensor 配置](docs/censor.md#图片审核)  
@@ -39,7 +40,9 @@ qiniu-suits-java 是一个多线程的云存储 api tools (base-qiniu)，通过�
 - [x] 内容审核结果查询 [censorresult 配置](docs/censorresult.md)  
 - [x] 修改资源的 mimeType [mime 配置](docs/mime.md)  
 - [x] 修改资源的 metadata [metadata 配置](docs/metadata.md)  
-- [x] CDN 资源的刷新预取操作 [cdn 操作配置](docs/cdn.md)  
+- [x] CDN 资源的刷新、预取操作 [cdn 操作配置](docs/cdn.md)  
+- [x] CDN 刷新、预取结果的查询操作 [cdn 操作配置](docs/cdn.md#CDN-刷新/预取结果查询)  
+- [x] 查询七牛存储空间绑定的域名 [domainsofbucket 操作配置](docs/domainsofbucket.md)  
 
 *【部分 process 属于危险操作（如文件删除/禁用等），需要在启动后根据提示输入 y/yes 确认，如果不希望进行 verify 验证则需要在命令行加入 -f 参数】*  
 

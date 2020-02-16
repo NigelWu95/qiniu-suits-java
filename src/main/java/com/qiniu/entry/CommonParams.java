@@ -231,7 +231,7 @@ public class CommonParams {
         }
         if (fromLine) {
             mapLine = converter.convertToV(line);
-            fromLine = mapLine.containsKey("key");
+            fromLine = "domainsofbucket".equals(process) ? mapLine.containsKey("bucket") : mapLine.containsKey("key");
         } else {
             mapLine = new HashMap<>();
         }
@@ -280,6 +280,8 @@ public class CommonParams {
             case "videocensor":
             case "cdnrefresh":
             case "cdnprefetch":
+            case "refreshquery":
+            case "prefetchquery":
             case "syncupload":
                 String url = entryParam.getValue("url", "").trim();
                 if (!"".equals(url)) {
@@ -328,8 +330,8 @@ public class CommonParams {
                     throw new IOException("filepath and key shouldn't all be empty, file must be found with them.");
                 }
                 break;
-            default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
-                break;
+            case "domainsofbucket": if (!fromLine) mapLine.put("bucket", entryParam.getValue("bucket")); break;
+            default: if (!fromLine) mapLine.put("key", entryParam.getValue("key")); break;
         }
     }
 
@@ -351,7 +353,8 @@ public class CommonParams {
                 try {
                     source = entryParam.getValue("source").trim();
                 } catch (IOException e2) {
-                    source = "qiniu";
+                    if ("domainsofbucket".equals(process)) source = "local";
+                    else source = "qiniu";
                 }
             }
             // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
@@ -389,6 +392,7 @@ public class CommonParams {
             source = "local";
         }
         isStorageSource = CloudApiUtils.isStorageSource(source);
+        if (isStorageSource && "domainsofbucket".equals(process)) throw new IOException("domainsofbucket doesn't support source: " + source);
     }
 
     private void setHttpsConfigEnabled() throws IOException {
@@ -636,7 +640,7 @@ public class CommonParams {
 
     private void setPrivateType() throws IOException {
         privateType = entryParam.getValue("private", "").trim();
-        if ("".equals(privateType)) return;
+        if ("".equals(privateType) || !ProcessUtils.canPrivateToNext(process)) return;
         switch (privateType) {
             case "qiniu":
                 if (isStorageSource) {
@@ -980,8 +984,13 @@ public class CommonParams {
     }
 
     private void setIndexMap() throws IOException {
-        int fieldsMode = 0;
         indexMap = new HashMap<>();
+        boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse) || "file".equals(parse);
+        if ("domainsofbucket".equals(process)) {
+            indexMap.put(fieldIndex ? "bucket" : "0", "bucket");
+            return;
+        }
+        int fieldsMode = 0;
         List<String> keys = new ArrayList<>();
         String indexes = entryParam.getValue("indexes", "").trim();
         if (isSelfUpload || "file".equals(parse)) { // 自上传和导出文件信息都是 local source，需要定义单独的默认 keys
@@ -1000,6 +1009,7 @@ public class CommonParams {
             } else if (!indexes.startsWith("pre-")) {
                 throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
             }
+            indexMap.put(entryParam.getValue("filepath-index", "filepath").trim(), "filepath");
         } else { // 存储数据源的 keys 定义
             keys.addAll(ConvertingUtils.defaultFileFields);
             if ("upyun".equals(source)) {
@@ -1020,59 +1030,54 @@ public class CommonParams {
             }
         }
 
-        boolean fieldIndex = parse == null || "json".equals(parse)
-                || "".equals(parse) || "object".equals(parse) || "file".equals(parse);
         setIndexes(keys, indexes, fieldIndex);
         boolean useDefault = "".equals(indexes);
-        if (ProcessUtils.needUrl(process))
-            setIndex(entryParam.getValue("url-index", "").trim(), "url");
-        if (ProcessUtils.needToKey(process)) {
-            setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
-            if (fieldIndex) {
-                if ("".equals(indexes) && !indexMap.containsKey("key")) indexMap.put("key", "key");
-            } else {
-                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
-            }
-        }
-        if (ProcessUtils.needFops(process)) {
-            setIndex(entryParam.getValue("fops-index", "").trim(), "fops");
-            if (fieldIndex) {
-                if (!indexMap.containsKey("key")) indexMap.put("key", "key");
-            } else {
-                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
-            }
-        }
-        if (ProcessUtils.needId(process))
-            setIndex(entryParam.getValue("id-index", "").trim(), "id");
-        if (ProcessUtils.needAvinfo(process)) {
-            setIndex(entryParam.getValue("avinfo-index", "").trim(), "avinfo");
-            if (fieldIndex) {
-                if (!indexMap.containsKey("key")) indexMap.put("key", "key");
-            } else {
-                if (!indexMap.containsKey("0")) indexMap.put("0", "key");
-            }
-        }
-        if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
-            setIndex(entryParam.getValue("filepath-index", fieldIndex ? "filepath" : "").trim(), "filepath");
-//            setIndex("parent", "parent");
-        }
-        if (indexMap.size() == 0) {
-//            useDefault = true;
-            if (isStorageSource) {
+        boolean zeroUsed = false;
+        if (useDefault) {
+            if (isStorageSource || isSelfUpload) {
                 for (String key : keys) indexMap.put(key, key);
-            } else if (isSelfUpload) {
-                for (int i = 0; i < keys.size(); i++) indexMap.put(String.valueOf(i), keys.get(i));
-            } else if (fieldIndex) {
-                indexMap.put("key", "key");
+            } else if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
+                String filepathIndex = entryParam.getValue("filepath-index", "").trim();
+                if ("".equals(filepathIndex)) {
+                    setIndex(fieldIndex ? "filepath" : "0", "filepath");
+                } else {
+                    zeroUsed = true;
+                    setIndex(filepathIndex, "filepath");
+                }
+            } else if (ProcessUtils.needUrl(process)) {
+                String urlIndex = entryParam.getValue("url-index", "").trim();
+                if ("".equals(urlIndex)) {
+                    setIndex(fieldIndex ? "url" : "0", "url");
+                } else {
+                    zeroUsed = true;
+                    setIndex(urlIndex, "url");
+                }
+            } else if (ProcessUtils.needId(process)) {
+                String idIndex = entryParam.getValue("id-index", "").trim();
+                if ("".equals(idIndex)) {
+                    setIndex(fieldIndex ? "id" : "0", "id");
+                } else {
+                    zeroUsed = true;
+                    setIndex(idIndex, "id");
+                }
             } else {
-                indexMap.put("0", "key");
+                if (fieldIndex) indexMap.put("key", "key");
+                else indexMap.put("0", "key");
+                if (ProcessUtils.needToKey(process))
+                    // move/copy/rename 等操作不设置默认 toKey，因为大部分情况是增加或删除前缀，需要优先考虑，查看 processor 的实现
+                    setIndex(entryParam.getValue("toKey-index").trim(), "toKey");
+                if (ProcessUtils.needFops(process))
+                    setIndex(entryParam.getValue("fops-index", fieldIndex ? "fops" : "1").trim(), "fops");
+                if (ProcessUtils.needAvinfo(process))
+                    setIndex(entryParam.getValue("avinfo-index", fieldIndex ? "avinfo" : "1").trim(), "avinfo");
             }
         }
 
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault) {
-                    indexMap.put(fieldIndex ? "key" : "0", "key");
+                    if (zeroUsed) setIndex(fieldIndex ? "key" : "0", "key");
+                    else indexMap.put(fieldIndex ? "key" : "0", "key");
                 } else {
                     throw new IOException("f-[x] about key filter for file key must get the key's index in indexes settings.");
                 }
@@ -1116,7 +1121,8 @@ public class CommonParams {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
                     if (useDefault) {
-                        indexMap.put(fieldIndex ? "key" : "0", "key");
+                        if (zeroUsed) setIndex(fieldIndex ? "key" : "0", "key");
+                        else indexMap.put(fieldIndex ? "key" : "0", "key");
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                     }
@@ -1191,7 +1197,7 @@ public class CommonParams {
                     else this.batchSize = 30;
                 } else if ("cdnprefetch".equals(process)) {
                     this.batchSize = 30;
-                } else if ("stat".equals(process)) {
+                } else if ("stat".equals(process) || "refreshquery".equals(process) || "prefetchquery".equals(process)) {
                     this.batchSize = 100;
                 } else {
                     this.batchSize = 1000;
@@ -1206,10 +1212,12 @@ public class CommonParams {
                 if ("true".equals(entryParam.getValue("is-dir", "false").trim()) && this.batchSize > 10) {
                     throw new IOException("cdn url refresh for dir can not use batchSize more than 10.");
                 } else if (this.batchSize > 60) {
-                    throw new IOException("cdn url refresh can not use batchSize more than 10.");
+                    throw new IOException("cdn url refresh can not use batchSize more than 60.");
                 }
-            } else if ("cdnprefetch".equals(process)) {
-                this.batchSize = 30;
+            } else if ("cdnprefetch".equals(process) && this.batchSize > 60) {
+                throw new IOException("cdn url prefetch can not use batchSize more than 60.");
+            } else if (this.batchSize > 100 && ("refreshquery".equals(process) || "prefetchquery".equals(process))) {
+                throw new IOException("cdn refresh or prefetch query can not use batchSize more than 100.");
             }
         }
     }

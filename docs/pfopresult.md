@@ -22,7 +22,7 @@ id-index=
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
 |process=pfopresult| 查询 pfop 转码结果时设置为pfopresult| 表示查询 pfop 转码结果操作|  
-|id-index| 字符串| 转码结果查询所需 persistentId 的索引（下标），pfopresult 操作时必须指定 |  
+|id-index| 字符串| 转码结果查询所需 persistentId 的索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "id"|  
 
 ### 命令行方式
 ```

@@ -15,24 +15,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class CdnUrlProcess extends Base<Map<String, String>> {
+public class CdnUrlQuery extends Base<Map<String, String>> {
 
     private String protocol;
     private String domain;
     private String urlIndex;
-    private boolean isDir;
-//    private boolean prefetch;
+    private boolean prefetch;
     private List<String> batches;
     private List<Map<String, String>> lines;
     private ICdnApplier cdnApplier;
 
-    public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
-                         String urlIndex, boolean isDir, boolean prefetch) throws IOException {
-        super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null);
+    public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
+                       String urlIndex, boolean prefetch) throws IOException {
+        super(prefetch ? "prefetchquery" : "refreshquery", accessKey, secretKey, null);
         Auth auth = Auth.create(accessKey, secretKey);
         CdnHelper cdnHelper = new CdnHelper(auth, configuration.clone());
-        this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
-                dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
+        this.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
         CloudApiUtils.checkQiniu(auth);
         if (domain == null || "".equals(domain)) {
             if (urlIndex == null || "".equals(urlIndex)) {
@@ -46,20 +44,18 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             this.domain = domain;
             this.urlIndex = "url";
         }
-        this.isDir = isDir;
-//        this.prefetch = prefetch;
+        this.prefetch = prefetch;
     }
 
-    public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
-                         String urlIndex, boolean isDir, boolean prefetch, String savePath, int saveIndex) throws IOException {
-        super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null, savePath, saveIndex);
+    public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
+                       String urlIndex, boolean prefetch, String savePath, int saveIndex) throws IOException {
+        super(prefetch ? "prefetchquery" : "refreshquery", accessKey, secretKey, null, savePath, saveIndex);
         this.batchSize = 30;
         this.batches = new ArrayList<>(30);
         this.lines = new ArrayList<>();
         Auth auth = Auth.create(accessKey, secretKey);
         CdnHelper cdnHelper = new CdnHelper(auth, configuration.clone());
-        this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
-                dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
+        this.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
         CloudApiUtils.checkQiniu(auth);
         if (domain == null || "".equals(domain)) {
             if (urlIndex == null || "".equals(urlIndex)) {
@@ -73,29 +69,27 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             this.domain = domain;
             this.urlIndex = "url";
         }
-        this.isDir = isDir;
-//        this.prefetch = prefetch;
-        this.fileSaveMapper.preAddWriter("invalid");
+        this.prefetch = prefetch;
+        this.fileSaveMapper.preAddWriter("processing");
     }
 
-    public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
-                         String urlIndex, boolean isDir, boolean prefetch, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, protocol, domain, urlIndex, isDir, prefetch, savePath, 0);
+    public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
+                       String urlIndex, boolean prefetch, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, protocol, domain, urlIndex, prefetch, savePath, 0);
     }
 
     @Override
-    public CdnUrlProcess clone() throws CloneNotSupportedException {
-//        CdnUrlProcess cdnUrlProcess = (CdnUrlProcess)super.clone();
-//        cdnUrlProcess.lines = new ArrayList<>();
-//        CdnHelper cdnHelper = new CdnHelper(Auth.create(accessId, secretKey));
-//        cdnUrlProcess.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
-//                dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
-//        if (cdnUrlProcess.fileSaveMapper != null) {
-//            cdnUrlProcess.fileSaveMapper.preAddWriter("invalid");
-//        }
-//        return cdnUrlProcess;
-        if (!autoIncrease) saveIndex.addAndGet(1);
-        return this;
+    public CdnUrlQuery clone() throws CloneNotSupportedException {
+        CdnUrlQuery cdnUrlQuery = (CdnUrlQuery)super.clone();
+        cdnUrlQuery.lines = new ArrayList<>();
+        CdnHelper cdnHelper = new CdnHelper(Auth.create(accessId, secretKey));
+        cdnUrlQuery.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
+        if (cdnUrlQuery.fileSaveMapper != null) {
+            cdnUrlQuery.fileSaveMapper.preAddWriter("processing");
+        }
+        return cdnUrlQuery;
+//        if (!autoIncrease) saveIndex.addAndGet(1);
+//        return this;
     }
 
     @Override
@@ -142,21 +136,27 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
         JsonObject refreshResult = JsonUtils.toJsonObject(result);
         int code = refreshResult.get("code").getAsInt();
         if (code == 200) {
-            JsonObject tasks = refreshResult.get("taskIds").getAsJsonObject();
-            fileSaveMapper.writeSuccess(tasks.entrySet().stream().map(entry -> String.join("\t", entry.getKey(),
-                    entry.getValue().getAsString())).collect(Collectors.joining("\n")), false);
-        } else {
             JsonArray jsonArray = new JsonArray();
-            JsonElement jsonElement = isDir ? refreshResult.get("invalidDirs") : refreshResult.get("invalidUrls");
+            JsonElement jsonElement = refreshResult.get("items");
             if (!(jsonElement instanceof JsonNull)) jsonArray = jsonElement.getAsJsonArray();
             if (jsonArray.size() > 0) {
-                StringBuilder builder = new StringBuilder(jsonArray.get(0).getAsString());
-                for (int i = 1; i < jsonArray.size(); i++) {
-                    builder.append("\n").append(jsonArray.get(i).getAsString());
+                JsonObject item;
+                String state;
+                for (int i = 0; i < jsonArray.size(); i++) {
+                    item = jsonArray.get(i).getAsJsonObject();
+                    state = item.get("state").getAsString();
+                    if ("success".equals(state)) {
+                        fileSaveMapper.writeSuccess(item.toString(), false);
+                    } else if ("processing".equals(state)) {
+                        fileSaveMapper.writeToKey("processing", item.toString(), false);
+                    } else {
+                        fileSaveMapper.writeError(item.toString(), false);
+                    }
                 }
-                fileSaveMapper.writeToKey("invalid", String.join("\t", builder,
-                        String.valueOf(code), refreshResult.get("error").getAsString()), false);
             }
+        } else {
+            fileSaveMapper.writeError(String.join("\n", processList.stream().map(this::resultInfo)
+                    .collect(Collectors.toList())) + "\t" + code + refreshResult.get("error").getAsString(), false);
         }
         refreshResult = null;
         return null;
@@ -171,23 +171,19 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
         }
         String[] urls = new String[]{url};
-        return key == null ? String.join("\t", url, HttpRespUtils.getResult(cdnApplier.apply(urls))) :
-                String.join("\t", key, url, HttpRespUtils.getResult(cdnApplier.apply(urls)));
+        return key == null ? HttpRespUtils.getResult(cdnApplier.apply(urls)) :
+                String.join("\t", key, HttpRespUtils.getResult(cdnApplier.apply(urls)));
     }
 
     @Override
     public void closeResource() {
-        if (saveIndex == null || saveIndex.get() <= index) {
-            super.closeResource();
-            protocol = null;
-            domain = null;
-            urlIndex = null;
-            batches = null;
-            lines = null;
-            cdnApplier = null;
-            saveIndex = null;
-        } else {
-            saveIndex.decrementAndGet();
-        }
+        super.closeResource();
+        protocol = null;
+        domain = null;
+        urlIndex = null;
+        batches = null;
+        lines = null;
+        cdnApplier = null;
+        saveIndex = null;
     }
 }

@@ -31,27 +31,27 @@ public class CdnUrlProcessTest {
         PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
         String accessKey = propertiesFile.getValue("ak");
         String secretKey = propertiesFile.getValue("sk");
-        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, new Configuration(), null, null, "url", true, false,
+        CdnUrlProcess cdnUrlProcess = new CdnUrlProcess(accessKey, secretKey, new Configuration(), null, null, "url", false, false,
                 "/Users/wubingheng/Downloads/refresh");
         List<Map<String, String>> list = new ArrayList<>();
 //        list.add(new HashMap<String, String>(){{
-//            put("url", "http://qsuits.nigel.net.cn/choose_install_java_message.jpg");
+//            put("url", "http://xxx.cn/choose_install_java_message.jpg");
 //        }});
 //        list.add(new HashMap<String, String>(){{
-//            put("url", "http://qsuits.nigel.net.cn/choose_install_java_message.jpg");
+//            put("url", "http://xxx.cn/choose_install_java_message.jpg");
 //        }});
 //        list.add(new HashMap<String, String>(){{
-//            put("url", "http://test.nigel.net.cn/choose_install_java_message.jpg");
+//            put("url", "http://xxx.cn/choose_install_java_message.jpg");
 //        }});
 //        list.add(new HashMap<String, String>(){{
-//            put("url", "http://qsuits.nigel.net.cn/choose_install_java_message.jpg");
+//            put("url", "http://xxx.cn/choose_install_java_message.jpg");
+//        }});
+//        list.add(new HashMap<String, String>(){{
+//            put("url", "http://xxx.cn/choose_install_java_message.jpg");
 //        }});
         list.add(new HashMap<String, String>(){{
-            put("url", "http://qsuits.nigel.net.cn/choose_install_java_message.jpg");
+            put("url", "http://xxx.cn/choose_install_java_message.jpg");
         }});
-//        list.add(new HashMap<String, String>(){{
-//            put("url", "http://qsuits.nigel.net.cn/choose_install_java_message.jpg");
-//        }});
         list.add(new HashMap<String, String>(){{
             put("url", "http://xxx.cn/upload/24790f63-0936-44c4-8695-a6d6b1dd8d91.jpg");
         }});
@@ -69,10 +69,10 @@ public class CdnUrlProcessTest {
                 "/Users/wubingheng/Downloads/refresh");
         List<Map<String, String>> list = new ArrayList<>();
         list.add(new HashMap<String, String>(){{
-            put("url", "http://qsuits.nigel.net.cn/choose_install_java_message.jpg");
+            put("url", "http://xxx.cn/choose_install_java_message.jpg");
         }});
 //        list.add(new HashMap<String, String>(){{
-//            put("url", "http://qsuits.nigel.net.cn/choose_install_java_message.jpg");
+//            put("url", "http://xxx.cn/choose_install_java_message.jpg");
 //        }});
 //        list.add(new HashMap<String, String>(){{
 //            put("url", "http://xxx.cn/upload/24790f63-0936-44c4-8695-a6d6b1dd8d91.jpg");

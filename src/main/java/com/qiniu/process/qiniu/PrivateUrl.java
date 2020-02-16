@@ -40,17 +40,17 @@ public class PrivateUrl extends Base<Map<String, String>> {
     }
 
     private void set(String protocol, String domain, String urlIndex, String suffixOrQuery, long expires) throws IOException {
-        if (urlIndex == null || "".equals(urlIndex)) {
-            this.urlIndex = "url";
-            if (domain == null || "".equals(domain)) {
+        if (domain == null || "".equals(domain)) {
+            if (urlIndex == null || "".equals(urlIndex)) {
                 throw new IOException("please set one of domain and url-index.");
             } else {
-                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
-                RequestUtils.lookUpFirstIpFromHost(domain);
-                this.domain = domain;
+                this.urlIndex = urlIndex;
             }
         } else {
-            this.urlIndex = urlIndex;
+            this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            RequestUtils.lookUpFirstIpFromHost(domain);
+            this.domain = domain;
+            this.urlIndex = "url";
         }
         this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
         useQuery = !"".equals(this.suffixOrQuery);

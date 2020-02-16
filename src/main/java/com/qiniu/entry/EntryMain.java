@@ -62,6 +62,10 @@ public class EntryMain {
         } else if (paramsMap.containsKey("delaccount")) {
             AccountUtils.deleteAccount(paramsMap.get("delaccount"));
             return;
+        } else if (paramsMap.containsKey("domainsfrom")) {
+            paramsMap.put("single", "true");
+            paramsMap.put("process", "domainsofbucket");
+            paramsMap.put("bucket", paramsMap.get("domainsfrom"));
         }
         if (paramsMap.containsKey("verify")) processVerify = Boolean.parseBoolean(paramsMap.get("verify"));
         boolean single = paramsMap.containsKey("single") && Boolean.parseBoolean(paramsMap.get("single"));
@@ -99,7 +103,11 @@ public class EntryMain {
                         converted.put("filepath", FileUtils.convertToRealPath(converted.get("key")));
                     }
                 }
-                System.out.println(processor.processLine(converted));
+                if (paramsMap.containsKey("domainsfrom")) {
+                    System.out.println(processor.processLine(converted).replace(",", "\n"));
+                } else {
+                    System.out.println(processor.processLine(converted));
+                }
             }
         } else if (interactive) {
             InputSource inputSource = qSuitsEntry.getInputSource();
