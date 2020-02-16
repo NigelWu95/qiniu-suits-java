@@ -1057,7 +1057,8 @@ public class CommonParams {
                 if (fieldIndex) indexMap.put("key", "key");
                 else indexMap.put("0", "key");
                 if (ProcessUtils.needToKey(process))
-                    setIndex(entryParam.getValue("toKey-index", fieldIndex ? "toKey" : "1").trim(), "toKey");
+                    // move/copy/rename 等操作不设置默认 toKey，因为大部分情况是增加或删除前缀，需要优先考虑，查看 processor 的实现
+                    setIndex(entryParam.getValue("toKey-index").trim(), "toKey");
                 if (ProcessUtils.needFops(process))
                     setIndex(entryParam.getValue("fops-index", fieldIndex ? "fops" : "1").trim(), "fops");
                 if (ProcessUtils.needAvinfo(process))

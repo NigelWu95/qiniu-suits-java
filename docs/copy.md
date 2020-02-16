@@ -26,14 +26,14 @@ rm-prefix=
 |bucket| 字符串| 操作的资源原空间，当数据源为 qiniu 时无需再设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |to-bucket| 字符串| 复制资源保存的目标空间|  
-|toKey-index| 字符串| copy 操作可选择设置的目标文件名索引（下标），未设置任何索引时根据 parse 类型默认为 1 或 "toKey"|  
+|toKey-index| 字符串| copy 操作可选择设置的目标文件名索引（下标），需要手动指定才会解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 copy 之后保存的文件名|  
 
 ### 关于 toKey-index
 指定输入行中对应修改之后的文件名字段下标，不设置则无法进行解析，当使用 file 源且 parse=tab/csv 时下标必须为整数，但未设置且 add-prefix 不为空
 时需要强制指定 prefix-force=true，表明该次重命名操作只添加文件名前缀。由于 rename 操作既需要原始文件名字段也需要新文件名字段，因此 toKey 下
-标和 key 字段下标不可相同，key 下标用 indexes 参数设置，。  
+标和 key 字段下标不可相同，key 下标用 indexes 参数设置，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
 **注意**：七牛存储空间不支持文件名以 `../`, `./` 开头或者包含 `/../`, `/./` 这种情况，会造成无法访问，因此设置文件名时请注意。  
 
 ### 命令行方式

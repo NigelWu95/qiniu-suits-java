@@ -51,17 +51,17 @@ public class DownloadFile extends Base<Map<String, String>> {
     private void set(Configuration configuration, String protocol, String domain, String urlIndex, String host, int[] range,
                      String suffixOrQuery, String addPrefix, String rmPrefix, String downPath) throws IOException {
         this.configuration = configuration;
-        if (urlIndex == null || "".equals(urlIndex)) {
-            this.urlIndex = "url";
-            if (domain == null || "".equals(domain)) {
+        if (domain == null || "".equals(domain)) {
+            if (urlIndex == null || "".equals(urlIndex)) {
                 throw new IOException("please set one of domain and url-index.");
             } else {
-                this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
-                RequestUtils.lookUpFirstIpFromHost(domain);
-                this.domain = domain;
+                this.urlIndex = urlIndex;
             }
         } else {
-            this.urlIndex = urlIndex;
+            this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
+            RequestUtils.lookUpFirstIpFromHost(domain);
+            this.domain = domain;
+            this.urlIndex = "url";
         }
         if (host != null && !"".equals(host)) {
             RequestUtils.lookUpFirstIpFromHost(host);

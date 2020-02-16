@@ -11,12 +11,12 @@ public final class ProcessUtils {
         add("qhash");
         add("avinfo");
         add("exportts");
-        add("tenprivate");
-        add("awsprivate");
-        add("s3private");
-        add("aliprivate");
-        add("huaweiprivate");
-        add("baiduprivate");
+//        add("tenprivate");
+//        add("awsprivate");
+//        add("s3private");
+//        add("aliprivate");
+//        add("huaweiprivate");
+//        add("baiduprivate");
         add("download");
         add("imagecensor");
         add("videocensor");
@@ -116,6 +116,7 @@ public final class ProcessUtils {
         add("exportts");
         add("download");
         add("filter");
+        add("publicurl");
     }};
     public static Set<String> dangerousProcesses = new HashSet<String>(){{
         add("status");

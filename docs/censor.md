@@ -78,7 +78,7 @@ private=
 
 #### 关于 url-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
-key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置。  
+key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
 
 ### 资源需要私有签名
 当进行图片审核的 url 需要通过私有鉴权访问时（资源来自于存储私有权限的空间），本工具支持串联操作，即先进行对应的私有签名再提交审核，使用如下的 private

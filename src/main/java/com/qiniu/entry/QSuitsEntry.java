@@ -529,6 +529,7 @@ public class QSuitsEntry {
             case "qhash": processor = getQueryHash(indexes, single); break;
             case "stat": processor = getStatFile(single); break;
             case "privateurl": processor = getPrivateUrl(indexes, single); break;
+            case "publicurl": processor = getPublicUrl(indexes, single); break;
             case "mirror": processor = getMirrorFile(single); break;
             case "exportts": processor = getExportTs(indexes, single); break;
             case "tenprivate": processor = getTencentPrivateUrl(single); break;
@@ -751,6 +752,15 @@ public class QSuitsEntry {
         ParamsUtils.checked(expires, "expires", "[1-9]\\d*");
         return single ? new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.parseLong(expires))
                 : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.parseLong(expires), savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getPublicUrl(Map<String, String> indexMap, boolean single) throws IOException {
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String queries = entryParam.getValue("queries", "").trim();
+        return single ? new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, queries)
+                : new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, queries, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
