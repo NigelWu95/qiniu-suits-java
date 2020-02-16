@@ -546,6 +546,8 @@ public class QSuitsEntry {
             case "metadata": processor = getChangeMetadata(single); break;
             case "cdnrefresh": processor = getCdnRefresh(indexes, single); break;
             case "cdnprefetch": processor = getCdnPrefetch(indexes, single); break;
+            case "refreshquery": processor = getRefreshQuery(indexes, single); break;
+            case "prefetchquery": processor = getPrefetchQuery(indexes, single); break;
             case "fetch": processor = getFetch(indexes, single); break;
             case "syncupload": processor = getSyncUpload(indexes, single); break;
             case "filter": case "": break;
@@ -1094,6 +1096,26 @@ public class QSuitsEntry {
         return single ? new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
                 false, true) : new CdnUrlProcess(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
                 domain, urlIndex, false, true, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getRefreshQuery(Map<String, String> indexMap, boolean single) throws IOException {
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        return single ? new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
+                false) : new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
+                domain, urlIndex, false, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getPrefetchQuery(Map<String, String> indexMap, boolean single) throws IOException {
+        String protocol = entryParam.getValue("protocol", "http").trim();
+        ParamsUtils.checked(protocol, "protocol", "https?");
+        String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
+        return single ? new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
+                true) : new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
+                domain, urlIndex, true, savePath);
     }
 
     private ILineProcess<Map<String, String>> getFetch(Map<String, String> indexMap, boolean single) throws IOException {

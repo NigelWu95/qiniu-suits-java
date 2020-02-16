@@ -22,6 +22,8 @@ public final class ProcessUtils {
         add("videocensor");
         add("cdnrefresh");
         add("cdnprefetch");
+        add("refreshquery");
+        add("prefetchquery");
         add("fetch");
         add("syncupload");
     }};
@@ -70,6 +72,8 @@ public final class ProcessUtils {
         add("metadata");
         add("cdnrefresh");
         add("cdnprefetch");
+        add("refreshquery");
+        add("prefetchquery");
     }};
     public static Set<String> tenProcesses = new HashSet<String>(){{
         add("tenprivate");
@@ -107,6 +111,8 @@ public final class ProcessUtils {
         add("censorresult");
         add("cdnrefresh");
         add("cdnprefetch");
+        add("refreshquery");
+        add("prefetchquery");
         add("domainsofbucket");
     }};
     public static Set<String> supportStorageSource = new HashSet<String>(){{
@@ -126,6 +132,8 @@ public final class ProcessUtils {
         add("censorresult");
         add("cdnrefresh");
         add("cdnprefetch");
+        add("refreshquery");
+        add("prefetchquery");
         add("publicurl");
     }};
     public static Set<String> dangerousProcesses = new HashSet<String>(){{
@@ -154,6 +162,8 @@ public final class ProcessUtils {
         add("syncupload");
         add("cdnrefresh");
         add("cdnprefetch");
+        add("refreshquery");
+        add("prefetchquery");
     }};
 
     public static boolean needUrl(String process) {

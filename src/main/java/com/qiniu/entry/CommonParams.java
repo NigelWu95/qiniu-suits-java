@@ -280,6 +280,8 @@ public class CommonParams {
             case "videocensor":
             case "cdnrefresh":
             case "cdnprefetch":
+            case "refreshquery":
+            case "prefetchquery":
             case "syncupload":
                 String url = entryParam.getValue("url", "").trim();
                 if (!"".equals(url)) {
@@ -1195,7 +1197,7 @@ public class CommonParams {
                     else this.batchSize = 30;
                 } else if ("cdnprefetch".equals(process)) {
                     this.batchSize = 30;
-                } else if ("stat".equals(process)) {
+                } else if ("stat".equals(process) || "refreshquery".equals(process) || "prefetchquery".equals(process)) {
                     this.batchSize = 100;
                 } else {
                     this.batchSize = 1000;
@@ -1210,10 +1212,12 @@ public class CommonParams {
                 if ("true".equals(entryParam.getValue("is-dir", "false").trim()) && this.batchSize > 10) {
                     throw new IOException("cdn url refresh for dir can not use batchSize more than 10.");
                 } else if (this.batchSize > 60) {
-                    throw new IOException("cdn url refresh can not use batchSize more than 10.");
+                    throw new IOException("cdn url refresh can not use batchSize more than 60.");
                 }
-            } else if ("cdnprefetch".equals(process)) {
-                this.batchSize = 30;
+            } else if ("cdnprefetch".equals(process) && this.batchSize > 60) {
+                throw new IOException("cdn url prefetch can not use batchSize more than 60.");
+            } else if (this.batchSize > 100 && ("refreshquery".equals(process) || "prefetchquery".equals(process))) {
+                throw new IOException("cdn refresh or prefetch query can not use batchSize more than 100.");
             }
         }
     }
