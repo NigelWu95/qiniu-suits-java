@@ -32,7 +32,7 @@ queries=
 |process| 私有资源签名时设置为privateurl | 表示私有资源生成签名链接操作|  
 |ak、sk|长度40的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源（如 path=<source>://<bucket>）指定时无需再设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
-|domain| 域名字符串| 用于拼接文件名生成链接的域名，当指定 url-index 时无需设置|  
+|domain| 域名字符串| 用于拼接文件名生成链接的域名（七牛存储空间域名可以使用[ domainsfrom 命令查询](domainsofbucket.md)），当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "url"|  
 |expires| 整型| url 签名的过期时间，单位 s，默认 3600s|  

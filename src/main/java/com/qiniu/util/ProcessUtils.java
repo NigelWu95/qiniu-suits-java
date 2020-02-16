@@ -107,15 +107,25 @@ public final class ProcessUtils {
         add("censorresult");
         add("cdnrefresh");
         add("cdnprefetch");
+        add("domainsofbucket");
     }};
     public static Set<String> supportStorageSource = new HashSet<String>(){{
-        addAll(needQiniuAuthProcesses);
         addAll(needBucketProcesses);
         add("qhash");
         add("avinfo");
         add("exportts");
         add("download");
         add("filter");
+        add("mirror");
+        add("fetch");
+        add("asyncfetch");
+        add("syncupload");
+        add("privateurl");
+        add("imagecensor");
+        add("videocensor");
+        add("censorresult");
+        add("cdnrefresh");
+        add("cdnprefetch");
         add("publicurl");
     }};
     public static Set<String> dangerousProcesses = new HashSet<String>(){{
@@ -135,12 +145,15 @@ public final class ProcessUtils {
 //        addAll(supportListSourceProcesses);
 //    }};
     public static Set<String> canPrivateToNextProcesses = new HashSet<String>(){{
+        add("exportts");
         add("asyncfetch");
         add("download");
         add("imagecensor");
         add("videocensor");
         add("fetch");
         add("syncupload");
+        add("cdnrefresh");
+        add("cdnprefetch");
     }};
 
     public static boolean needUrl(String process) {

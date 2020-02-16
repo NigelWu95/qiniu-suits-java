@@ -231,7 +231,7 @@ public class CommonParams {
         }
         if (fromLine) {
             mapLine = converter.convertToV(line);
-            fromLine = mapLine.containsKey("key");
+            fromLine = "domainsofbucket".equals(process) ? mapLine.containsKey("bucket") : mapLine.containsKey("key");
         } else {
             mapLine = new HashMap<>();
         }
@@ -328,8 +328,8 @@ public class CommonParams {
                     throw new IOException("filepath and key shouldn't all be empty, file must be found with them.");
                 }
                 break;
-            default: if (!fromLine) mapLine.put("key", entryParam.getValue("key"));
-                break;
+            case "domainsofbucket": if (!fromLine) mapLine.put("bucket", entryParam.getValue("bucket")); break;
+            default: if (!fromLine) mapLine.put("key", entryParam.getValue("key")); break;
         }
     }
 
@@ -351,7 +351,8 @@ public class CommonParams {
                 try {
                     source = entryParam.getValue("source").trim();
                 } catch (IOException e2) {
-                    source = "qiniu";
+                    if ("domainsofbucket".equals(process)) source = "local";
+                    else source = "qiniu";
                 }
             }
             // list 和 file 方式是兼容老的数据源参数，list 默认表示从七牛进行列举，file 表示从本地读取文件
@@ -389,6 +390,7 @@ public class CommonParams {
             source = "local";
         }
         isStorageSource = CloudApiUtils.isStorageSource(source);
+        if (isStorageSource && "domainsofbucket".equals(process)) throw new IOException("domainsofbucket doesn't support source: " + source);
     }
 
     private void setHttpsConfigEnabled() throws IOException {
@@ -636,7 +638,7 @@ public class CommonParams {
 
     private void setPrivateType() throws IOException {
         privateType = entryParam.getValue("private", "").trim();
-        if ("".equals(privateType)) return;
+        if ("".equals(privateType) || !ProcessUtils.canPrivateToNext(process)) return;
         switch (privateType) {
             case "qiniu":
                 if (isStorageSource) {
@@ -980,8 +982,13 @@ public class CommonParams {
     }
 
     private void setIndexMap() throws IOException {
-        int fieldsMode = 0;
         indexMap = new HashMap<>();
+        boolean fieldIndex = parse == null || "json".equals(parse) || "".equals(parse) || "object".equals(parse) || "file".equals(parse);
+        if ("domainsofbucket".equals(process)) {
+            indexMap.put(fieldIndex ? "bucket" : "0", "bucket");
+            return;
+        }
+        int fieldsMode = 0;
         List<String> keys = new ArrayList<>();
         String indexes = entryParam.getValue("indexes", "").trim();
         if (isSelfUpload || "file".equals(parse)) { // 自上传和导出文件信息都是 local source，需要定义单独的默认 keys
@@ -1021,8 +1028,6 @@ public class CommonParams {
             }
         }
 
-        boolean fieldIndex = parse == null || "json".equals(parse)
-                || "".equals(parse) || "object".equals(parse) || "file".equals(parse);
         setIndexes(keys, indexes, fieldIndex);
         boolean useDefault = "".equals(indexes);
         boolean zeroUsed = false;

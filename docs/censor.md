@@ -29,7 +29,7 @@ private=
 |process| 图片审核时设置为imagecensor | 表示图片资源的内容审核操作|  
 |ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源为 qiniu 时无需再设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
-|domain| 域名字符串| 当数据源数据为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
+|domain| 域名字符串| 当数据源数据为文件名列表时，需要设置进行访问的域名（七牛存储空间域名可以使用[ domainsfrom 命令查询](domainsofbucket.md)），当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 [url 索引（下标）](#关于-url-index)，未设置任何索引时根据 parse 类型默认为 0 或 "url"，支持[需要私有签名的情况](#资源需要私有签名)|  
 |queries| 字符串| url 的 query 参数或样式后缀，如 `-w480` 或 `?v=1.1&time=1565171107845`（这种形式请务必带上 ? 号，否则无效）[关于 queries 参数](#关于-queries-参数)|  
@@ -65,7 +65,7 @@ private=
 |process| 视频审核时设置为videocensor | 表示视频资源的内容审核操作|  
 |ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取，当数据源为 qiniu 时无需再设置|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
-|domain| 域名字符串| 当数据源数据为文件名列表时，需要设置进行访问的域名，当指定 url-index 时无需设置|  
+|domain| 域名字符串| 当数据源数据为文件名列表时，需要设置进行访问的域名（七牛存储空间域名可以使用[ domainsfrom 命令查询](domainsofbucket.md)），当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 [url 索引（下标）](#关于-url-index)，未设置任何索引时根据 parse 类型默认为 0 或 "url"，支持[需要私有签名的情况](#资源需要私有签名)|  
 |scenes| 审核类型字符串| pulp/terror/politician，鉴黄、鉴暴恐、鉴政，多种类型同时审核可用 `,` 拼接，如：`pulp,terror` 或 `pulp,terror,politician` 等|  

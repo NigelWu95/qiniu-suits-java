@@ -21,7 +21,7 @@ queries=
 |-----|-------|-----|  
 |process| 资源 url 操作时设置为 publicurl | 表示为资源生成 url 链接操作|  
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
-|domain| 域名字符串| 用于拼接文件名生成链接的域名，当指定 url-index 时无需设置|  
+|domain| 域名字符串| 用于拼接文件名生成链接的域名（七牛存储空间域名可以使用[ domainsfrom 命令查询](domainsofbucket.md)），当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |queries| 字符串| url 的 query 参数或样式后缀，如 `?v=1.1&time=1565171107845` 或 `-w480`，[关于 queries 参数](#关于-queries-参数)|  
 

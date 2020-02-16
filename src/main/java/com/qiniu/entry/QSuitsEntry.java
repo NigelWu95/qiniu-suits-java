@@ -529,7 +529,7 @@ public class QSuitsEntry {
             case "qhash": processor = getQueryHash(indexes, single); break;
             case "stat": processor = getStatFile(single); break;
             case "privateurl": processor = getPrivateUrl(indexes, single); break;
-            case "publicurl": processor = getPublicUrl(indexes, single); break;
+            case "publicurl": processor = getPublicUrl(single); break;
             case "mirror": processor = getMirrorFile(single); break;
             case "exportts": processor = getExportTs(indexes, single); break;
             case "tenprivate": processor = getTencentPrivateUrl(single); break;
@@ -549,6 +549,7 @@ public class QSuitsEntry {
             case "fetch": processor = getFetch(indexes, single); break;
             case "syncupload": processor = getSyncUpload(indexes, single); break;
             case "filter": case "": break;
+            case "domainsofbucket": processor = getDomainsOfBucket(single); break;
             default: throw new IOException("unsupported process: " + process);
         }
         if (processor != null) {
@@ -754,7 +755,7 @@ public class QSuitsEntry {
                 : new PrivateUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, Long.parseLong(expires), savePath);
     }
 
-    private ILineProcess<Map<String, String>> getPublicUrl(Map<String, String> indexMap, boolean single) throws IOException {
+    private ILineProcess<Map<String, String>> getPublicUrl(boolean single) throws IOException {
         String protocol = entryParam.getValue("protocol", "http").trim();
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
@@ -1149,5 +1150,10 @@ public class QSuitsEntry {
         return single ? new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex, host, addPrefix, rmPrefix,
                 toBucket, expires, policy, params) : new SyncUpload(ak, sk, configuration, protocol, domain, urlIndex,
                 host, addPrefix, rmPrefix, toBucket, expires, policy, params, savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getDomainsOfBucket(boolean single) throws IOException {
+        return single ? new DomainsOfBucket(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig())
+                : new DomainsOfBucket(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), savePath);
     }
 }

@@ -16,13 +16,13 @@ public class PublicUrl extends Base<Map<String, String>> {
     private ILineProcess<Map<String, String>> nextProcessor;
 
     public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String suffixOrQuery) throws IOException {
-        super("privateurl", accessKey, secretKey, null);
+        super("publicurl", accessKey, secretKey, null);
         set(protocol, domain, suffixOrQuery);
     }
 
     public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String suffixOrQuery, String savePath,
                      int saveIndex) throws IOException {
-        super("privateurl", accessKey, secretKey, null, savePath, saveIndex);
+        super("publicurl", accessKey, secretKey, null, savePath, saveIndex);
         set(protocol, domain, suffixOrQuery);
     }
 
