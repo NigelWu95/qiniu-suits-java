@@ -597,7 +597,7 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getChangeType(boolean single) throws IOException {
         String type = entryParam.getValue("type").trim();
-        ParamsUtils.checked(type, "type", "[01]");
+        ParamsUtils.checked(type, "type", "\\d");
         return single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(type))
                 : new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(type), savePath);
     }
@@ -688,18 +688,18 @@ public class QSuitsEntry {
 
     private ILineProcess<Map<String, String>> getPfopCommand(Map<String, String> indexMap, boolean single) throws IOException {
         String avinfoIndex = indexMap.containsValue("avinfo") ? "avinfo" : null;
-        String duration = entryParam.getValue("duration", "false").trim();
-        ParamsUtils.checked(duration, "duration", "(true|false)");
-        String size = entryParam.getValue("size", "false").trim();
-        ParamsUtils.checked(size, "size", "(true|false)");
+        String hasDuration = entryParam.getValue("has-duration", "false").trim();
+        ParamsUtils.checked(hasDuration, "has-duration", "(true|false)");
+        String hasSize = entryParam.getValue("has-size", "false").trim();
+        ParamsUtils.checked(hasSize, "has-size", "(true|false)");
         String combine = entryParam.getValue("combine", "true").trim();
         ParamsUtils.checked(combine, "combine", "(true|false)");
         String configJson = entryParam.getValue("pfop-config", "").trim();
         List<JsonObject> pfopConfigs = commonParams.getPfopConfigs();
-        return single ? new PfopCommand(getNewQiniuConfig(), avinfoIndex, Boolean.parseBoolean(duration), Boolean.parseBoolean(size),
-                Boolean.parseBoolean(combine), configJson, pfopConfigs)
-                : new PfopCommand(getNewQiniuConfig(), avinfoIndex, Boolean.parseBoolean(duration), Boolean.parseBoolean(size),
-                Boolean.parseBoolean(combine), configJson, pfopConfigs, savePath);
+        return single ? new PfopCommand(getNewQiniuConfig(), avinfoIndex, Boolean.parseBoolean(hasDuration),
+                Boolean.parseBoolean(hasSize), Boolean.parseBoolean(combine), configJson, pfopConfigs)
+                : new PfopCommand(getNewQiniuConfig(), avinfoIndex, Boolean.parseBoolean(hasDuration),
+                Boolean.parseBoolean(hasSize), Boolean.parseBoolean(combine), configJson, pfopConfigs, savePath);
     }
 
     private ILineProcess<Map<String, String>> getPfop(Map<String, String> indexMap, boolean single) throws IOException {
