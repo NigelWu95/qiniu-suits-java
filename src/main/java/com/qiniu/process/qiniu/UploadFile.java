@@ -139,11 +139,14 @@ public class UploadFile extends Base<Map<String, String>> {
 //                    key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
 //                }
 //            }
-            if (keepPath) {
-                if (key == null) key = filepath;
+            if (keepPath && key == null) {
+                key = filepath;
+                line.put("key", key);
+            } else if (key == null) {
+                key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
+                line.put("key", key);
             } else {
-                if (key == null) key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
-                else key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
+                key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
             }
             if (parentPath != null) {
                 if (filepath.startsWith(FileUtils.pathSeparator)) {
@@ -151,11 +154,9 @@ public class UploadFile extends Base<Map<String, String>> {
                 } else {
                     filepath = String.join( FileUtils.pathSeparator , parentPath, filepath);
                 }
-                line.put(pathIndex, filepath);
             }
         }
         key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
-        line.put("key", key);
         if (iFileChecker.check(key) != null) throw new IOException("file exists");
         if (filepath.endsWith(FileUtils.pathSeparator)) {
             return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(new byte[]{}, key,

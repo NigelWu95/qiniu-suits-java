@@ -14,8 +14,8 @@ process=pfopcmd
 indexes=
 avinfo-index=
 pfop-config=
-duration=
-size=
+has-duration=
+has-size=
 combine=true/false
 #cmd=
 #saveas=
@@ -27,8 +27,8 @@ combine=true/false
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |pfop-config| 文件路径字符串| 进行转码和另存规则设置的 json 配置文件路径，可设置多个转码条件和指令，[配置写法](#pfop-config-配置文件)|  
 |avinfo-index| 字符串| 读取 avinfo 信息时需要设置的 avinfo 字符串索引（下标），未设置任何索引时根据 parse 类型默认为 1 或 "avinfo"|  
-|duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
-|size| true/false| 得到的结果行中是否需要保存 size（音视频大小）信息，会放在 duration 字段之后|  
+|has-duration| true/false| 得到的结果行中是否需要保存 duration（音视频时长）信息，会放在转码指令字段之后 |  
+|has-size| true/false| 得到的结果行中是否需要保存 size（音视频大小）信息，会放在 duration 字段之后|  
 |combine| true/false| 多个 pfop 命令时，是否组合成一个命令来处理，默认为 true，使用 `;` 来拼接多条处理命令，参考[persistentOps 多个命令](https://developer.qiniu.com/dora/api/3686/pfop-directions-for-use#1)|  
 |cmd| 字符串| pfop 命令，如 avthumb/mp4，和 pfop-config 中的 cmd 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas + scale 设置的方式|  
 |saveas| 字符串| saveas 的格式，如 bucket:$(key)F720.mp4，和 pfop-config 中的 saveas 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas + scale 设置的方式|  
@@ -78,5 +78,5 @@ combine=true/false
 
 ### 命令行方式
 ```
--process=pfopcmd -pfop-config= -duration= -size=
+-process=pfopcmd -pfop-config= -has-duration= -has-size=
 ```

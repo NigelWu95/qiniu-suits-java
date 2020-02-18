@@ -60,17 +60,18 @@ public class ExportTS extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get(urlIndex);
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
-        String url = line.get(urlIndex);
-        if (url == null || "".equals(url)) {
+        String url;
+        if (domain == null) {
+            url = line.get(urlIndex);
+        } else {
             String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
-            line.put(urlIndex, url);
         }
         return String.join("\n", m3U8Manager.getVideoTSListByUrl(url).stream()
                 .map(VideoTS::toString).collect(Collectors.toList()));

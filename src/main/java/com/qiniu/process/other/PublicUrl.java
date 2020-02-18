@@ -12,7 +12,6 @@ public class PublicUrl extends Base<Map<String, String>> {
     private String protocol;
     private String domain;
     private String suffixOrQuery;
-    private boolean useQuery;
     private ILineProcess<Map<String, String>> nextProcessor;
 
     public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String suffixOrQuery) throws IOException {
@@ -40,7 +39,6 @@ public class PublicUrl extends Base<Map<String, String>> {
             this.domain = domain;
         }
         this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
-        useQuery = !"".equals(this.suffixOrQuery);
     }
 
     @Override

@@ -18,7 +18,6 @@ public class DownloadFile extends Base<Map<String, String>> {
     private String urlIndex;
     private StringMap headers;
     private String suffixOrQuery;
-    private boolean useQuery;
     private boolean preDown;
     private String addPrefix;
     private String rmPrefix;
@@ -72,7 +71,6 @@ public class DownloadFile extends Base<Map<String, String>> {
             headers.put("Range", new StringBuilder("bytes=").append(range[0]).append("-").append(range.length > 1 ? range[1] : ""));
         }
         this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
-        useQuery = !"".equals(this.suffixOrQuery);
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
         this.downPath = downPath;
@@ -96,28 +94,24 @@ public class DownloadFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return String.join("\t", line.get("key"), line.get(urlIndex));
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
-        String url = line.get(urlIndex);
+        String url;
         String key = line.get("key");
-        if (url == null || "".equals(url)) {
+        if (domain == null) {
+            url = line.get(urlIndex);
+            if (key != null) key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
+            else key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url)));
+            url = url + suffixOrQuery;
+        } else {
             if (key == null || "".equals(key)) throw new IOException("key is not exists or empty in " + line);
             url = String.join("", protocol, "://", domain, "/",
                     key.replace("\\?", "%3f"), suffixOrQuery);
-            line.put(urlIndex, url);
             key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
-        } else {
-            if (key != null) key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
-            else key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url)));
-            if (useQuery) {
-                url = String.join("", url, suffixOrQuery);
-                line.put(urlIndex, url);
-            }
         }
-        line.put("key", key);
         if (preDown) {
             downloader.download(url, headers);
             return String.join("\t", key, url);

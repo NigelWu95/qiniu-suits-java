@@ -100,31 +100,28 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        String key = line.get("key");
-        return key == null ? line.get(urlIndex) : String.join("\t", key, line.get(urlIndex));
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
     protected synchronized List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
         batches.clear();
         lines.clear();
-        String key;
-        String url;
-        for (Map<String, String> line : processList) {
-            key = line.get("key");
-            url = line.get(urlIndex);
-            if (url == null || "".equals(url)) {
+        if (domain == null) {
+            for (Map<String, String> line : processList) {
+                lines.add(line);
+                batches.add(line.get(urlIndex));
+            }
+        } else {
+            String key;
+            for (Map<String, String> line : processList) {
+                key = line.get("key");
                 if (key == null) {
                     fileSaveMapper.writeError("key and url are not exist or empty in " + line, false);
                 } else {
-                    url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
-                    line.put(urlIndex, url);
                     lines.add(line);
-                    batches.add(url);
+                    batches.add(String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f")));
                 }
-            } else {
-                lines.add(line);
-                batches.add(url);
             }
         }
         return lines;
@@ -164,15 +161,18 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
-        String key = line.get("key");
-        String url = line.get(urlIndex);
-        if (url == null || "".equals(url)) {
+        String url;
+        if (domain == null) {
+            url = line.get(urlIndex);
+            String[] urls = new String[]{url};
+            return String.join("\t", url, HttpRespUtils.getResult(cdnApplier.apply(urls)));
+        } else {
+            String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
+            String[] urls = new String[]{url};
+            return String.join("\t", key, HttpRespUtils.getResult(cdnApplier.apply(urls)));
         }
-        String[] urls = new String[]{url};
-        return key == null ? String.join("\t", url, HttpRespUtils.getResult(cdnApplier.apply(urls))) :
-                String.join("\t", key, url, HttpRespUtils.getResult(cdnApplier.apply(urls)));
     }
 
     @Override

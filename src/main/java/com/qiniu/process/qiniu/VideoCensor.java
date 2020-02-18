@@ -42,8 +42,7 @@ public class VideoCensor extends Base<Map<String, String>> {
 
     public VideoCensor(String accesskey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, String[] scenes, int interval, String saverBucket, String saverPrefix, String hookUrl,
-                       String savePath)
-            throws IOException {
+                       String savePath) throws IOException {
         this(accesskey, secretKey, configuration, protocol, domain, urlIndex, scenes, interval, saverBucket, saverPrefix,
                 hookUrl, savePath, 0);
     }
@@ -91,23 +90,23 @@ public class VideoCensor extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        String key = line.get("key");
-        return key == null ? line.get(urlIndex) : String.join("\t", key, line.get(urlIndex));
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
-        String url = line.get(urlIndex);
+        String url;
         String key = line.get("key");
-        if (url == null || "".equals(url)) {
+        if (domain == null) {
+            url = line.get(urlIndex);
+            return String.join("\t", url,
+                    JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString());
+        } else {
             if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
-            line.put(urlIndex, url);
-            return String.join("\t", key, url,
+            return String.join("\t", key,
                     JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString());
         }
-        return key == null ? String.join("\t", url, JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString()) :
-                String.join("\t", key, url, JsonUtils.toJsonObject(censorManager.doVideoCensor(url, paramsJson)).get("job").getAsString());
     }
 
     @Override

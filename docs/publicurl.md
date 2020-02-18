@@ -26,7 +26,7 @@ queries=
 |queries| 字符串| url 的 query 参数或样式后缀，如 `?v=1.1&time=1565171107845` 或 `-w480`，[关于 queries 参数](#关于-queries-参数)|  
 
 #### 关于 key
-key 下标用 indexes 参数设置，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
+key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
 
 #### 关于 queries 参数
 queries 参数用于设置 ?+参数部分（或 url 的后缀），希望在 url 上加上参数。  
