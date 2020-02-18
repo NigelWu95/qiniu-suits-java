@@ -117,7 +117,8 @@ indexes=1
 
 ### 关于 filepath-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。filepath-index 表示输入行含 filepath 形式的文件路径，未设置的情
-况下则使用 key 字段加上 parent-path 的方式访问文件路径，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
+况下则使用 key 字段加上 parent-path 的方式访问文件路径，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
+及[关于 parse 和索引](datasource.md#关于-parse)。  
 
 ### 命令行参数方式
 ```

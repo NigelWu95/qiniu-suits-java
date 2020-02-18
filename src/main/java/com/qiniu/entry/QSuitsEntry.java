@@ -761,9 +761,10 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String queries = entryParam.getValue("queries", "").trim();
-        return single ? new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, queries)
-                : new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, queries, savePath);
+        return single ? new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries)
+                : new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {

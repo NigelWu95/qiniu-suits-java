@@ -39,7 +39,7 @@ threads 说明及默认值参考下述[并发处理](#关于并发处理 )，建
 多数数据源默认设置为顺序包含 9 个字段：**key,etag,size,datetime,mime,type,status,md5,owner**，参考[文件信息字段](#关于文件信息字段)。但
 是对于 file 数据源进行上传操作时或者 `parse=file` 导出文件信息列表时，默认字段为 **key,parent,size,datetime,mime,etag**，key 为解析的文
 件名称，字段减少和顺序变化的原因是因为 mime 和 etag 需要经过计算得到，故优先级放低，不是必需的情况下可以舍弃，size 和 datetime 为非关键信息，也
-可以选择舍弃，parent 表示该文件所在的父层路径。   
+可以选择舍弃，parent 表示该文件所在的父层路径。而文件本身的 filepath 索引则为默认项，字段为 filepath-index。   
 
 2、**indexes 索引的设置方式有三种**  
 （1）使用 `indexes=pre-<索引的前几位个数>`，即按照索引的字段顺序需要前几个默认字段，如 `indexes=pre-3`，表示输入字段需要 key,etag,size，如
@@ -64,15 +64,15 @@ threads 说明及默认值参考下述[并发处理](#关于并发处理 )，建
 序会自动识别并扩展出该字段，如 `indexes=key,etag,size,timestamp,mime,type`，此时持久化结果中或者 process 的输入行中将体现 timestamp，亦
 可使两者同时存在，如 `indexes=key,etag,size,datetime,timestamp,mime,type,status,md5,owner`。  
 
-（2）当数据源为 [file](#2-file-文本文件行读取) 类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引只有
-`0`，输入格式为 `json` 时索引只有 `key`，使用默认值时若存在 [filter](filter.md) 过滤字段则会自动添加过滤字段，需要指定更多字段时可按照[ indexes 规范](#关于-indexes-索引)
-设置，例如为数字列表:`0,1,2,3,...` 或者 `json` 的 `key` 名称列表，采用默认字段的设置方式时长度不超过 9，表明取对应顺序的前几个字段，当数据格式
-为 `tab/csv` 时索引必须均为整数，如果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 `-1` 索引表示，表示跳过该顺序对应的字段，例如原输入
-行中不包含 mime 字段，则可以设置 `indexes=0,1,2,3,-1,5`。  
+（2）当数据源为 [file-文件列表](#2.1-文本文件行读取)类型时，默认情况下，程序只从输入行中解析 `key` 字段数据，因此当输入格式为 `tab/csv` 时索引
+只有 `0`，输入格式为 `json` 时索引只有 `key`，使用默认值时若存在 [filter](filter.md) 过滤字段则会自动添加过滤字段，需要指定更多字段时可按照
+[ indexes 规范](#关于-indexes-索引)设置，例如为数字列表:`0,1,2,3,...` 或者 `json` 的 `key` 名称列表，采用默认字段的设置方式时长度不超过 9，
+表明取对应顺序的前几个字段，当数据格式为 `tab/csv` 时索引必须均为整数，如果输入行中本身只包含部分字段，则可以在缺少字段的顺序位置用 `-1` 索引表示，
+表示跳过该顺序对应的字段，例如原输入行中不包含 mime 字段，则可以设置 `indexes=0,1,2,3,-1,5`。  
 
-（3）对于 file 数据源，存在的特殊情况是即扫描 path 下的文件进行上传（`process=qupload`）或者导出列表（`parse=file`），对于这种情况，indexes
-的设置只允许使用第一种设置方式，即 `indexes=pre-<个数>`，个数不超过 6，如果不设置则默认会取得两项信息：filepath 和 key，key 是属于 indexes 
-的第一个默认字段，而 filepath 是必备字段且对于 path 下文件的直接扫描不希望更改该字段的索引值，默认即为 filepath。  
+（3）对于 file 文件数据源，即扫描 path 下的文件进行上传（`process=qupload`）或者导出列表（`parse=file`），这种数据源参数长度不能超过 6，其 
+indexes 的设置通常采用第一种方式，即 `indexes=pre-<个数>`，如果不设置则默认会取得 key，而 filepath 作为必备字段使用单独的 filepath-index
+字段来设置索引，但对于 path 下文件的直接扫描不能更改该字段的索引值，默认即为 filepath。  
 
 #### 关于并发处理  
 1、云存储数据源，从存储空间中列举文件，可多线程并发列举，用于支持大量文件的加速列举，线程数在配置文件中指定，自动按照线程数检索前缀并执行并发列举。  
@@ -86,19 +86,19 @@ threads 说明及默认值参考下述[并发处理](#关于并发处理 )，建
 息可信度会比较高。
 
 #### 关于文件信息字段  
-文件信息规范字段及顺序定义为：**key,etag,size,datetime,mime,type,status,md5,owner** (indexes 的默认字段及顺序即使用该字段列表)，默认根
-据七牛存储文件的信息字段进行定义，顺序固定，其释义及其他数据源方式对应关系如下：  
+文件信息规范字段默认根据七牛存储文件的信息字段进行定义，其释义及各数据源方式对应关系如下：  
 
-|数据源      |key（文件名）    |etag（文件唯一值）|size（文件大小 kb）|datetime（日期时间字符串）|mime（mime-type/content-type）|type（资源存储类型）|status（资源状态）|md5（文件 md5）|owner（终端标识符）|  
-|-----------|---------------|---------------|-----------------|-----------------------|-----------------------------|-----------------|---------------|-------------|-----------------|  
-|文件列表输入行|indexes第1个索引|indexes的第2个索引|indexes的第3个索引|indexes的第4个索引       |indexes的第5个索引             |indexes的第6个索引 |indexes的第7个索引|indexes的第8个索引|indexes的第9个索引|
-|七牛云存储   |key            |eatg（hash）    |fsize            |putTime 转换而来        |mimeType                     |type             |status         |md5          |endUser          |  
-|腾讯云存储   |key            |etag           |size             |lastModified 转换而来   |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
-|阿里云存储   |key            |etag           |size             |lastModified 转换而来   |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段   |Owner.displayName|  
-|AWS云存储/S3|key            |etag           |size             |lastModified 转换而来    |无此含义字段                   |storageClass     |无此含义字段     |无此含义字段  |Owner.displayName |  
-|又拍云存储   |name           |无此含义字段     |length           |lastModified 转换而来   |type/attribute                |无此含义字段       |无此含义字段      |无此含义字段  |无此含义字段        |  
-|华为云存储   |key            |metadata.etag  |metadata.contentLength|lastModified 转换而来|metadata.contentType        |storageClass     |无此含义字段     |metadata.contentMd5|Owner.id  |  
-|百度云存储   |key            |etag           |size             |lastModified 转换而来    |无此含义字段                   |storageClass     |无此含义字段      |无此含义字段  |Owner.displayName |  
+|数据源      |key（文件名）    |etag（文件唯一值）|size（文件大小 kb）|datetime（日期时间字符串）|mime（content-type）|type（资源存储类型）|status（资源状态） |md5（文件 md5）|owner（终端标识符）|  
+|-----------|---------------|---------------|-----------------|----------------------|-------------------|-----------------|-----------------|-------------|----------------|  
+|文件列表输入行|默认 0 或 "key" |默认 1 或 "etag"|默认 2 或 "size"  |默认 3 或 "datetime"    |默认 4 或 "mime"    |默认 5 或 "type"  |默认 6 或 "status"|默认 7 或 "md5"|默认 8 或 "owner"|
+|本地文件     |key           |etag            |length          |timestamp 转换          |mime               |无此含义字段       |无此含义字段       |无此含义字段    |无此含义字段      |
+|七牛云存储   |key            |eatg（hash）    |fsize            |putTime 转换           |mimeType           |type             |status          |md5           |endUser         |  
+|腾讯云存储   |key            |etag           |size             |lastModified 转换      |无此含义字段          |storageClass    |无此含义字段       |无此含义字段    |Owner.displayName|  
+|阿里云存储   |key            |etag           |size             |lastModified 转换      |无此含义字段          |storageClass    |无此含义字段       |无此含义字段    |Owner.displayName|  
+|AWS云存储/S3|key            |etag           |size             |lastModified 转换      |无此含义字段          |storageClass    |无此含义字段       |无此含义字段    |Owner.displayName|  
+|又拍云存储   |name           |无此含义字段     |length           |lastModified 转换      |type/attribute      |无此含义字段       |无此含义字段      |无此含义字段    |无此含义字段       |  
+|华为云存储   |key            |metadata.etag  |metadata.contentLength|lastModified 转换 |metadata.contentType|storageClass    |无此含义字段      |metadata.contentMd5|Owner.id    |  
+|百度云存储   |key            |etag           |size             |lastModified 转换      |无此含义字段          |storageClass    |无此含义字段       |无此含义字段    |Owner.displayName|  
 
 ### 2 file 本地文件读取
 本地文件数据源分为**两种情况：（1）读取文件内容为数据列表按行输入（2）读取路径下的文件本身，包括目录遍历，得到文件信息作为输入**  
@@ -124,6 +124,25 @@ uri-config=
 |rm-keyPrefix| 字符串|将解析出的 key 字段去除指定前缀再进行后续操作，用于输入 key 可能比实际空间的 key 多了前缀的情况，如输入行中的文件名多了 `/` 前缀|  
 |uris| 字符串|数据源路径下需要读取的文件名列表，如果只想处理部分文件，可使用参数设置列表的方式，以 `,` 号分割文件名，不设置默认读取 path 下全部文本文件|  
 |uri-config| 配置文件路径|表示从该配置中读取文件名作为 file 数据源，同时文件名对应的值表示读取该文件的起始位置，配置文件格式为 json，可参考[ uri-config 配置](#关于-uri-config)|  
+
+#### 关于 parse
+数据源输入的文件列表为每行一条数据，parse 决定了数据的解析方式以及索引的设置方式，以下做简单举例说明，关于具体的其他索引设置参考对应 process 的文档。  
+如文件列表为 \t 分割的行：  
+```
+IMG_0967.MOV	llO8y0gW4GULwF1ry_UcvkA1HXYZ	22257875	2019-01-30T20:15:14.189789900	video/quicktime	0	0	e69957f45a290c0f10b51642b660e6df
+IMG_0967.MOVF720.mp4	FoWR3PSyOkXprvMVbQM9SmhDojlO	645768	2019-08-06T18:44:37.193583700	video/mp4	0	0	60618eda5846e623c3cf9028928393bc
+IMG_0967F720.mp4	FoWR3PSyOkXprvMVbQM9SmhDojlO	645768	2019-08-06T19:11:13.697041	video/mp4	0	0	60618eda5846e623c3cf9028928393bc
+...
+```  
+则应设置 `parse=tab`，当然 parse=tab 为默认值可以省略，同时可以设置 `indexes=pre-8` 或者 `indexes=0,1,2` 等等，默认值为 `indexes=0`，
+或者如在做 copy/move/rename 操作时可以设置 `toKey-index=1`。  
+再如文件列表为 json 字符串的行：  
+```
+{"key":"data/2015/02/01.mp4","id":"NjwAAKG4Gu6bffQV","fops":"avthumb/mp4"}
+{"key":"data/2015/02/02.mp4","id":"dUIAAACkEPwNdfQV","fops":"avthumb/mp4"}
+```  
+则需设置 `parse=json`，indexes 默认值为 `indexes=key`，在做有关 id 的查询时可以 `id-index=id`，或者做 pfop 转码时可以是 `fops-index=fops`，
+当然 "id"、"fops" 其实均是对应操作下可以省略的默认值。     
 
 #### 关于 uri-config
 uri-config 用来设置要读取的文件路径，在 path 为空的情况下，uri-config 中的文件名必须是完整的路径名，path 为目录时，uri-config 中的文件名可

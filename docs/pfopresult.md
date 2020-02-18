@@ -30,4 +30,4 @@ id-index=
 ```
 
 ## 备注
-pfopresult 操作是 file 源下的操作，从 every line of fileinput 的 id-index 索引获取 persistentId。
+pfopresult 操作是 file 源下的操作，从 every line of fileinput 的 id-index 索引获取 persistentId，参见[关于 parse 和索引](datasource.md#关于-parse)。

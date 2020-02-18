@@ -128,7 +128,7 @@ public class SyncUpload extends Base<Map<String, String>> {
         if (response.statusCode == 200 || response.statusCode == 206) {
             try {
                 InputStream stream = response.bodyStream();
-                return String.join("\t", url, HttpRespUtils.getResult(uploadManager.put(stream, key,
+                return String.join("\t", key, url, HttpRespUtils.getResult(uploadManager.put(stream, key,
                         auth.uploadToken(bucket, key, expires, policy), params, response.contentType())));
             } finally {
                 response.close();

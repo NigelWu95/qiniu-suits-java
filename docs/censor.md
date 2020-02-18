@@ -36,6 +36,11 @@ private=
 |scenes| 审核类型字符串| pulp/terror/politician，鉴黄、鉴暴恐、鉴政，多种类型同时审核可用 `,` 拼接，如：`pulp,terror` 或 `pulp,terror,politician` 等|  
 |private| 数据源私有类型|是否是对私有空间资源进行审核，选择对应的私有类型，参考[私有访问](#资源需要私有签名)|  
 
+#### 关于 url-index
+当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
+key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
+及[关于 parse 和索引](datasource.md#关于-parse)。  
+
 #### 关于 queries 参数
 queries 参数用于设置 url 的后缀或 ?+参数部分，内容审核可能会出现大图超过尺寸或大小导致失败，因此可以通过一些图片处理样式或参数来设置对处理之后的图
 片进行审核。当设置 private（私有签名）的情况下，该参数会使用在 privateurl 操作中（因为 privateurl 操作在前，当前操作在后）。  
@@ -75,10 +80,6 @@ private=
 |callback-url| 公网可访问的 url 字符串| 设置回调地址|  
 |check-url| true/false|表示是否在提交任务之前对回调地址进行简单的 post 请求验证（无body的纯post请求），默认为 true，如果无需验证则设置为 false|  
 |private| 数据源私有类型|是否是对私有空间资源进行审核，选择对应的私有类型，参考[私有访问](#资源需要私有签名)|  
-
-#### 关于 url-index
-当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
-key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
 
 ### 资源需要私有签名
 当进行图片审核的 url 需要通过私有鉴权访问时（资源来自于存储私有权限的空间），本工具支持串联操作，即先进行对应的私有签名再提交审核，使用如下的 private

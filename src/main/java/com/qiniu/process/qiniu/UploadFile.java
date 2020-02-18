@@ -159,10 +159,10 @@ public class UploadFile extends Base<Map<String, String>> {
         key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
         if (iFileChecker.check(key) != null) throw new IOException("file exists");
         if (filepath.endsWith(FileUtils.pathSeparator)) {
-            return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(new byte[]{}, key,
+            return String.join("\t", key, filepath, HttpRespUtils.getResult(uploadManager.put(new byte[]{}, key,
                     auth.uploadToken(bucket, key, expires, policy), params, null, checkCrc)));
         } else {
-            return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(filepath, key,
+            return String.join("\t", key, filepath, HttpRespUtils.getResult(uploadManager.put(filepath, key,
                     auth.uploadToken(bucket, key, expires, policy), params, null, checkCrc)));
         }
     }

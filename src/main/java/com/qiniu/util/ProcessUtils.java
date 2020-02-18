@@ -8,6 +8,7 @@ public final class ProcessUtils {
     public static Set<String> needUrlProcesses = new HashSet<String>(){{
         add("asyncfetch");
         add("privateurl");
+        add("publicurl");
         add("qhash");
         add("avinfo");
         add("exportts");
@@ -127,6 +128,7 @@ public final class ProcessUtils {
         add("asyncfetch");
         add("syncupload");
         add("privateurl");
+        add("publicurl");
         add("imagecensor");
         add("videocensor");
         add("censorresult");
@@ -134,7 +136,6 @@ public final class ProcessUtils {
         add("cdnprefetch");
         add("refreshquery");
         add("prefetchquery");
-        add("publicurl");
     }};
     public static Set<String> dangerousProcesses = new HashSet<String>(){{
         add("status");
