@@ -64,6 +64,7 @@ public class QiniuPfop extends Base<Map<String, String>> {
                 JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), false);
                 this.pfopConfigs.add(jsonObject);
             }
+            if (this.pfopConfigs.size() <= 0) throw new IOException("please check pfop config json in: " + pfopJsonPath);
         } else if (fopsIndex != null && !"".equals(fopsIndex)) {
             this.fopsIndex = fopsIndex;
         } else {
@@ -80,14 +81,22 @@ public class QiniuPfop extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key");
+        if (pfopConfigs == null) {
+            return String.join("\t", line.get("key"), line.get(fopsIndex));
+        } else {
+            return line.get("key");
+        }
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-        if (pfopConfigs != null && pfopConfigs.size() > 0) {
+        if (pfopConfigs == null) {
+            String fops = line.get(fopsIndex);
+            if (fops == null) throw new IOException("fops is not exists or empty in " + line);
+            return String.join("\t", key, operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams));
+        } else {
             StringBuilder cmdBuilder = new StringBuilder();
             for (JsonObject pfopConfig : pfopConfigs) {
                 cmdBuilder.append(pfopConfig.get("cmd").getAsString())
@@ -97,10 +106,6 @@ public class QiniuPfop extends Base<Map<String, String>> {
             }
             cmdBuilder.deleteCharAt(cmdBuilder.length() - 1);
             return String.join("\t", key, operationManager.pfop(bucket, key, cmdBuilder.toString(), pfopParams));
-        } else {
-            String fops = line.get(fopsIndex);
-            if (fops == null) throw new IOException("fops is not exists or empty in " + line);
-            return String.join("\t", key, operationManager.pfop(bucket, key, line.get(fopsIndex), pfopParams));
         }
     }
 

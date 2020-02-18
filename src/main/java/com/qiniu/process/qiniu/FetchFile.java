@@ -1,6 +1,5 @@
 package com.qiniu.process.qiniu;
 
-import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.process.Base;
@@ -78,23 +77,22 @@ public class FetchFile extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return String.join("\t", line.get("key"), line.get(urlIndex));
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
-        String url = line.get(urlIndex);
+        String url;
         String key = line.get("key"); // 原始的认为正确的 key，用来拼接 URL 时需要保持不变
-        if (url == null || "".equals(url)) {
-            if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
-            line.put(urlIndex, url);
-            key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
-        } else {
+        if (domain == null) {
+            url = line.get(urlIndex);
             if (key != null) key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
             else key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url)));
+        } else {
+            if (key == null) throw new IOException("key is not exists or empty in " + line);
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
+            key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
         }
-        line.put("key", key);
 //        String check = iFileChecker.check(key);
         if (iFileChecker.check(key) != null) throw new IOException("file exists");
         Response response = bucketManager.fetchResponse(url, bucket, key);

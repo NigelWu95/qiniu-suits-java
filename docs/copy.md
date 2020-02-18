@@ -33,7 +33,7 @@ rm-prefix=
 ### 关于 toKey-index
 指定输入行中对应修改之后的文件名字段下标，不设置则无法进行解析，当使用 file 源且 parse=tab/csv 时下标必须为整数，但未设置且 add-prefix 不为空
 时需要强制指定 prefix-force=true，表明该次重命名操作只添加文件名前缀。由于 rename 操作既需要原始文件名字段也需要新文件名字段，因此 toKey 下
-标和 key 字段下标不可相同，key 下标用 indexes 参数设置，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
+标和 key 字段下标不可相同，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
 **注意**：七牛存储空间不支持文件名以 `../`, `./` 开头或者包含 `/../`, `/./` 这种情况，会造成无法访问，因此设置文件名时请注意。  
 
 ### 命令行方式

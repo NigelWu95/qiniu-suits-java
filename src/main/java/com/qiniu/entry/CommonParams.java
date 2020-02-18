@@ -993,6 +993,8 @@ public class CommonParams {
         int fieldsMode = 0;
         List<String> keys = new ArrayList<>();
         String indexes = entryParam.getValue("indexes", "").trim();
+        boolean useDefault = "".equals(indexes);
+        boolean zeroDefault = false;
         if (isSelfUpload || "file".equals(parse)) { // 自上传和导出文件信息都是 local source，需要定义单独的默认 keys
             if (isStorageSource) throw new IOException("self upload only support local file source.");
             fieldsMode = 1; // file 的 parse 方式，字段类型为 field，所以顺序无所谓，mime 和 etag 涉及计算，所以将优先级放在后面
@@ -1002,14 +1004,16 @@ public class CommonParams {
             keys.add("datetime");
             keys.add("mime");
             keys.add("etag");
-            if ("".equals(indexes)) {
+            if (useDefault) {
                 saveFormat = entryParam.getValue("save-format", "tab").trim();
                 if ("yaml".equals(saveFormat)) indexes = "pre-2";
                 else indexes = "pre-1";
-            } else if (!indexes.startsWith("pre-")) {
-                throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
             }
-            indexMap.put(entryParam.getValue("filepath-index", "filepath").trim(), "filepath");
+//            else if (!indexes.startsWith("pre-")) {
+//                throw new IOException("upload from path only support \"pre-indexes\" like \"indexes=pre-3\".");
+//            }
+            setIndexes(keys, indexes, fieldIndex);
+            setIndex(entryParam.getValue("filepath-index", "filepath").trim(), "filepath");
         } else { // 存储数据源的 keys 定义
             keys.addAll(ConvertingUtils.defaultFileFields);
             if ("upyun".equals(source)) {
@@ -1028,44 +1032,49 @@ public class CommonParams {
                 keys.remove(ConvertingUtils.defaultStatusField);
                 keys.remove(ConvertingUtils.defaultMd5Field);
             }
-        }
-
-        setIndexes(keys, indexes, fieldIndex);
-        boolean useDefault = "".equals(indexes);
-        boolean zeroUsed = false;
-        if (useDefault) {
-            if (isStorageSource || isSelfUpload) {
+            if (!useDefault)  {
+                setIndexes(keys, indexes, fieldIndex);
+            } else if (isStorageSource) {
                 for (String key : keys) indexMap.put(key, key);
             } else if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
+                // 由于 filepath 可能依据 parent 和文件名生成，故列表第一列亦可能为文件名，所以要确保没有设置 parent 才能给默认的 filepath-index=0
                 String filepathIndex = entryParam.getValue("filepath-index", "").trim();
                 if ("".equals(filepathIndex)) {
-                    setIndex(fieldIndex ? "filepath" : "0", "filepath");
+                    zeroDefault = true;
+                    if (entryParam.getValue("parent-path", null) == null) {
+                        indexMap.put(fieldIndex ? "filepath" : "0", "filepath");
+                    } else {
+                        indexMap.put(fieldIndex ? "key" : "0", "key");
+                    }
                 } else {
-                    zeroUsed = true;
-                    setIndex(filepathIndex, "filepath");
+                    indexMap.put(filepathIndex, "filepath");
                 }
             } else if (ProcessUtils.needUrl(process)) {
+                // 由于 url 可能依据 domain 和文件名生成，故列表第一列亦可能为文件名，所以要确保没有设置 domain 才能给默认的 url-index=0
                 String urlIndex = entryParam.getValue("url-index", "").trim();
                 if ("".equals(urlIndex)) {
-                    setIndex(fieldIndex ? "url" : "0", "url");
+                    zeroDefault = true;
+                    if (entryParam.getValue("domain", null) == null) {
+                        indexMap.put(fieldIndex ? "url" : "0", "url");
+                    } else {
+                        indexMap.put(fieldIndex ? "key" : "0", "key");
+                    }
                 } else {
-                    zeroUsed = true;
-                    setIndex(urlIndex, "url");
+                    indexMap.put(urlIndex, "url");
                 }
             } else if (ProcessUtils.needId(process)) {
                 String idIndex = entryParam.getValue("id-index", "").trim();
                 if ("".equals(idIndex)) {
-                    setIndex(fieldIndex ? "id" : "0", "id");
+                    zeroDefault = true;
+                    indexMap.put(fieldIndex ? "id" : "0", "id");
                 } else {
-                    zeroUsed = true;
-                    setIndex(idIndex, "id");
+                    indexMap.put(idIndex, "id");
                 }
             } else {
-                if (fieldIndex) indexMap.put("key", "key");
-                else indexMap.put("0", "key");
+                indexMap.put(fieldIndex ? "key" : "0", "key");
                 if (ProcessUtils.needToKey(process))
                     // move/copy/rename 等操作不设置默认 toKey，因为大部分情况是增加或删除前缀，需要优先考虑，查看 processor 的实现
-                    setIndex(entryParam.getValue("toKey-index").trim(), "toKey");
+                    setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
                 if (ProcessUtils.needFops(process))
                     setIndex(entryParam.getValue("fops-index", fieldIndex ? "fops" : "1").trim(), "fops");
                 if (ProcessUtils.needAvinfo(process))
@@ -1076,8 +1085,8 @@ public class CommonParams {
         if (baseFilter != null) {
             if (baseFilter.checkKeyCon() && !indexMap.containsValue("key")) {
                 if (useDefault) {
-                    if (zeroUsed) setIndex(fieldIndex ? "key" : "0", "key");
-                    else indexMap.put(fieldIndex ? "key" : "0", "key");
+                    if (zeroDefault) indexMap.put(fieldIndex ? "key" : "0", "key");
+                    else setIndex(fieldIndex ? "key" : "0", "key");
                 } else {
                     throw new IOException("f-[x] about key filter for file key must get the key's index in indexes settings.");
                 }
@@ -1121,8 +1130,8 @@ public class CommonParams {
             if (seniorFilter.checkExtMime()) {
                 if (!indexMap.containsValue("key")) {
                     if (useDefault) {
-                        if (zeroUsed) setIndex(fieldIndex ? "key" : "0", "key");
-                        else indexMap.put(fieldIndex ? "key" : "0", "key");
+                        if (zeroDefault) indexMap.put(fieldIndex ? "key" : "0", "key");
+                        else setIndex(fieldIndex ? "key" : "0", "key");
                     } else {
                         throw new IOException("f-check=ext-mime filter must get the key's index in indexes settings.");
                     }

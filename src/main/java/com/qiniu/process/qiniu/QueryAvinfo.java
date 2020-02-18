@@ -58,22 +58,22 @@ public class QueryAvinfo extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        String key = line.get("key");
-        return key == null ? line.get(urlIndex) : String.join("\t", key, line.get(urlIndex));
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
-        String url = line.get(urlIndex);
-        String key = line.get("key");
-        if (url == null || "".equals(url)) {
+        String url;
+        if (domain == null) {
+            url = line.get(urlIndex);
+            return String.join("\t", url, JsonUtils.toJson(mediaManager.getAvinfoBody(url)));
+        } else {
+            String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
-            line.put(urlIndex, url);
-            return String.join("\t", key, url, JsonUtils.toJson(mediaManager.getAvinfoBody(url)));
+//            line.put(urlIndex, url);
+            return String.join("\t", key, JsonUtils.toJson(mediaManager.getAvinfoBody(url)));
         }
-        return key == null ? String.join("\t", url, JsonUtils.toJson(mediaManager.getAvinfoBody(url))) :
-                String.join("\t", key, url, JsonUtils.toJson(mediaManager.getAvinfoBody(url)));
     }
 
     @Override

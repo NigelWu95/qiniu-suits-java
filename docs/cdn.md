@@ -27,12 +27,12 @@ is-dir=
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
 |domain| 域名字符串| 用于拼接文件名生成链接的域名（七牛存储空间域名可以使用[ domainsfrom 命令查询](domainsofbucket.md)），当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
-|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "url"|  
+|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 |is-dir| true/false| 是否进行目录刷新，设置为 true 时，输入的 url 或 key 必须是目录形式（即以 / 结尾），默认为 false，表示进行 url 刷新|  
 
 #### 关于 url-index
 当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
-加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
+加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
 
 #### 批量刷新的 url 条数
 刷新操作分为目录刷新和普通 url 刷新，目录刷新默认每次提交 10 条，普通 url 刷新默认每次提交 30 条，如果需要其他规模，可以通过 batch-size 参数来
@@ -60,7 +60,7 @@ url-index=
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
 |domain| 域名字符串| 用于拼接文件名生成链接的域名（七牛存储空间域名可以使用[ domainsfrom 命令查询](domainsofbucket.md)），当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
-|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "url"|  
+|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 
 #### 批量预取的 url 条数
 批量预取默认每次提交 30 条，如果需要其他规模，可以通过 batch-size 参数来设置，如 `batch-size=50`，但是批量预取资源的每次提交条数上限是 60。  
@@ -87,11 +87,11 @@ url-index=
 |protocol| http/https| 使用 http 还是 https 访问资源进行抓取（默认 http）|  
 |domain| 域名字符串| 用于拼接文件名生成链接的域名（七牛存储空间域名可以使用[ domainsfrom 命令查询](domainsofbucket.md)），当指定 url-index 时无需设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
-|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "url"|  
+|url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 
 #### 关于 url-index
 当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
-加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
+加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
 
 #### 批量查询的 url 条数
 每次提交查询条数默认 100 条，如果需要其他规模，可以通过 batch-size 参数来设置，如 `batch-size=80`，但是查询的每次提交条数上限是 100。  

@@ -14,7 +14,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
     private String domain;
     private String urlIndex;
     private String suffixOrQuery;
-    private boolean useQuery;
     private long expires;
     private ILineProcess<Map<String, String>> nextProcessor;
 
@@ -53,7 +52,6 @@ public class PrivateUrl extends Base<Map<String, String>> {
             this.urlIndex = "url";
         }
         this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
-        useQuery = !"".equals(this.suffixOrQuery);
         this.expires = expires <= 0L ? 3600 : expires;
     }
 
@@ -73,29 +71,26 @@ public class PrivateUrl extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        String key = line.get("key");
-        return key == null ? line.get(urlIndex) : String.join("\t", key, line.get(urlIndex));
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
-        String url = line.get(urlIndex);
-        String key = line.get("key");
-        if (url == null || "".equals(url)) {
+        String url;
+        if (domain != null) {
+            String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = String.join("", protocol, "://", domain, "/",
                     key.replace("\\?", "%3f"), suffixOrQuery);
-            line.put(urlIndex, url);
-        } else if (useQuery) {
-            url = String.join("", url, suffixOrQuery);
-            line.put(urlIndex, url);
+            if (nextProcessor == null) return String.join("\t", key, auth.privateDownloadUrl(url, expires));
+        } else {
+            url = line.get(urlIndex);
+            if (nextProcessor == null) return String.join("\t", url, auth
+                    .privateDownloadUrl(url + suffixOrQuery, expires));
         }
         url = auth.privateDownloadUrl(url, expires);
-        if (nextProcessor != null) {
-            line.put("url", url);
-            return nextProcessor.processLine(line);
-        }
-        return key == null ? url : String.join("\t", key, url);
+        line.put("url", auth.privateDownloadUrl(url, expires));
+        return nextProcessor.processLine(line);
     }
 
     @Override

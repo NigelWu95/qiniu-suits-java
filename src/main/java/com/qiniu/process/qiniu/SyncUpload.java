@@ -107,23 +107,22 @@ public class SyncUpload extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return String.join("\t", line.get("key"), line.get(urlIndex));
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
-        String url = line.get(urlIndex);
+        String url;
         String key = line.get("key");
-        if (url == null || "".equals(url)) {
-            if (key == null || "".equals(key)) throw new IOException("key is not exists or empty in " + line);
-            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
-            line.put(urlIndex, url);
-            key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
-        } else {
+        if (domain == null) {
+            url = line.get(urlIndex);
             if (key != null) key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
             else key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, URLUtils.getKey(url)));
+        } else {
+            if (key == null || "".equals(key)) throw new IOException("key is not exists or empty in " + line);
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
+            key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
         }
-        line.put("key", key);
         if (iFileChecker.check(key) != null) throw new IOException("file exists");
         Response response = downloader.downloadResponse(url, headers);
         if (response.statusCode == 200 || response.statusCode == 206) {
