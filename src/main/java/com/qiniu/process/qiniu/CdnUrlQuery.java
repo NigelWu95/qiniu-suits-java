@@ -146,8 +146,9 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
                 }
             }
         } else {
-            fileSaveMapper.writeError(String.join("\n", processList.stream().map(this::resultInfo)
-                    .collect(Collectors.toList())) + "\t" + code + refreshResult.get("error").getAsString(), false);
+            fileSaveMapper.writeError(String.join("\t", processList.stream().map(this::resultInfo)
+                    .collect(Collectors.joining("\n")), String.valueOf(code),
+                    refreshResult.get("error").getAsString()), false);
         }
         refreshResult = null;
         return null;

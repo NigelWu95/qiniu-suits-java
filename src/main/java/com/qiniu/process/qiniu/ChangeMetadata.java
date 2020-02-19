@@ -21,7 +21,6 @@ public class ChangeMetadata extends Base<Map<String, String>> {
     private Auth auth;
     private Configuration configuration;
     private Client client;
-    private static final String URL = "http://rs.qiniu.com/batch";
 
     public ChangeMetadata(String accessKey, String secretKey, Configuration configuration, String bucket,
                           Map<String, String> metadata, String condition) throws IOException {
@@ -57,12 +56,14 @@ public class ChangeMetadata extends Base<Map<String, String>> {
 
     @Override
     public ChangeMetadata clone() throws CloneNotSupportedException {
-        ChangeMetadata changeType = (ChangeMetadata)super.clone();
-        changeType.ops = new ArrayList<>();
-        changeType.lines = new ArrayList<>();
-        changeType.auth = Auth.create(accessId, secretKey);
-        changeType.client = new Client(configuration.clone());
-        return changeType;
+        ChangeMetadata changeMetadata = (ChangeMetadata)super.clone();
+        if (fileSaveMapper == null) {
+            changeMetadata.ops = new ArrayList<>();
+            changeMetadata.lines = new ArrayList<>();
+        }
+        changeMetadata.auth = Auth.create(accessId, secretKey);
+        changeMetadata.client = new Client(configuration.clone());
+        return changeMetadata;
     }
 
     @Override
@@ -103,7 +104,8 @@ public class ChangeMetadata extends Base<Map<String, String>> {
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        return HttpRespUtils.getResult(client.post(URL, body, auth.authorization(URL, body, Client.FormMime), Client.FormMime));
+        return HttpRespUtils.getResult(client.post(CloudApiUtils.QINIU_RS_BATCH_URL, body,
+                auth.authorization(CloudApiUtils.QINIU_RS_BATCH_URL, body, Client.FormMime), Client.FormMime));
     }
 
     @Override

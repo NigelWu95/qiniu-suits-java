@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class RestoreArchive extends Base<Map<String, String>> {
 
     private int days;
-    private String condition;
+    private String encodedCondition;
     private Configuration configuration;
     private Auth auth;
     private Client client;
@@ -27,7 +27,7 @@ public class RestoreArchive extends Base<Map<String, String>> {
                           String condition) throws IOException {
         super("restorear", accessKey, secretKey, bucket);
         this.days = days;
-        this.condition = condition;
+        if (condition != null && !condition.isEmpty()) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.configuration = configuration;
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
@@ -39,7 +39,7 @@ public class RestoreArchive extends Base<Map<String, String>> {
                           String condition, String savePath, int saveIndex) throws IOException {
         super("restorear", accessKey, secretKey, bucket, savePath, saveIndex);
         this.days = days;
-        this.condition = condition;
+        if (condition != null && !condition.isEmpty()) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.configuration = configuration;
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
@@ -50,16 +50,6 @@ public class RestoreArchive extends Base<Map<String, String>> {
     public RestoreArchive(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
                           String condition, String savePath) throws IOException {
         this(accessKey, secretKey, configuration, bucket, days, condition, savePath, 0);
-    }
-
-    RestoreArchive(Auth auth, String secretKey, Configuration configuration, String bucket, int days, String condition) {
-        super("restorear", auth.accessKey, secretKey, bucket);
-        this.auth = auth;
-        this.days = days;
-        this.condition = condition;
-        this.configuration = configuration;
-        this.client = new Client(configuration.clone());
-        requestUrl = configuration.useHttpsDomains ? "https://rs.qbox.me/restoreAr" : "http://rs.qbox.me/restoreAr";
     }
 
     @Override
@@ -84,7 +74,7 @@ public class RestoreArchive extends Base<Map<String, String>> {
         for (Map<String, String> line : lineList) {
             entry.addProperty("key", line.get("key"));
             entry.addProperty("freeze_after_days", days);
-            entry.addProperty("cond", condition);
+            entry.addProperty("cond", encodedCondition);
             entries.add(entry);
         }
         bodyJson.add("entries", entries);
@@ -117,7 +107,7 @@ public class RestoreArchive extends Base<Map<String, String>> {
         String key = line.get("key");
         entry.addProperty("key", key);
         entry.addProperty("freeze_after_days", days);
-        entry.addProperty("cond", condition);
+        entry.addProperty("cond", encodedCondition);
         entries.add(entry);
         bodyJson.add("entries", entries);
         byte[] body = bodyJson.toString().getBytes();
@@ -135,7 +125,7 @@ public class RestoreArchive extends Base<Map<String, String>> {
     @Override
     public void closeResource() {
         super.closeResource();
-        condition = null;
+        encodedCondition = null;
         configuration = null;
         auth = null;
         client = null;
