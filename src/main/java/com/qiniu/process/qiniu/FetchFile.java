@@ -95,8 +95,7 @@ public class FetchFile extends Base<Map<String, String>> {
         }
 //        String check = iFileChecker.check(key);
         if (iFileChecker.check(key) != null) throw new IOException("file exists");
-        Response response = bucketManager.fetchResponse(url, bucket, key);
-        return String.join("\t", key, url, String.valueOf(response.statusCode), HttpRespUtils.getResult(response));
+        return HttpRespUtils.getResult(bucketManager.fetchResponse(url, bucket, key));
     }
 
     @Override

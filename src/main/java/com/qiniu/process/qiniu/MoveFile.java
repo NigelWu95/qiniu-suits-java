@@ -143,7 +143,7 @@ public class MoveFile extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-        String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, line.get(toKeyIndex));
+        String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, defaultToKey ? key : line.get(toKeyIndex));
         if (isRename) {
             Response response = bucketManager.rename(bucket, key, toKey);
             if (response.statusCode != 200) throw new QiniuException(response);

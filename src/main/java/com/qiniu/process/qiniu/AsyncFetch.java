@@ -32,7 +32,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
     private Configuration configuration;
     private Auth auth;
     private Client client;
-    private String requestUrl;
+    private static String requestUrl;
 //    private BucketManager bucketManager;
 
     public AsyncFetch(String accessKey, String secretKey, Configuration configuration, String bucket, String protocol,
@@ -41,7 +41,6 @@ public class AsyncFetch extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
-        this.requestUrl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
 //        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
 //        CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
@@ -54,7 +53,6 @@ public class AsyncFetch extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
-        this.requestUrl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
 //        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
 //        CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
@@ -83,6 +81,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         }
         this.addPrefix = addPrefix == null ? "" : addPrefix;
         this.rmPrefix = rmPrefix;
+        requestUrl = configuration.apiHost(auth.accessKey, bucket) + "/sisyphus/fetch";
     }
 
     public void setFetchArgs(String host, String md5Index, String callbackUrl, String callbackBody,
