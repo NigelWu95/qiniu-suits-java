@@ -1,6 +1,5 @@
 package com.qiniu.process.qiniu;
 
-import com.qiniu.http.Response;
 import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;

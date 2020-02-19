@@ -52,6 +52,16 @@ public class RestoreArchive extends Base<Map<String, String>> {
         this(accessKey, secretKey, configuration, bucket, days, condition, savePath, 0);
     }
 
+    RestoreArchive(Auth auth, String secretKey, Configuration configuration, String bucket, int days, String condition) {
+        super("restorear", auth.accessKey, secretKey, bucket);
+        this.auth = auth;
+        this.days = days;
+        this.condition = condition;
+        this.configuration = configuration;
+        this.client = new Client(configuration.clone());
+        requestUrl = configuration.useHttpsDomains ? "https://rs.qbox.me/restoreAr" : "http://rs.qbox.me/restoreAr";
+    }
+
     @Override
     public RestoreArchive clone() throws CloneNotSupportedException {
         RestoreArchive restoreArchive = (RestoreArchive)super.clone();
@@ -99,7 +109,7 @@ public class RestoreArchive extends Base<Map<String, String>> {
     }
 
     @Override
-    protected String singleResult(Map<String, String> line) throws Exception {
+    protected String singleResult(Map<String, String> line) throws IOException {
         JsonObject bodyJson = new JsonObject();
         JsonArray entries = new JsonArray();
         JsonObject entry = new JsonObject();
