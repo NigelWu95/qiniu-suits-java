@@ -36,7 +36,7 @@ public class ChangeType extends Base<Map<String, String>> {
         storageType = type == 0 ? StorageType.COMMON : StorageType.INFREQUENCY;
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(auth, configuration.clone());
+        this.bucketManager = new BucketManager(auth, configuration); // BucketManager 中已经做了 configuration.clone()
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         caller = list -> null;
     }
@@ -50,7 +50,7 @@ public class ChangeType extends Base<Map<String, String>> {
         this.lines = new ArrayList<>();
         this.configuration = configuration;
         this.auth = Auth.create(accessKey, secretKey);
-        this.bucketManager = new BucketManager(auth, configuration.clone());
+        this.bucketManager = new BucketManager(auth, configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         caller = list -> null;
     }
@@ -72,7 +72,7 @@ public class ChangeType extends Base<Map<String, String>> {
     public ChangeType clone() throws CloneNotSupportedException {
         ChangeType changeType = (ChangeType)super.clone();
         changeType.auth = Auth.create(accessId, secretKey);
-        changeType.bucketManager = new BucketManager(changeType.auth, configuration.clone());
+        changeType.bucketManager = new BucketManager(changeType.auth, configuration);
         changeType.batchOperations = new BatchOperations();
         changeType.lines = new ArrayList<>();
         if (restoreArchive != null) {

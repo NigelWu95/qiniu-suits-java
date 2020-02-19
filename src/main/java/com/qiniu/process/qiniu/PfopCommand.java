@@ -31,14 +31,14 @@ public class PfopCommand extends Base<Map<String, String>> {
                        String pfopJsonPath, List<JsonObject> pfopConfigs) throws IOException {
         super("pfopcmd", "", "", null);
         set(configuration, avinfoIndex, hasDuration, hasSize, combine, pfopJsonPath, pfopConfigs);
-        this.mediaManager = new MediaManager(configuration.clone());
+        this.mediaManager = new MediaManager(configuration);
     }
 
     public PfopCommand(Configuration configuration, String avinfoIndex, boolean hasDuration, boolean hasSize, boolean combine,
                        String pfopJsonPath, List<JsonObject> pfopConfigs, String savePath, int saveIndex) throws IOException {
         super("pfopcmd", "", "", null, savePath, saveIndex);
         set(configuration, avinfoIndex, hasDuration, hasSize, combine, pfopJsonPath, pfopConfigs);
-        this.mediaManager = new MediaManager(configuration.clone());
+        this.mediaManager = new MediaManager(configuration);
     }
 
     public PfopCommand(Configuration configuration, String avinfoIndex, boolean hasDuration, boolean hasSize, boolean combine,
@@ -72,7 +72,7 @@ public class PfopCommand extends Base<Map<String, String>> {
     @Override
     public PfopCommand clone() throws CloneNotSupportedException {
         PfopCommand pfopCommand = (PfopCommand)super.clone();
-        pfopCommand.mediaManager = new MediaManager(configuration.clone());
+        pfopCommand.mediaManager = new MediaManager(configuration);
         return pfopCommand;
     }
 

@@ -30,14 +30,14 @@ public class DownloadFile extends Base<Map<String, String>> {
             throws IOException {
         super("download", "", "", null, savePath, saveIndex);
         set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix, downPath);
-        downloader = new HttpDownloader(configuration.clone());
+        downloader = new HttpDownloader(configuration);
     }
 
     public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host, int[] range,
                         String suffixOrQuery, String addPrefix, String rmPrefix, String downPath) throws IOException {
         super("download", "", "", null);
         set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix, downPath);
-        downloader = new HttpDownloader(configuration.clone());
+        downloader = new HttpDownloader(configuration);
     }
 
     public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
@@ -88,7 +88,7 @@ public class DownloadFile extends Base<Map<String, String>> {
     @Override
     public DownloadFile clone() throws CloneNotSupportedException {
         DownloadFile downloadFile = (DownloadFile)super.clone();
-        downloadFile.downloader = new HttpDownloader(configuration.clone());
+        downloadFile.downloader = new HttpDownloader(configuration);
         return downloadFile;
     }
 

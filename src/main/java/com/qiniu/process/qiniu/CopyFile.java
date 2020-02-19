@@ -31,7 +31,7 @@ public class CopyFile extends Base<Map<String, String>> {
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String toKeyIndex, String addPrefix, String rmPrefix) throws IOException {
         super("copy", accessKey, secretKey, bucket);
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         CloudApiUtils.checkQiniu(bucketManager, toBucket);
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix);
@@ -43,7 +43,7 @@ public class CopyFile extends Base<Map<String, String>> {
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         CloudApiUtils.checkQiniu(bucketManager, toBucket);
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix);
@@ -73,7 +73,7 @@ public class CopyFile extends Base<Map<String, String>> {
     @Override
     public CopyFile clone() throws CloneNotSupportedException {
         CopyFile copyFile = (CopyFile)super.clone();
-        copyFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+        copyFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
         copyFile.batchOperations = new BatchOperations();
         copyFile.lines = new ArrayList<>();
         return copyFile;

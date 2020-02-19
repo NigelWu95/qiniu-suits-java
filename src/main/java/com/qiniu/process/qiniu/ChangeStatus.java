@@ -28,7 +28,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         super("status", accessKey, secretKey, bucket);
         this.status = status;
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
@@ -40,7 +40,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
@@ -52,7 +52,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
     @Override
     public ChangeStatus clone() throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
-        changeStatus.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+        changeStatus.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
         changeStatus.batchOperations = new BatchOperations();
         changeStatus.lines = new ArrayList<>();
         return changeStatus;

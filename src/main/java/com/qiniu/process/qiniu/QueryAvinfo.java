@@ -18,14 +18,14 @@ public class QueryAvinfo extends Base<Map<String, String>> {
     public QueryAvinfo(Configuration configuration, String protocol, String domain, String urlIndex) throws IOException {
         super("avinfo", "", "", null);
         set(configuration, protocol, domain, urlIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+        this.mediaManager = new MediaManager(configuration, protocol);
     }
 
     public QueryAvinfo(Configuration configuration, String protocol, String domain, String urlIndex, String savePath,
                        int saveIndex) throws IOException {
         super("avinfo", "", "", null, savePath, saveIndex);
         set(configuration, protocol, domain, urlIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+        this.mediaManager = new MediaManager(configuration, protocol);
     }
 
     public QueryAvinfo(Configuration configuration, String protocol, String domain, String urlIndex, String savePath)
@@ -52,7 +52,7 @@ public class QueryAvinfo extends Base<Map<String, String>> {
     @Override
     public QueryAvinfo clone() throws CloneNotSupportedException {
         QueryAvinfo queryAvinfo = (QueryAvinfo)super.clone();
-        queryAvinfo.mediaManager = new MediaManager(configuration.clone(), protocol);
+        queryAvinfo.mediaManager = new MediaManager(configuration, protocol);
         return queryAvinfo;
     }
 

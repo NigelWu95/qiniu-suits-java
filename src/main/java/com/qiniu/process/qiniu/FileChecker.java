@@ -32,7 +32,7 @@ public class FileChecker {
     }
 
     public FileChecker(Configuration configuration, String protocol, String algorithm) {
-        this.client = new Client(configuration);
+        this.client = configuration == null ? new Client() : new Client(configuration.clone());
         this.protocol = "https".equals(protocol)? "https" : "http";
         this.algorithm = algorithms.contains(algorithm) ? algorithm : "md5";
     }

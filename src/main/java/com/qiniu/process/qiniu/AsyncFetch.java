@@ -41,7 +41,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
-//        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+//        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
 //        CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
     }
@@ -53,7 +53,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
-//        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+//        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
 //        CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
     }
@@ -102,7 +102,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
         AsyncFetch asyncFetch = (AsyncFetch)super.clone();
         asyncFetch.auth = Auth.create(accessId, secretKey);
         asyncFetch.client = new Client(configuration.clone());
-//        asyncFetch.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+//        asyncFetch.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
         return asyncFetch;
     }
 

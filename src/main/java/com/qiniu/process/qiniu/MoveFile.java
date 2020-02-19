@@ -34,7 +34,7 @@ public class MoveFile extends Base<Map<String, String>> {
         // 目标 bucket 为空时规定为 rename 操作
         super(toBucket == null || "".equals(toBucket) ? "rename" : "move", accessKey, secretKey, bucket);
         if ("rename".equals(processName)) isRename = true;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         CloudApiUtils.checkQiniu(bucketManager, toBucket);
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix, forceIfOnlyPrefix);
@@ -49,7 +49,7 @@ public class MoveFile extends Base<Map<String, String>> {
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
         this.lines = new ArrayList<>();
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         CloudApiUtils.checkQiniu(bucketManager, toBucket);
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix, forceIfOnlyPrefix);
@@ -91,7 +91,7 @@ public class MoveFile extends Base<Map<String, String>> {
     @Override
     public MoveFile clone() throws CloneNotSupportedException {
         MoveFile moveFile = (MoveFile)super.clone();
-        moveFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+        moveFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
         moveFile.batchOperations = new BatchOperations();
         moveFile.lines = new ArrayList<>();
         return moveFile;

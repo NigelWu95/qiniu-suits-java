@@ -27,7 +27,7 @@ public class VideoCensor extends Base<Map<String, String>> {
         set(configuration, protocol, domain, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
         Auth auth = Auth.create(accessKey, secretKey);
         CloudApiUtils.checkQiniu(auth);
-        censorManager = new CensorManager(auth, configuration.clone());
+        censorManager = new CensorManager(auth, configuration);
     }
 
     public VideoCensor(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
@@ -37,7 +37,7 @@ public class VideoCensor extends Base<Map<String, String>> {
         set(configuration, protocol, domain, urlIndex, scenes, interval, saverBucket, saverPrefix, hookUrl);
         Auth auth = Auth.create(accessKey, secretKey);
         CloudApiUtils.checkQiniu(auth);
-        censorManager = new CensorManager(auth, configuration.clone());
+        censorManager = new CensorManager(auth, configuration);
     }
 
     public VideoCensor(String accesskey, String secretKey, Configuration configuration, String protocol, String domain,
@@ -84,7 +84,7 @@ public class VideoCensor extends Base<Map<String, String>> {
     @Override
     public VideoCensor clone() throws CloneNotSupportedException {
         VideoCensor videoCensor = (VideoCensor)super.clone();
-        videoCensor.censorManager = new CensorManager(Auth.create(accessId, secretKey), configuration.clone());
+        videoCensor.censorManager = new CensorManager(Auth.create(accessId, secretKey), configuration);
         return videoCensor;
     }
 

@@ -20,14 +20,14 @@ public class ExportTS extends Base<Map<String, String>> {
     public ExportTS(Configuration configuration, String protocol, String domain, String urlIndex) throws IOException {
         super("exportts", "", "", null);
         set(configuration, protocol, domain, urlIndex);
-        this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
+        this.m3U8Manager = new M3U8Manager(configuration, protocol);
     }
 
     public ExportTS(Configuration configuration, String protocol, String domain, String urlIndex, String savePath,
                     int saveIndex) throws IOException {
         super("exportts", "", "", null, savePath, saveIndex);
         set(configuration, protocol, domain, urlIndex);
-        this.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
+        this.m3U8Manager = new M3U8Manager(configuration, protocol);
     }
 
     public ExportTS(Configuration configuration, String protocol, String domain, String urlIndex, String savePath)
@@ -54,7 +54,7 @@ public class ExportTS extends Base<Map<String, String>> {
     @Override
     public ExportTS clone() throws CloneNotSupportedException {
         ExportTS exportTS = (ExportTS)super.clone();
-        exportTS.m3U8Manager = new M3U8Manager(configuration.clone(), protocol);
+        exportTS.m3U8Manager = new M3U8Manager(configuration, protocol);
         return exportTS;
     }
 

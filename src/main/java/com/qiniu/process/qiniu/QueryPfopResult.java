@@ -19,14 +19,14 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     public QueryPfopResult(Configuration configuration, String protocol, String pIdIndex) throws IOException {
         super("pfopresult", "", "", null);
         set(configuration, protocol, pIdIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+        this.mediaManager = new MediaManager(configuration, protocol);
     }
 
     public QueryPfopResult(Configuration configuration, String protocol, String pIdIndex, String savePath, int saveIndex)
             throws IOException {
         super("pfopresult", "", "", null, savePath, saveIndex);
         set(configuration, protocol, pIdIndex);
-        this.mediaManager = new MediaManager(configuration.clone(), protocol);
+        this.mediaManager = new MediaManager(configuration, protocol);
         this.fileSaveMapper.preAddWriter("waiting");
         this.fileSaveMapper.preAddWriter("notify_failed");
     }
@@ -45,7 +45,7 @@ public class QueryPfopResult extends Base<Map<String, String>> {
     @Override
     public QueryPfopResult clone() throws CloneNotSupportedException {
         QueryPfopResult pfopResult = (QueryPfopResult)super.clone();
-        pfopResult.mediaManager = new MediaManager(configuration.clone(), protocol);
+        pfopResult.mediaManager = new MediaManager(configuration, protocol);
         if (pfopResult.fileSaveMapper != null) {
             pfopResult.fileSaveMapper.preAddWriter("waiting");
             pfopResult.fileSaveMapper.preAddWriter("notify_failed");

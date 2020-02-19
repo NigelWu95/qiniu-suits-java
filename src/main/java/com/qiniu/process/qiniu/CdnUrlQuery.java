@@ -24,27 +24,16 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
     private List<String> batches;
     private List<Map<String, String>> lines;
     private ICdnApplier cdnApplier;
+    private Configuration configuration;
 
     public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, boolean prefetch) throws IOException {
         super(prefetch ? "prefetchquery" : "refreshquery", accessKey, secretKey, null);
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth, configuration.clone());
+        CdnHelper cdnHelper = new CdnHelper(auth, configuration);
         this.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
         CloudApiUtils.checkQiniu(auth);
-        if (domain == null || "".equals(domain)) {
-            if (urlIndex == null || "".equals(urlIndex)) {
-                throw new IOException("please set one of domain and url-index.");
-            } else {
-                this.urlIndex = urlIndex;
-            }
-        } else {
-            this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
-            RequestUtils.lookUpFirstIpFromHost(domain);
-            this.domain = domain;
-            this.urlIndex = "url";
-        }
-        this.prefetch = prefetch;
+        set(configuration, protocol, domain, urlIndex, prefetch);
     }
 
     public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
@@ -54,9 +43,20 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
         this.batches = new ArrayList<>(30);
         this.lines = new ArrayList<>();
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth, configuration.clone());
+        CdnHelper cdnHelper = new CdnHelper(auth, configuration);
         this.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
         CloudApiUtils.checkQiniu(auth);
+        set(configuration, protocol, domain, urlIndex, prefetch);
+        this.fileSaveMapper.preAddWriter("processing");
+    }
+
+    public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
+                       String urlIndex, boolean prefetch, String savePath) throws IOException {
+        this(accessKey, secretKey, configuration, protocol, domain, urlIndex, prefetch, savePath, 0);
+    }
+
+    public void set(Configuration configuration, String protocol, String domain, String urlIndex, boolean prefetch) throws IOException {
+        this.configuration = configuration;
         if (domain == null || "".equals(domain)) {
             if (urlIndex == null || "".equals(urlIndex)) {
                 throw new IOException("please set one of domain and url-index.");
@@ -70,19 +70,13 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
             this.urlIndex = "url";
         }
         this.prefetch = prefetch;
-        this.fileSaveMapper.preAddWriter("processing");
-    }
-
-    public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
-                       String urlIndex, boolean prefetch, String savePath) throws IOException {
-        this(accessKey, secretKey, configuration, protocol, domain, urlIndex, prefetch, savePath, 0);
     }
 
     @Override
     public CdnUrlQuery clone() throws CloneNotSupportedException {
         CdnUrlQuery cdnUrlQuery = (CdnUrlQuery)super.clone();
         cdnUrlQuery.lines = new ArrayList<>();
-        CdnHelper cdnHelper = new CdnHelper(Auth.create(accessId, secretKey));
+        CdnHelper cdnHelper = new CdnHelper(Auth.create(accessId, secretKey), configuration);
         cdnUrlQuery.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
         if (cdnUrlQuery.fileSaveMapper != null) {
             cdnUrlQuery.fileSaveMapper.preAddWriter("processing");

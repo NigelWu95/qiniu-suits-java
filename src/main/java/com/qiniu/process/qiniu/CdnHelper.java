@@ -20,14 +20,9 @@ public class CdnHelper {
     private static final String refreshQueryUrl = "http://fusion.qiniuapi.com/v2/tune/refresh/list";
     private static final String prefetchQueryUrl = "http://fusion.qiniuapi.com/v2/tune/prefetch/list";
 
-    public CdnHelper(Auth auth) {
-        this.auth = auth;
-        this.client = new Client();
-    }
-
     public CdnHelper(Auth auth, Configuration configuration) {
         this.auth = auth;
-        this.client = new Client(configuration);
+        this.client = configuration == null ? new Client() : new Client(configuration);
     }
 
     public Response refresh(String[] urls, String[] dirs) throws QiniuException {

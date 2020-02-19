@@ -24,29 +24,18 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 //    private boolean prefetch;
     private List<String> batches;
     private List<Map<String, String>> lines;
+//    private Configuration configuration;
     private ICdnApplier cdnApplier;
 
     public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                          String urlIndex, boolean isDir, boolean prefetch) throws IOException {
         super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null);
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth, configuration.clone());
+        CdnHelper cdnHelper = new CdnHelper(auth, configuration);
         this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
                 dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
         CloudApiUtils.checkQiniu(auth);
-        if (domain == null || "".equals(domain)) {
-            if (urlIndex == null || "".equals(urlIndex)) {
-                throw new IOException("please set one of domain and url-index.");
-            } else {
-                this.urlIndex = urlIndex;
-            }
-        } else {
-            this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
-            RequestUtils.lookUpFirstIpFromHost(domain);
-            this.domain = domain;
-            this.urlIndex = "url";
-        }
-        this.isDir = isDir;
+        set(configuration, protocol, domain, urlIndex, isDir);
 //        this.prefetch = prefetch;
     }
 
@@ -57,10 +46,17 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
         this.batches = new ArrayList<>(30);
         this.lines = new ArrayList<>();
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth, configuration.clone());
+        CdnHelper cdnHelper = new CdnHelper(auth, configuration);
         this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
                 dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
         CloudApiUtils.checkQiniu(auth);
+        set(configuration, protocol, domain, urlIndex, isDir);
+//        this.prefetch = prefetch;
+        this.fileSaveMapper.preAddWriter("invalid");
+    }
+
+    public void set(Configuration configuration, String protocol, String domain, String urlIndex, boolean isDir) throws IOException {
+//        this.configuration = configuration;
         if (domain == null || "".equals(domain)) {
             if (urlIndex == null || "".equals(urlIndex)) {
                 throw new IOException("please set one of domain and url-index.");
@@ -74,8 +70,6 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             this.urlIndex = "url";
         }
         this.isDir = isDir;
-//        this.prefetch = prefetch;
-        this.fileSaveMapper.preAddWriter("invalid");
     }
 
     public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
@@ -87,7 +81,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
     public CdnUrlProcess clone() throws CloneNotSupportedException {
 //        CdnUrlProcess cdnUrlProcess = (CdnUrlProcess)super.clone();
 //        cdnUrlProcess.lines = new ArrayList<>();
-//        CdnHelper cdnHelper = new CdnHelper(Auth.create(accessId, secretKey));
+//        CdnHelper cdnHelper = new CdnHelper(Auth.create(accessId, secretKey), configuration);
 //        cdnUrlProcess.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
 //                dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
 //        if (cdnUrlProcess.fileSaveMapper != null) {

@@ -23,7 +23,7 @@ public class FetchFile extends Base<Map<String, String>> {
                      String domain, String urlIndex, String addPrefix, String rmPrefix) throws IOException {
         super("fetch", accessKey, secretKey, bucket);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
     }
@@ -33,7 +33,7 @@ public class FetchFile extends Base<Map<String, String>> {
             throws IOException {
         super("fetch", accessKey, secretKey, bucket, savePath, saveIndex);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
     }
@@ -65,7 +65,7 @@ public class FetchFile extends Base<Map<String, String>> {
     @Override
     public FetchFile clone() throws CloneNotSupportedException {
         FetchFile fetchFile = (FetchFile) super.clone();
-        fetchFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+        fetchFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
         return fetchFile;
     }
 
