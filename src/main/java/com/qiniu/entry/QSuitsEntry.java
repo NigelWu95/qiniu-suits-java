@@ -516,6 +516,7 @@ public class QSuitsEntry {
         switch (process) {
             case "status": processor = getChangeStatus(single); break;
             case "type": processor = getChangeType(single); break;
+            case "restorear": processor = getRestoreArchive(single); break;
             case "lifecycle": processor = getChangeLifecycle(single); break;
             case "copy": processor = getCopyFile(indexes, single); break;
             case "move":
@@ -598,8 +599,45 @@ public class QSuitsEntry {
     private ILineProcess<Map<String, String>> getChangeType(boolean single) throws IOException {
         String type = entryParam.getValue("type").trim();
         ParamsUtils.checked(type, "type", "\\d");
-        return single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(type))
-                : new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(type), savePath);
+        ChangeType changeType = single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket,
+                Integer.parseInt(type)) : new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket,
+                Integer.parseInt(type), savePath);
+        String archive = entryParam.getValue("archive", "false").trim();
+        ParamsUtils.checked(archive, "archive", "(true|false)");
+        if (Boolean.parseBoolean(archive)) {
+            String days = entryParam.getValue("days", "1").trim();
+            ParamsUtils.checked(days, "days", "[1-7]");
+            StringBuilder condition = new StringBuilder();
+            for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
+                if (entry.getKey().startsWith("cond.")) {
+                    if (condition.length() > 0) {
+                        condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim()).append("&");
+                    } else {
+                        condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim());
+                    }
+                }
+            }
+            changeType.enableRestoreArchive(Integer.parseInt(days), condition.toString());
+        }
+        return changeType;
+    }
+
+    private ILineProcess<Map<String, String>> getRestoreArchive(boolean single) throws IOException {
+        String days = entryParam.getValue("days", "1").trim();
+        ParamsUtils.checked(days, "days", "[1-7]");
+        StringBuilder condition = new StringBuilder();
+        for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
+            if (entry.getKey().startsWith("cond.")) {
+                if (condition.length() > 0) {
+                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim()).append("&");
+                } else {
+                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim());
+                }
+            }
+        }
+        return single ? new RestoreArchive(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(days),
+                condition.toString()) : new RestoreArchive(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket,
+                Integer.parseInt(days), condition.toString(), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeLifecycle(boolean single) throws IOException {
