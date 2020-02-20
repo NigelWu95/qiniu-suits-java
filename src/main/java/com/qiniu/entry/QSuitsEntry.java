@@ -634,10 +634,12 @@ public class QSuitsEntry {
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
+        String force = entryParam.getValue("force", "false").trim();
+        ParamsUtils.checked(force, "force", "(true|false)");
         return single ? new CopyFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
-                rmPrefix)
+                rmPrefix, Boolean.parseBoolean(force))
                 : new CopyFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
-                rmPrefix, savePath);
+                rmPrefix, Boolean.parseBoolean(force), savePath);
     }
 
     private ILineProcess<Map<String, String>> getMoveFile(Map<String, String> indexMap, boolean single) throws IOException {
@@ -646,8 +648,8 @@ public class QSuitsEntry {
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        String force = entryParam.getValue("prefix-force", "false").trim();
-        ParamsUtils.checked(force, "prefix-force", "(true|false)");
+        String force = entryParam.getValue("force", "false").trim();
+        ParamsUtils.checked(force, "force", "(true|false)");
         return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
                 rmPrefix, Boolean.parseBoolean(force))
                 : new MoveFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,

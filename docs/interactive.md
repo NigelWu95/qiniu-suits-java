@@ -37,7 +37,7 @@ please input line data to process:
 ```
 ##### 4 对指定空间的资源进行重命名 [rename](rename.md)  
 ```
-➜ ~ qsuits -i -d -process=rename -bucket=temp -add-prefix=1 -prefix-force=true
+➜ ~ qsuits -i -d -process=rename -bucket=temp -add-prefix=1
 please input line data to process: 
 10.mp4
 10.mp4	10.mp4	

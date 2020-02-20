@@ -41,8 +41,8 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         this.metadata = metadata;
         if (condition != null && !condition.isEmpty()) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.batchSize = 1000;
-        this.ops = new ArrayList<>();
-        this.lines = new ArrayList<>();
+        this.ops = new ArrayList<>(1000);
+        this.lines = new ArrayList<>(1000);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
@@ -58,8 +58,8 @@ public class ChangeMetadata extends Base<Map<String, String>> {
     public ChangeMetadata clone() throws CloneNotSupportedException {
         ChangeMetadata changeMetadata = (ChangeMetadata)super.clone();
         if (fileSaveMapper == null) {
-            changeMetadata.ops = new ArrayList<>();
-            changeMetadata.lines = new ArrayList<>();
+            changeMetadata.ops = new ArrayList<>(batchSize);
+            changeMetadata.lines = new ArrayList<>(batchSize);
         }
         changeMetadata.auth = Auth.create(accessId, secretKey);
         changeMetadata.client = new Client(configuration.clone());

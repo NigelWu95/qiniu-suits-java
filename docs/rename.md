@@ -17,7 +17,7 @@ indexes=
 toKey-index=
 add-prefix=
 rm-prefix=
-prefix-force=
+force=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
@@ -28,16 +28,14 @@ prefix-force=
 |toKey-index| 字符串| rename 操作所需要设置的目标文件名索引（下标），需要手动指定才会解析|  
 |add-prefix| 字符串| 表示为保存的文件名添加指定前缀|  
 |rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 rename 之后保存的文件名|  
-|prefix-force| 字符串| 设置了 add-prefix/rm-prefix 但未设置 toKey-index 的情况下需要保证该参数为 true|  
+|force| true/false| 修改后的文件名如果空间中已存在是否进行强制覆盖，默认为 false|  
 
 ### 关于 toKey-index
-指定输入行中对应修改之后的文件名字段下标，不设置则无法进行解析，当使用 file 源且 parse=tab/csv 时下标必须为整数，但未设置且 add-prefix 不为空
-时需要强制指定 prefix-force=true，表明该次重命名操作只添加文件名前缀。由于 rename 操作既需要原始文件名字段也需要新文件名字段，因此 toKey 下
-标和 key 字段下标不可相同，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
-及[关于 parse 和索引](datasource.md#关于-parse)。  
+指定输入行中对应修改之后的文件名字段下标，不设置则无法进行解析，当使用 file 源且 parse=tab/csv 时下标必须为整数，toKey 下标和 key 字段下标不可
+相同，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)及[关于 parse 和索引](datasource.md#关于-parse)。  
 **注意**：七牛存储空间不支持文件名以 `../`, `./` 开头或者包含 `/../`, `/./` 这种情况，会造成无法访问，因此设置文件名时请注意。  
 
 ### 命令行方式
 ```
--process=rename -ak= -sk= -bucket= -toKey-index= -add-prefix= -rm-prefix= -prefix-force=
+-process=rename -ak= -sk= -bucket= -toKey-index= -add-prefix= -rm-prefix=
 ```

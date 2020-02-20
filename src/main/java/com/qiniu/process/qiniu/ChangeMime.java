@@ -47,8 +47,8 @@ public class ChangeMime extends Base<Map<String, String>> {
         this.mimeIndex = mimeIndex == null ? "mime" : mimeIndex;
         if (condition != null && !condition.isEmpty()) encodedCondition = UrlSafeBase64.encodeToString(condition);
         this.batchSize = 1000;
-        this.ops = new ArrayList<>();
-        this.lines = new ArrayList<>();
+        this.ops = new ArrayList<>(1000);
+        this.lines = new ArrayList<>(1000);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
@@ -65,8 +65,10 @@ public class ChangeMime extends Base<Map<String, String>> {
         ChangeMime changeType = (ChangeMime)super.clone();
         changeType.auth = Auth.create(accessId, secretKey);
         changeType.client = new Client(configuration.clone());
-        changeType.ops = new ArrayList<>();
-        changeType.lines = new ArrayList<>();
+        if (fileSaveMapper != null) {
+            changeType.ops = new ArrayList<>(batchSize);
+            changeType.lines = new ArrayList<>(batchSize);
+        }
         return changeType;
     }
 
@@ -97,7 +99,6 @@ public class ChangeMime extends Base<Map<String, String>> {
                             .append("/mime/").append(UrlSafeBase64.encodeToString(mime));
                     if (encodedCondition != null) pathBuilder.append("/cond/").append(encodedCondition);
                     ops.add(pathBuilder.toString());
-//                    batchOperations.addChgmOp(bucket, mime, key);
                 } else {
                     fileSaveMapper.writeError("key or mime is not exists or empty in " + map, false);
                 }
@@ -112,7 +113,6 @@ public class ChangeMime extends Base<Map<String, String>> {
                             .append("/mime/").append(encodedMime);
                     if (encodedCondition != null) pathBuilder.append("/cond/").append(encodedCondition);
                     ops.add(pathBuilder.toString());
-//                    batchOperations.addChgmOp(bucket, mimeType, key);
                 } else {
                     fileSaveMapper.writeError("key is not exists or empty in " + map, false);
                 }
@@ -125,7 +125,6 @@ public class ChangeMime extends Base<Map<String, String>> {
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
         return HttpRespUtils.getResult(client.post(URL, body, auth.authorization(URL, body, Client.FormMime), Client.FormMime));
-//        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
     }
 
     @Override
@@ -164,13 +163,11 @@ public class ChangeMime extends Base<Map<String, String>> {
         mimeType = null;
         mimeIndex = null;
         encodedCondition = null;
-//        batchOperations = null;
         if (ops != null) ops.clear();
         ops = null;
         if (lines != null) lines.clear();
         auth = null;
-        configuration = null;
         client = null;
-//        bucketManager = null;
+        configuration = null;
     }
 }

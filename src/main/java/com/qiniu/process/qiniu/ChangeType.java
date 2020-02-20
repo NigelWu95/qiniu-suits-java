@@ -19,9 +19,9 @@ public class ChangeType extends Base<Map<String, String>> {
     private int type;
     private ArrayList<String> ops;
     private List<Map<String, String>> lines;
-    private Auth auth;
     private Configuration configuration;
     private Client client;
+    private Auth auth;
 //    private BucketManager bucketManager;
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type) throws IOException {
@@ -43,8 +43,8 @@ public class ChangeType extends Base<Map<String, String>> {
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         this.type = type;
         this.batchSize = 1000;
-        this.ops = new ArrayList<>();
-        this.lines = new ArrayList<>();
+        this.ops = new ArrayList<>(1000);
+        this.lines = new ArrayList<>(1000);
         this.configuration = configuration;
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
@@ -64,8 +64,8 @@ public class ChangeType extends Base<Map<String, String>> {
 //        changeType.bucketManager = new BucketManager(changeType.auth, configuration);
 //        changeType.batchOperations = new BatchOperations();
         if (fileSaveMapper != null) {
-            changeType.ops = new ArrayList<>();
-            changeType.lines = new ArrayList<>();
+            changeType.ops = new ArrayList<>(batchSize);
+            changeType.lines = new ArrayList<>(batchSize);
         }
         changeType.auth = Auth.create(accessId, secretKey);
         changeType.client = new Client(configuration.clone());
@@ -124,10 +124,9 @@ public class ChangeType extends Base<Map<String, String>> {
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-//        String path = String.format("/chgm/%s", BucketManager.encodedEntry(bucket, key));
         StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/chtype/")
-                .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)));
-        urlBuilder.append("/type/").append(type);
+                .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
+                .append("/type/").append(type);
         StringMap headers = auth.authorization(urlBuilder.toString(), null, Client.FormMime);
         Response response = client.post(urlBuilder.toString(), null, headers, Client.FormMime);
         if (response.statusCode != 200) throw new QiniuException(response);
@@ -143,7 +142,7 @@ public class ChangeType extends Base<Map<String, String>> {
         if (lines != null) lines.clear();
         lines = null;
         auth = null;
-        configuration = null;
         client = null;
+        configuration = null;
     }
 }
