@@ -516,6 +516,7 @@ public class QSuitsEntry {
         switch (process) {
             case "status": processor = getChangeStatus(single); break;
             case "type": processor = getChangeType(single); break;
+            case "restorear": processor = getRestoreArchive(single); break;
             case "lifecycle": processor = getChangeLifecycle(single); break;
             case "copy": processor = getCopyFile(indexes, single); break;
             case "move":
@@ -598,8 +599,27 @@ public class QSuitsEntry {
     private ILineProcess<Map<String, String>> getChangeType(boolean single) throws IOException {
         String type = entryParam.getValue("type").trim();
         ParamsUtils.checked(type, "type", "\\d");
-        return single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(type))
-                : new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(type), savePath);
+        return single ? new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket,
+                Integer.parseInt(type)) : new ChangeType(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket,
+                Integer.parseInt(type), savePath);
+    }
+
+    private ILineProcess<Map<String, String>> getRestoreArchive(boolean single) throws IOException {
+        String days = entryParam.getValue("days", "1").trim();
+        ParamsUtils.checked(days, "days", "[1-7]");
+        StringBuilder condition = new StringBuilder();
+        for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
+            if (entry.getKey().startsWith("cond.")) {
+                if (condition.length() > 0) {
+                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim()).append("&");
+                } else {
+                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim());
+                }
+            }
+        }
+        return single ? new RestoreArchive(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(days),
+                condition.toString()) : new RestoreArchive(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket,
+                Integer.parseInt(days), condition.toString(), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeLifecycle(boolean single) throws IOException {
@@ -614,10 +634,12 @@ public class QSuitsEntry {
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
+        String force = entryParam.getValue("force", "false").trim();
+        ParamsUtils.checked(force, "force", "(true|false)");
         return single ? new CopyFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
-                rmPrefix)
+                rmPrefix, Boolean.parseBoolean(force))
                 : new CopyFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
-                rmPrefix, savePath);
+                rmPrefix, Boolean.parseBoolean(force), savePath);
     }
 
     private ILineProcess<Map<String, String>> getMoveFile(Map<String, String> indexMap, boolean single) throws IOException {
@@ -626,8 +648,8 @@ public class QSuitsEntry {
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
-        String force = entryParam.getValue("prefix-force", "false").trim();
-        ParamsUtils.checked(force, "prefix-force", "(true|false)");
+        String force = entryParam.getValue("force", "false").trim();
+        ParamsUtils.checked(force, "force", "(true|false)");
         return single ? new MoveFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
                 rmPrefix, Boolean.parseBoolean(force))
                 : new MoveFile(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, toBucket, toKeyIndex, addPrefix,
@@ -761,9 +783,10 @@ public class QSuitsEntry {
         String protocol = entryParam.getValue("protocol", "http").trim();
         ParamsUtils.checked(protocol, "protocol", "https?");
         String domain = entryParam.getValue("domain", "").trim();
+        String urlIndex = indexMap.containsValue("url") ? "url" : null;
         String queries = entryParam.getValue("queries", "").trim();
-        return single ? new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, queries)
-                : new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, queries, savePath);
+        return single ? new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries)
+                : new PublicUrl(qiniuAccessKey, qiniuSecretKey, protocol, domain, urlIndex, queries, savePath);
     }
 
     private ILineProcess<Map<String, String>> getMirrorFile(boolean single) throws IOException {
@@ -1106,6 +1129,12 @@ public class QSuitsEntry {
         return single ? new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
                 false) : new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
                 domain, urlIndex, false, savePath);
+//        String pageNo = entryParam.getValue("pageNo", "").trim();
+//        String pageSize = entryParam.getValue("pageSize", "").trim();
+//        String startTime = entryParam.getValue("startTime", "").trim();
+//        ParamsUtils.checked(startTime, "startTime", "\\d{4}-[01]\\d-[0-3]\\d");
+//        String endTime = entryParam.getValue("endTime", "").trim();
+//        ParamsUtils.checked(endTime, "endTime", "\\d{4}-[01]\\d-[0-3]\\d");
     }
 
     private ILineProcess<Map<String, String>> getPrefetchQuery(Map<String, String> indexMap, boolean single) throws IOException {

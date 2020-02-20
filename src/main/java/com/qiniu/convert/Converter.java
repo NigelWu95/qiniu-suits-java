@@ -15,17 +15,16 @@ public abstract class Converter<E, T> implements ITypeConvert<E, T> {
 
     @Override
     public List<T> convertToVList(List<E> lineList) {
-        List<T> mapList = new ArrayList<>();
-        if (lineList != null && lineList.size() > 0) {
-            for (E line : lineList) {
-                try {
-                    mapList.add(convertToV(line));
-                } catch (Exception e) {
-                    if (line instanceof String) {
-                        errorList.add(String.join("\t", String.valueOf(line), "convert error", e.getMessage()));
-                    } else {
-                        errorList.add(String.join("\t", JsonUtils.toJson(line), "convert error", e.getMessage()));
-                    }
+        if (lineList == null) return new ArrayList<>();
+        List<T> mapList = new ArrayList<>(lineList.size());
+        for (E line : lineList) {
+            try {
+                mapList.add(convertToV(line));
+            } catch (Exception e) {
+                if (line instanceof String) {
+                    errorList.add(String.join("\t", String.valueOf(line), "convert error", e.getMessage()));
+                } else {
+                    errorList.add(String.join("\t", JsonUtils.toJson(line), "convert error", e.getMessage()));
                 }
             }
         }

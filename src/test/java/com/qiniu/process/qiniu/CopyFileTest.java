@@ -17,7 +17,7 @@ public class CopyFileTest {
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");
         CopyFile copyFile = new CopyFile(accessKey, secretKey, new Configuration(), bucket, "ts-work",
-                null, null, null, "../temp");
+                null, null, null, false, "../temp");
         Map<String, String> map = new HashMap<String, String>(){{
             put("key", "qiniu_success_1.txt");
             put("toKey", "qiniu_success_1-1.txt");

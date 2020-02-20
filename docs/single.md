@@ -30,7 +30,7 @@ process 提供的参数用法，具体可参见 process 的文档）包括要处
 ```
 ##### 4 对指定空间的资源进行重命名 [rename](rename.md)  
 ```
-➜ ~ qsuits -s -d -process=rename -bucket=temp -add-prefix=1 -prefix-force=true -key=10.mp4
+➜ ~ qsuits -s -d -process=rename -bucket=temp -add-prefix=1 -key=10.mp4
 10.mp4	10.mp4	
 ```
 ##### 5 查询空间资源的元信息 [stat](stat.md)  

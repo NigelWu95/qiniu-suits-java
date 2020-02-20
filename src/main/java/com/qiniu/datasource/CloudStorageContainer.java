@@ -495,7 +495,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                         rootLogger.info("prefix: {}, nextMarker: {}, endMap: {}", prefix, nextMarker, endMap);
                         // 如果 truncate 时的 nextMarker 已经为空说明已经列举完成了
                         if (nextMarker == null || nextMarker.isEmpty()) continue;
-                        if (extremePrefixes == null) extremePrefixes = new ArrayList<>();
+                        if (extremePrefixes == null) extremePrefixes = new ArrayList<>(1);
                         extremePrefixes.add(prefix);
                         prefixMap.put("marker", nextMarker);
                         prefixesMap.put(prefix, prefixMap);

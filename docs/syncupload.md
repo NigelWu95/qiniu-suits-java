@@ -1,7 +1,7 @@
-# 通过 url 同步上传
+# 通过 url 流式同步上传
 
 ## 简介
-将 url 的内容同步上传至存储空间，同时依据原 url 设置目标文件名。上传可参考：[上传策略](https://developer.qiniu.com/kodo/manual/1206/put-policy) 
+将 url 的内容通过字节流同步上传至存储空间，同时依据原 url 设置目标文件名。上传可参考：[上传策略](https://developer.qiniu.com/kodo/manual/1206/put-policy) 
 和 [流式上传资源](https://developer.qiniu.com/kodo/sdk/1239/java#upload-stream)  
 1. **操作需要指定数据源，上传 url 的内容到七牛空间，故需要配置数据源，参考：[配置数据源](datasource.md)**  
 2. 支持通过 `-a=<account-name>`/`-d` 使用已设置的账号，则不需要再直接设置密钥，参考：[账号设置](../README.md#账号设置)  
@@ -53,7 +53,8 @@ timeout 参数可以通过全局的 timeout 来设置，参考：[网络设置](
 
 ### 关于 url-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
-key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
+key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
+及[关于 parse 和索引](datasource.md#关于-parse)。  
 
 ### 资源需要私有签名
 当进行图片审核的 url 需要通过私有鉴权访问时（资源来自于存储私有权限的空间），本工具支持串联操作，即先进行对应的私有签名再提交审核，使用如下的 private

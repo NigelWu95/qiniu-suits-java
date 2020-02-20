@@ -20,14 +20,14 @@ public class QueryHash extends Base<Map<String, String>> {
             throws IOException {
         super("qhash", "", "", null);
         set(configuration, protocol, domain, urlIndex, algorithm);
-        this.fileChecker = new FileChecker(configuration.clone(), protocol, algorithm);
+        this.fileChecker = new FileChecker(configuration, protocol, algorithm);
     }
 
     public QueryHash(Configuration configuration, String protocol, String domain, String urlIndex, String algorithm,
                      String savePath, int saveIndex) throws IOException {
         super("qhash", "", "", null, savePath, saveIndex);
         set(configuration, protocol, domain, urlIndex, algorithm);
-        this.fileChecker = new FileChecker(configuration.clone(), protocol, algorithm);
+        this.fileChecker = new FileChecker(configuration, protocol, algorithm);
     }
 
     public QueryHash(Configuration configuration, String protocol, String domain, String urlIndex, String algorithm,
@@ -56,7 +56,7 @@ public class QueryHash extends Base<Map<String, String>> {
     @Override
     public QueryHash clone() throws CloneNotSupportedException {
         QueryHash queryHash = (QueryHash)super.clone();
-        queryHash.fileChecker = new FileChecker(configuration.clone(), algorithm, protocol);
+        queryHash.fileChecker = new FileChecker(configuration, algorithm, protocol);
         return queryHash;
     }
 

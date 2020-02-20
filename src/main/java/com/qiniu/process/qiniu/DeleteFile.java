@@ -25,7 +25,7 @@ public class DeleteFile extends Base<Map<String, String>> {
     public DeleteFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
         super("delete", accessKey, secretKey, bucket);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
@@ -34,9 +34,9 @@ public class DeleteFile extends Base<Map<String, String>> {
         super("delete", accessKey, secretKey, bucket, savePath, saveIndex);
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
-        this.lines = new ArrayList<>();
+        this.lines = new ArrayList<>(1000);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
@@ -48,9 +48,11 @@ public class DeleteFile extends Base<Map<String, String>> {
     @Override
     public DeleteFile clone() throws CloneNotSupportedException {
         DeleteFile deleteFile = (DeleteFile)super.clone();
-        deleteFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
-        deleteFile.batchOperations = new BatchOperations();
-        deleteFile.lines = new ArrayList<>();
+        deleteFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
+        if (fileSaveMapper != null) {
+            deleteFile.batchOperations = new BatchOperations();
+            deleteFile.lines = new ArrayList<>(batchSize);
+        }
         return deleteFile;
     }
 

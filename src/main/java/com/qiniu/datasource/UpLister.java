@@ -81,7 +81,7 @@ public class UpLister implements IStorageLister<FileItem> {
         JsonElement jsonElement = returnJson.get("files");
         if (jsonElement instanceof JsonArray) {
             JsonArray files = returnJson.get("files").getAsJsonArray();
-            int initSize = files.size() > 100 ? (int)(files.size() * 0.67) : files.size();
+            int initSize = files.size() > 100 ? files.size() * 2 / 3 + 1 : files.size();
             List<FileItem> fileItems = new ArrayList<>(initSize);
             if (files.size() > 0) {
                 JsonObject object;

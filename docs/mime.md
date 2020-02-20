@@ -27,7 +27,7 @@ indexes=
 
 ### 关于 indexes
 这里的 indexes 表示取文件名的索引配置，非存储数据源的情况下默认只会包含 key 的索引，会根据 parse 类型设置为 0 或 "key"，如果需要从每一行读取
-mime 用于资源的类型修改，则需要设置 mime 的索引，如 `indexes=0,-1,-1,-1,mime`，具体参见[ indexes 索引](datasource.md#关于-indexes-索引)。  
+mime 用于资源的类型修改，则需要设置 mime 的索引，如 `indexes=0,-1,-1,-1,mime`，具体参见[ indexes 索引](datasource.md#关于-indexes-索引)及[关于 parse 和索引](datasource.md#关于-parse)。  
 
 ### 命令行参数方式
 ```

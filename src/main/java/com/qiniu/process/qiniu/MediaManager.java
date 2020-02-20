@@ -25,7 +25,7 @@ public class MediaManager {
     }
 
     public MediaManager(Configuration configuration) {
-        this.client = new Client(configuration);
+        this.client = configuration == null ? new Client() : new Client(configuration.clone());
         this.protocol = "http";
     }
 

@@ -24,7 +24,7 @@ public class M3U8Manager {
     }
 
     public M3U8Manager(Configuration configuration) {
-        this.client = new Client(configuration);
+        this.client = configuration == null ? new Client() : new Client(configuration.clone());
     }
 
     public M3U8Manager(String protocol) {
@@ -33,7 +33,7 @@ public class M3U8Manager {
     }
 
     public M3U8Manager(Configuration configuration, String protocol) {
-        this.client = new Client(configuration);
+        this.client = configuration == null ? new Client() : new Client(configuration.clone());
         this.protocol = "https".equals(protocol)? "https" : "http";
     }
 

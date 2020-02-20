@@ -1,7 +1,6 @@
 package com.qiniu.model.qdora;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class PfopResult {
 
@@ -10,7 +9,7 @@ public class PfopResult {
     public String id;
     public String inputBucket;
     public String inputKey;
-    public List<Item> items = new ArrayList<>();
+    public ArrayList<Item> items;
     public String pipeline;
     public String reqid;
 }

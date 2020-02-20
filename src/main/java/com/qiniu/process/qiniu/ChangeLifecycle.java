@@ -28,7 +28,7 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
         super("lifecycle", accessKey, secretKey, bucket);
         this.days = days;
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
@@ -38,9 +38,9 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
         this.days = days;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
-        this.lines = new ArrayList<>();
+        this.lines = new ArrayList<>(1000);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
@@ -52,9 +52,11 @@ public class ChangeLifecycle extends Base<Map<String, String>> {
     @Override
     public ChangeLifecycle clone() throws CloneNotSupportedException {
         ChangeLifecycle changeLifecycle = (ChangeLifecycle)super.clone();
-        changeLifecycle.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
-        changeLifecycle.batchOperations = new BatchOperations();
-        changeLifecycle.lines = new ArrayList<>();
+        changeLifecycle.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
+        if (fileSaveMapper != null) {
+            changeLifecycle.batchOperations = new BatchOperations();
+            changeLifecycle.lines = new ArrayList<>(batchSize);
+        }
         return changeLifecycle;
     }
 

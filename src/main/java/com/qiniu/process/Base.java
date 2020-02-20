@@ -149,14 +149,16 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             jsonObject = jsonArray.get(j).getAsJsonObject();
             switch (HttpRespUtils.checkStatusCode(jsonObject.get("code").getAsInt())) {
                 case 1:
-                    fileSaveMapper.writeSuccess(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                    fileSaveMapper.writeSuccess(String.join("\t", resultInfo(processList.get(j)),
+                            jsonObject.toString()), false);
                     break;
                 case 0:
-                    if (retryList == null) retryList = new ArrayList<>();
+                    if (retryList == null) retryList = new ArrayList<>(1);
                     retryList.add(processList.get(j)); // 放回重试列表
                     break;
                 case -1:
-                    fileSaveMapper.writeError(resultInfo(processList.get(j)) + "\t" + jsonObject, false);
+                    fileSaveMapper.writeError(String.join("\t", resultInfo(processList.get(j)),
+                            jsonObject.toString()), false);
                     break;
             }
         }
@@ -199,15 +201,15 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                     exception = null;
                 }
                 switch (retry) {
-                    case 0: fileSaveMapper.writeError(String.join("\n", processList.stream()
-                            .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                    case 0: fileSaveMapper.writeError(String.join("\t", processList.stream()
+                            .map(this::resultInfo).collect(Collectors.joining("\n")), message), false);
                         processList = null; break;
-                    case -1: fileSaveMapper.writeToKey("need_retry", String.join("\n", processList
-                            .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                    case -1: fileSaveMapper.writeToKey("need_retry", String.join("\t", processList
+                            .stream().map(this::resultInfo).collect(Collectors.joining("\n")), message), false);
                         processList = null; break;
-                    case -2: fileSaveMapper.writeError(String.join("\n", lineList
-                            .subList(batchSize * i, lineList.size()).stream()
-                            .map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                    case -2: fileSaveMapper.writeError(String.join("\t", lineList
+                            .subList(batchSize * i, lineList.size()).stream().map(this::resultInfo)
+                            .collect(Collectors.joining("\n")), message), false);
                         if (exception != null) throw exception;
                 }
                 if (exception != null && exception.response != null) exception.response.close();
@@ -262,11 +264,12 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                     exception = null;
                 }
                 switch (retry) {
-                    case 0: fileSaveMapper.writeError(resultInfo(line) + "\t" + message, false); break;
-                    case -1: fileSaveMapper.writeToKey("need_retry", resultInfo(line) + "\t" + message, false);
-                        break;
-                    case -2: fileSaveMapper.writeError(String.join("\n", lineList.subList(i, lineList.size())
-                            .stream().map(this::resultInfo).collect(Collectors.toList())) + "\t" + message, false);
+                    case 0: fileSaveMapper.writeError(String.join("\t", resultInfo(line), message),
+                            false); break;
+                    case -1: fileSaveMapper.writeToKey("need_retry", String.join("\t", resultInfo(line),
+                            message), false); break;
+                    case -2: fileSaveMapper.writeError(String.join("\t", lineList.subList(i, lineList.size())
+                            .stream().map(this::resultInfo).collect(Collectors.joining("\n")), message), false);
                         throw exception;
                 }
                 if (exception != null && exception.response != null) exception.response.close();

@@ -8,6 +8,7 @@ public final class ProcessUtils {
     public static Set<String> needUrlProcesses = new HashSet<String>(){{
         add("asyncfetch");
         add("privateurl");
+        add("publicurl");
         add("qhash");
         add("avinfo");
         add("exportts");
@@ -48,6 +49,7 @@ public final class ProcessUtils {
     public static Set<String> qiniuProcessesWithBucket = new HashSet<String>(){{
         add("status");
         add("type");
+        add("restorear");
         add("lifecycle");
         add("delete");
         add("copy");
@@ -58,10 +60,12 @@ public final class ProcessUtils {
         add("qupload");
         add("mime");
         add("metadata");
+        add("mirror");
     }};
     public static Set<String> canBatchProcesses = new HashSet<String>(){{
         add("status");
         add("type");
+        add("restorear");
         add("lifecycle");
         add("copy");
         add("move");
@@ -101,7 +105,6 @@ public final class ProcessUtils {
     }};
     public static Set<String> needQiniuAuthProcesses = new HashSet<String>(){{
         addAll(qiniuProcessesWithBucket);
-        add("mirror");
         add("fetch");
         add("asyncfetch");
         add("syncupload");
@@ -122,11 +125,11 @@ public final class ProcessUtils {
         add("exportts");
         add("download");
         add("filter");
-        add("mirror");
         add("fetch");
         add("asyncfetch");
         add("syncupload");
         add("privateurl");
+        add("publicurl");
         add("imagecensor");
         add("videocensor");
         add("censorresult");
@@ -134,7 +137,6 @@ public final class ProcessUtils {
         add("cdnprefetch");
         add("refreshquery");
         add("prefetchquery");
-        add("publicurl");
     }};
     public static Set<String> dangerousProcesses = new HashSet<String>(){{
         add("status");

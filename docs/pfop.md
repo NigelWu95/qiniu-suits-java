@@ -40,7 +40,7 @@ pfop-config=
 
 ### 关于 fops-index
 指定输入行中对应转码的命令字段下标，不设置为则无法进行解析。由于转码必须参数包含 key 和 fops，因此输入行中也必须包含 key 字段的值，使用 indexes 
-参数设置 key 下标，同时 key 下标不能与 fops 下标相同。  
+参数设置 key 下标，同时 key 下标不能与 fops 下标相同，参见[ indexes 索引](datasource.md#关于-indexes-索引)及[关于 parse 和索引](datasource.md#关于-parse)。  
 
 ### pfop-config 配置文件
 ```json

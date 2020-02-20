@@ -1,6 +1,5 @@
 package com.qiniu.process.qiniu;
 
-import com.qiniu.http.Response;
 import com.qiniu.interfaces.IFileChecker;
 import com.qiniu.process.Base;
 import com.qiniu.storage.BucketManager;
@@ -24,7 +23,7 @@ public class FetchFile extends Base<Map<String, String>> {
                      String domain, String urlIndex, String addPrefix, String rmPrefix) throws IOException {
         super("fetch", accessKey, secretKey, bucket);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
     }
@@ -34,7 +33,7 @@ public class FetchFile extends Base<Map<String, String>> {
             throws IOException {
         super("fetch", accessKey, secretKey, bucket, savePath, saveIndex);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
         set(configuration, protocol, domain, urlIndex, addPrefix, rmPrefix);
     }
@@ -66,7 +65,7 @@ public class FetchFile extends Base<Map<String, String>> {
     @Override
     public FetchFile clone() throws CloneNotSupportedException {
         FetchFile fetchFile = (FetchFile) super.clone();
-        fetchFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+        fetchFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
         return fetchFile;
     }
 
@@ -95,8 +94,7 @@ public class FetchFile extends Base<Map<String, String>> {
         }
 //        String check = iFileChecker.check(key);
         if (iFileChecker.check(key) != null) throw new IOException("file exists");
-        Response response = bucketManager.fetchResponse(url, bucket, key);
-        return String.join("\t", key, url, String.valueOf(response.statusCode), HttpRespUtils.getResult(response));
+        return HttpRespUtils.getResult(bucketManager.fetchResponse(url, bucket, key));
     }
 
     @Override

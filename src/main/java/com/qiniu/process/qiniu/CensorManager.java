@@ -40,7 +40,7 @@ public class CensorManager {
 
     public CensorManager(Auth auth, Configuration configuration) {
         this.auth = auth;
-        this.client = configuration == null ? new Client() : new Client(configuration);
+        this.client = configuration == null ? new Client() : new Client(configuration.clone());
         this.bodyJson = new JsonObject();
         this.paramsJson = new JsonObject();
         this.uriJson = new JsonObject();

@@ -18,7 +18,7 @@ public class DomainsOfBucket extends Base<Map<String, String>> {
         super("domainsofbucket", accessKey, secretKey, null);
         this.configuration = configuration;
         Auth auth = Auth.create(accessKey, secretKey);
-        this.bucketManager = new BucketManager(auth, configuration.clone());
+        this.bucketManager = new BucketManager(auth, configuration);
         CloudApiUtils.checkQiniu(auth);
     }
 
@@ -26,7 +26,7 @@ public class DomainsOfBucket extends Base<Map<String, String>> {
         super("domainsofbucket", accessKey, secretKey, null, savePath, saveIndex);
         this.configuration = configuration;
         Auth auth = Auth.create(accessKey, secretKey);
-        this.bucketManager = new BucketManager(auth, configuration.clone());
+        this.bucketManager = new BucketManager(auth, configuration);
         CloudApiUtils.checkQiniu(auth);
     }
 
@@ -38,7 +38,7 @@ public class DomainsOfBucket extends Base<Map<String, String>> {
     @Override
     public DomainsOfBucket clone() throws CloneNotSupportedException {
         DomainsOfBucket mirrorFile = (DomainsOfBucket) super.clone();
-        mirrorFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+        mirrorFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
         return mirrorFile;
     }
 

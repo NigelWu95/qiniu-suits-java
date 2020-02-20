@@ -56,7 +56,8 @@ check-url=
 
 ### 关于 url-index 和 md5-index
 当使用 file 数据源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中含 url 的字段索引，未设置的情况下则使用
-key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)，md5-index 为需要进行 md5 校验时输入 md5 值的字段下标，不设置则无效。  
+key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
+及[关于 parse 和索引](datasource.md#关于-parse)，md5-index 为需要进行 md5 校验时输入 md5 值的字段下标，不设置则无效。  
 
 ### 命令行参数方式
 ```

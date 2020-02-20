@@ -74,7 +74,7 @@ public class TextFileContainer extends TextContainer<Map<String, String>> {
         RandomAccessFile[] accessFiles = new RandomAccessFile[threads];
         accessFiles[0] = new RandomAccessFile(file, "r");
         String endLine;
-        List<ITextReader> readers = new ArrayList<>();
+        List<ITextReader> readers = new ArrayList<>(threads);
         int i = 1;
         for (; i < threads; i++) {
             RandomAccessFile accessFile = new RandomAccessFile(file, "r");

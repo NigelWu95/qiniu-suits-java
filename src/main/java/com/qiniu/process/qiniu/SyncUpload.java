@@ -36,9 +36,8 @@ public class SyncUpload extends Base<Map<String, String>> {
         super("syncupload", accessKey, secretKey, bucket);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         auth = Auth.create(accessKey, secretKey);
-        Configuration config = configuration.clone();
-        uploadManager = new UploadManager(config);
-        downloader = new HttpDownloader(config);
+        uploadManager = new UploadManager(configuration);
+        downloader = new HttpDownloader(configuration);
         set(configuration, protocol, domain, urlIndex, host, addPrefix, rmPrefix, expires, policy, params);
     }
 
@@ -48,9 +47,8 @@ public class SyncUpload extends Base<Map<String, String>> {
         super("syncupload", accessKey, secretKey, bucket, savePath, saveIndex);
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
         auth = Auth.create(accessKey, secretKey);
-        Configuration config = configuration.clone();
-        uploadManager = new UploadManager(config);
-        downloader = new HttpDownloader(config);
+        uploadManager = new UploadManager(configuration);
+        downloader = new HttpDownloader(configuration);
         set(configuration, protocol, domain, urlIndex, host, addPrefix, rmPrefix, expires, policy, params);
     }
 
@@ -93,9 +91,8 @@ public class SyncUpload extends Base<Map<String, String>> {
     public SyncUpload clone() throws CloneNotSupportedException {
         SyncUpload syncUpload = (SyncUpload)super.clone();
         syncUpload.auth = Auth.create(accessId, secretKey);
-        Configuration config = configuration.clone();
-        syncUpload.uploadManager = new UploadManager(config);
-        syncUpload.downloader = new HttpDownloader(config);
+        syncUpload.uploadManager = new UploadManager(configuration);
+        syncUpload.downloader = new HttpDownloader(configuration);
         return syncUpload;
     }
 
@@ -128,7 +125,7 @@ public class SyncUpload extends Base<Map<String, String>> {
         if (response.statusCode == 200 || response.statusCode == 206) {
             try {
                 InputStream stream = response.bodyStream();
-                return String.join("\t", url, HttpRespUtils.getResult(uploadManager.put(stream, key,
+                return String.join("\t", key, url, HttpRespUtils.getResult(uploadManager.put(stream, key,
                         auth.uploadToken(bucket, key, expires, policy), params, response.contentType())));
             } finally {
                 response.close();

@@ -22,7 +22,7 @@ public class HttpDownloader {
     }
 
     public HttpDownloader(Configuration configuration) {
-        this.client = new Client(configuration);
+        this.client = configuration == null ? new Client() : new Client(configuration.clone());
     }
 
     public File download(String url, String filepath, StringMap headers) throws IOException {

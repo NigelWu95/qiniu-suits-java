@@ -11,34 +11,42 @@ public class PublicUrl extends Base<Map<String, String>> {
 
     private String protocol;
     private String domain;
+    private String urlIndex;
     private String suffixOrQuery;
     private ILineProcess<Map<String, String>> nextProcessor;
 
-    public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String suffixOrQuery) throws IOException {
-        super("publicurl", accessKey, secretKey, null);
-        set(protocol, domain, suffixOrQuery);
-    }
-
-    public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String suffixOrQuery, String savePath,
-                     int saveIndex) throws IOException {
-        super("publicurl", accessKey, secretKey, null, savePath, saveIndex);
-        set(protocol, domain, suffixOrQuery);
-    }
-
-    public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String suffixOrQuery, String savePath)
+    public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String urlIndex, String suffixOrQuery)
             throws IOException {
-        this(accessKey, secretKey, protocol, domain, suffixOrQuery, savePath, 0);
+        super("publicurl", accessKey, secretKey, null);
+        set(protocol, domain, urlIndex, suffixOrQuery);
     }
 
-    private void set(String protocol, String domain, String suffixOrQuery) throws IOException {
+    public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String urlIndex, String suffixOrQuery,
+                     String savePath, int saveIndex) throws IOException {
+        super("publicurl", accessKey, secretKey, null, savePath, saveIndex);
+        set(protocol, domain, urlIndex, suffixOrQuery);
+    }
+
+    public PublicUrl(String accessKey, String secretKey, String protocol, String domain, String urlIndex, String suffixOrQuery,
+                     String savePath) throws IOException {
+        this(accessKey, secretKey, protocol, domain, urlIndex, suffixOrQuery, savePath, 0);
+    }
+
+    private void set(String protocol, String domain, String urlIndex, String suffixOrQuery) throws IOException {
+        this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
         if (domain == null || "".equals(domain)) {
-            throw new IOException("please set one of domain and url-index.");
+            if (urlIndex == null || "".equals(urlIndex)) {
+                throw new IOException("please set one of domain and url-index.");
+            } else {
+                this.urlIndex = urlIndex;
+                if ("".equals(this.suffixOrQuery)) throw new IOException("please set suffix or query if url-index used.");
+            }
         } else {
             this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             RequestUtils.lookUpFirstIpFromHost(domain);
             this.domain = domain;
+            this.urlIndex = "url";
         }
-        this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
     }
 
     @Override
@@ -61,15 +69,19 @@ public class PublicUrl extends Base<Map<String, String>> {
 
     @Override
     protected String singleResult(Map<String, String> line) throws Exception {
-        String key = line.get("key");
-        if (key == null) throw new IOException("key is not exists or empty in " + line);
-        String url = String.join("", protocol, "://", domain, "/",
-                key.replace("\\?", "%3f"), suffixOrQuery);
-        if (nextProcessor != null) {
-            line.put("url", url);
-            return nextProcessor.processLine(line);
+        String url;
+        if (domain == null) {
+            url = line.get(urlIndex);
+            if (nextProcessor == null) return url + suffixOrQuery;
+        } else {
+            String key = line.get("key");
+            if (key == null) throw new IOException("key is not exists or empty in " + line);
+            url = String.join("", protocol, "://", domain, "/",
+                    key.replace("\\?", "%3f"), suffixOrQuery);
+            if (nextProcessor == null) return url;
         }
-        return url;
+        line.put("url", url);
+        return nextProcessor.processLine(line);
     }
 
     @Override

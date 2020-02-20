@@ -19,7 +19,7 @@ public class MirrorFile extends Base<Map<String, String>> {
     public MirrorFile(String accessKey, String secretKey, Configuration configuration, String bucket) throws IOException {
         super("mirror", accessKey, secretKey, bucket);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
@@ -27,7 +27,7 @@ public class MirrorFile extends Base<Map<String, String>> {
                       int saveIndex) throws IOException {
         super("mirror", accessKey, secretKey, bucket, savePath, saveIndex);
         this.configuration = configuration;
-        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration.clone());
+        this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
 
@@ -39,7 +39,7 @@ public class MirrorFile extends Base<Map<String, String>> {
     @Override
     public MirrorFile clone() throws CloneNotSupportedException {
         MirrorFile mirrorFile = (MirrorFile) super.clone();
-        mirrorFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration.clone());
+        mirrorFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
         return mirrorFile;
     }
 

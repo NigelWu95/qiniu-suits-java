@@ -109,7 +109,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
             String end = value == null ? null : value.get("end");
             File tempFile = new File(temp);
             if (!tempFile.exists()) tempFile = new File(realPath, temp);
-            directories = new ArrayList<>();
+            directories = new ArrayList<>(size);
             if (tempFile.isDirectory()) directories.add(tempFile);
             else throw new IOException(temp + " is not valid directory.");
             String forCheckPath = tempFile.getCanonicalPath() + FileUtils.pathSeparator;
@@ -367,7 +367,7 @@ public abstract class FileContainer<E, T> extends DatasourceActor implements IDa
     private AtomicInteger integer = new AtomicInteger(0);
 
     private List<File> listForNextIteratively(List<File> directories) throws Exception {
-        List<Future<IFileLister<E, File>>> futures = new ArrayList<>();
+        List<Future<IFileLister<E, File>>> futures = new ArrayList<>(directories.size() * 2 / 3 + 1);
         List<File> nextDirectories = new ArrayList<>();
         Future<IFileLister<E, File>> future;
         List<File> tempDirectories;

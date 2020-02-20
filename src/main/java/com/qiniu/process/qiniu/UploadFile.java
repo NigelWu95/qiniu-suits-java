@@ -35,9 +35,9 @@ public class UploadFile extends Base<Map<String, String>> {
         auth = Auth.create(accessKey, secretKey);
         if (record) {
             recorder = String.join(FileUtils.pathSeparator, FileUtils.userHome, ".qsuits.record");
-            uploadManager = new UploadManager(configuration.clone(), new FileRecorder(recorder));
+            uploadManager = new UploadManager(configuration, new FileRecorder(recorder));
         } else {
-            uploadManager = new UploadManager(configuration.clone());
+            uploadManager = new UploadManager(configuration);
         }
         set(configuration, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params, checkCrc);
     }
@@ -50,9 +50,9 @@ public class UploadFile extends Base<Map<String, String>> {
         auth = Auth.create(accessKey, secretKey);
         if (record) {
             recorder = String.join(FileUtils.pathSeparator, savePath, ".record");
-            uploadManager = new UploadManager(configuration.clone(), new FileRecorder(recorder));
+            uploadManager = new UploadManager(configuration, new FileRecorder(recorder));
         } else {
-            uploadManager = new UploadManager(configuration.clone());
+            uploadManager = new UploadManager(configuration);
         }
         set(configuration, pathIndex, parentPath, keepPath, addPrefix, rmPrefix, expires, policy, params, checkCrc);
     }
@@ -87,8 +87,8 @@ public class UploadFile extends Base<Map<String, String>> {
         UploadFile uploadFile = (UploadFile)super.clone();
         uploadFile.auth = Auth.create(accessId, secretKey);
         try {
-            uploadFile.uploadManager = recorder == null ? new UploadManager(configuration.clone()) :
-                    new UploadManager(configuration.clone(), new FileRecorder(recorder));
+            uploadFile.uploadManager = recorder == null ? new UploadManager(configuration) :
+                    new UploadManager(configuration, new FileRecorder(recorder));
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage() + ", init writer failed.");
         }
@@ -139,14 +139,15 @@ public class UploadFile extends Base<Map<String, String>> {
 //                    key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
 //                }
 //            }
-            if (keepPath && key == null) {
-                key = filepath;
-                line.put("key", key);
-            } else if (key == null) {
-                key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
-                line.put("key", key);
+            if (keepPath) {
+                if (key == null) {
+                    key = filepath;
+                    line.put("key", key);
+                }
             } else {
-                key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
+                if (key == null) key = filepath.substring(filepath.lastIndexOf(FileUtils.pathSeparator) + 1);
+                else key = key.substring(key.lastIndexOf(FileUtils.pathSeparator) + 1);
+                line.put("key", key);
             }
             if (parentPath != null) {
                 if (filepath.startsWith(FileUtils.pathSeparator)) {
@@ -159,10 +160,10 @@ public class UploadFile extends Base<Map<String, String>> {
         key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key));
         if (iFileChecker.check(key) != null) throw new IOException("file exists");
         if (filepath.endsWith(FileUtils.pathSeparator)) {
-            return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(new byte[]{}, key,
+            return String.join("\t", key, filepath, HttpRespUtils.getResult(uploadManager.put(new byte[]{}, key,
                     auth.uploadToken(bucket, key, expires, policy), params, null, checkCrc)));
         } else {
-            return String.join("\t", filepath, HttpRespUtils.getResult(uploadManager.put(filepath, key,
+            return String.join("\t", key, filepath, HttpRespUtils.getResult(uploadManager.put(filepath, key,
                     auth.uploadToken(bucket, key, expires, policy), params, null, checkCrc)));
         }
     }

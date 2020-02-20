@@ -73,6 +73,8 @@ public final class CloudApiUtils {
         put(LOCAL, TYPE_File);
     }};
 
+    public static final String QINIU_RS_BATCH_URL = "http://rs.qiniu.com/batch";
+
     public static String getSourceType(String source) {
         return datasourceMap.get(source);
     }

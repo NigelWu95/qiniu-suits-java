@@ -22,7 +22,7 @@ public class QueryCensorResult extends Base<Map<String, String>> {
         else this.jobIdIndex = jobIdIndex;
         Auth auth = Auth.create(accessKey, secretKey);
         CloudApiUtils.checkQiniu(auth);
-        censorManager = new CensorManager(auth, configuration.clone());
+        censorManager = new CensorManager(auth, configuration);
     }
 
     public QueryCensorResult(String accessKey, String secretKey, Configuration configuration, String jobIdIndex, String savePath,
@@ -33,7 +33,7 @@ public class QueryCensorResult extends Base<Map<String, String>> {
         else this.jobIdIndex = jobIdIndex;
         Auth auth = Auth.create(accessKey, secretKey);
         CloudApiUtils.checkQiniu(auth);
-        censorManager = new CensorManager(auth, configuration.clone());
+        censorManager = new CensorManager(auth, configuration);
         fileSaveMapper.preAddWriter("waiting");
     }
 
@@ -45,7 +45,7 @@ public class QueryCensorResult extends Base<Map<String, String>> {
     @Override
     public QueryCensorResult clone() throws CloneNotSupportedException {
         QueryCensorResult censorResult = (QueryCensorResult)super.clone();
-        censorResult.censorManager = new CensorManager(Auth.create(accessId, secretKey), configuration.clone());
+        censorResult.censorManager = new CensorManager(Auth.create(accessId, secretKey), configuration);
         if (censorResult.fileSaveMapper != null) {
             censorResult.fileSaveMapper.preAddWriter("waiting");
         }
