@@ -1,5 +1,7 @@
 package com.qiniu.process.qiniu;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.qiniu.common.Constants;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Client;
@@ -38,6 +40,16 @@ public class CdnHelper {
         return UOperationForUrls(refreshQueryUrl, req);
     }
 
+    public Response queryRefresh(JsonArray urls, int pageNo, int pageSize, String startTime, String endTime) throws QiniuException {
+        JsonObject req = new JsonObject();
+        req.add("urls", urls);
+        req.addProperty("pageNo", pageNo);
+        req.addProperty("pageSize", pageSize);
+        req.addProperty("startTime", startTime);
+        req.addProperty("endTime", endTime);
+        return UOperationForUrls(refreshQueryUrl, req);
+    }
+
     public Response prefetch(String[] urls) throws QiniuException {
         Map<String, String[]> req = new HashMap<>();
         req.put("urls", urls);
@@ -50,7 +62,17 @@ public class CdnHelper {
         return UOperationForUrls(prefetchQueryUrl, req);
     }
 
-    private Response UOperationForUrls(String apiUrl, Map<String, String[]> req) throws QiniuException {
+    public Response queryPrefetch(JsonArray urls, int pageNo, int pageSize, String startTime, String endTime) throws QiniuException {
+        JsonObject req = new JsonObject();
+        req.add("urls", urls);
+        req.addProperty("pageNo", pageNo);
+        req.addProperty("pageSize", pageSize);
+        req.addProperty("startTime", startTime);
+        req.addProperty("endTime", endTime);
+        return UOperationForUrls(prefetchQueryUrl, req);
+    }
+
+    private Response UOperationForUrls(String apiUrl, Object req) throws QiniuException {
         byte[] body = Json.encode(req).getBytes(Constants.UTF_8);
         return client.post(apiUrl, body, auth.authorizationV2(apiUrl, "POST", body, Client.JsonMime), Client.JsonMime);
     }

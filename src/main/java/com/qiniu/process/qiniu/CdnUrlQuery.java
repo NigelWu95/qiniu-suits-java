@@ -11,6 +11,7 @@ import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,16 +22,22 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
     private String domain;
     private String urlIndex;
     private boolean prefetch;
-    private List<String> batches;
-    private List<Map<String, String>> lines;
-    private ICdnApplier cdnApplier;
+    private String[] batches;
+    private boolean hasOption;
+    private int pageNo;
+    private int pageSize;
+    private String startTime;
+    private String endTime;
     private Configuration configuration;
+    private List<Map<String, String>> lines;
+    private CdnHelper cdnHelper;
+    private ICdnApplier cdnApplier;
 
     public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, boolean prefetch) throws IOException {
         super(prefetch ? "prefetchquery" : "refreshquery", accessKey, secretKey, null);
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth, configuration);
+        cdnHelper = new CdnHelper(auth, configuration);
         this.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
         CloudApiUtils.checkQiniu(auth);
         set(configuration, protocol, domain, urlIndex, prefetch);
@@ -40,10 +47,10 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
                        String urlIndex, boolean prefetch, String savePath, int saveIndex) throws IOException {
         super(prefetch ? "prefetchquery" : "refreshquery", accessKey, secretKey, null, savePath, saveIndex);
         this.batchSize = 30;
-        this.batches = new ArrayList<>(30);
+        this.batches = new String[30];
         this.lines = new ArrayList<>();
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth, configuration);
+        cdnHelper = new CdnHelper(auth, configuration);
         this.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
         CloudApiUtils.checkQiniu(auth);
         set(configuration, protocol, domain, urlIndex, prefetch);
@@ -72,18 +79,45 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
         this.prefetch = prefetch;
     }
 
+    public void setQueryOptions(int pageNo, int pageSize, String startTime, String endTime) {
+        this.pageNo = pageNo;
+        this.pageSize = pageSize;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.hasOption = true;
+        this.cdnApplier = prefetch ? urls -> {
+            JsonArray urlArray = new JsonArray();
+            for (String url : urls) urlArray.add(url);
+            return cdnHelper.queryPrefetch(urlArray, pageNo, pageSize, startTime, endTime);
+        } : urls -> {
+            JsonArray urlArray = new JsonArray();
+            for (String url : urls) urlArray.add(url);
+            return cdnHelper.queryRefresh(urlArray, pageNo, pageSize, startTime, endTime);
+        };
+    }
+
     @Override
     public CdnUrlQuery clone() throws CloneNotSupportedException {
         CdnUrlQuery cdnUrlQuery = (CdnUrlQuery)super.clone();
         cdnUrlQuery.lines = new ArrayList<>();
-        CdnHelper cdnHelper = new CdnHelper(Auth.create(accessId, secretKey), configuration);
-        cdnUrlQuery.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
+        cdnUrlQuery.cdnHelper = new CdnHelper(Auth.create(accessId, secretKey), configuration);
+        if (hasOption) {
+            cdnUrlQuery.cdnApplier = prefetch ? urls -> {
+                JsonArray urlArray = new JsonArray();
+                for (String url : urls) urlArray.add(url);
+                return cdnUrlQuery.cdnHelper.queryPrefetch(urlArray, pageNo, pageSize, startTime, endTime);
+            } : urls -> {
+                JsonArray urlArray = new JsonArray();
+                for (String url : urls) urlArray.add(url);
+                return cdnUrlQuery.cdnHelper.queryRefresh(urlArray, pageNo, pageSize, startTime, endTime);
+            };
+        } else {
+            cdnUrlQuery.cdnApplier = prefetch ? cdnUrlQuery.cdnHelper::queryPrefetch : cdnUrlQuery.cdnHelper::queryRefresh;
+        }
         if (cdnUrlQuery.fileSaveMapper != null) {
             cdnUrlQuery.fileSaveMapper.preAddWriter("processing");
         }
         return cdnUrlQuery;
-//        if (!autoIncrease) saveIndex.addAndGet(1);
-//        return this;
     }
 
     @Override
@@ -93,22 +127,26 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
 
     @Override
     protected synchronized List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
-        batches.clear();
+        Arrays.fill(batches, null);
         lines.clear();
+        Map<String, String> line;
         if (domain == null) {
-            for (Map<String, String> line : processList) {
+            for (int i = 0; i < processList.size(); i++) {
+                line = processList.get(i);
                 lines.add(line);
-                batches.add(line.get(urlIndex));
+                batches[i] = line.get(urlIndex);
             }
         } else {
             String key;
-            for (Map<String, String> line : processList) {
+            for (int i = 0; i < processList.size(); i++) {
+                line = processList.get(i);
                 key = line.get("key");
                 if (key == null) {
                     fileSaveMapper.writeError("key and url are not exist or empty in " + line, false);
                 } else {
                     lines.add(line);
-                    batches.add(String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f")));
+                    batches[i] = String.join("", protocol, "://", domain, "/",
+                            key.replace("\\?", "%3f"));
                 }
             }
         }
@@ -117,8 +155,7 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
-        String[] urls = new String[batches.size()];
-        return HttpRespUtils.getResult(cdnApplier.apply(batches.toArray(urls)));
+        return HttpRespUtils.getResult(cdnApplier.apply(batches));
     }
 
     @Override
@@ -178,6 +215,7 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
         urlIndex = null;
         batches = null;
         lines = null;
+        cdnHelper = null;
         cdnApplier = null;
         saveIndex = null;
     }

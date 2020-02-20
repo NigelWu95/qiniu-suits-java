@@ -11,6 +11,7 @@ import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,7 +23,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
     private String urlIndex;
     private boolean isDir;
 //    private boolean prefetch;
-    private List<String> batches;
+    private String[] batches;
     private List<Map<String, String>> lines;
 //    private Configuration configuration;
     private ICdnApplier cdnApplier;
@@ -43,7 +44,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
                          String urlIndex, boolean isDir, boolean prefetch, String savePath, int saveIndex) throws IOException {
         super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null, savePath, saveIndex);
         this.batchSize = 30;
-        this.batches = new ArrayList<>(30);
+        this.batches = new String[30];
         this.lines = new ArrayList<>();
         Auth auth = Auth.create(accessKey, secretKey);
         CdnHelper cdnHelper = new CdnHelper(auth, configuration);
@@ -99,22 +100,26 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 
     @Override
     protected synchronized List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
-        batches.clear();
+        Arrays.fill(batches, null);
         lines.clear();
+        Map<String, String> line;
         if (domain == null) {
-            for (Map<String, String> line : processList) {
+            for (int i = 0; i < processList.size(); i++) {
+                line = processList.get(i);
                 lines.add(line);
-                batches.add(line.get(urlIndex));
+                batches[i] = line.get(urlIndex);
             }
         } else {
             String key;
-            for (Map<String, String> line : processList) {
+            for (int i = 0; i < processList.size(); i++) {
+                line = processList.get(i);
                 key = line.get("key");
                 if (key == null) {
                     fileSaveMapper.writeError("key and url are not exist or empty in " + line, false);
                 } else {
                     lines.add(line);
-                    batches.add(String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f")));
+                    batches[i] = String.join("", protocol, "://", domain, "/",
+                            key.replace("\\?", "%3f"));
                 }
             }
         }
@@ -123,8 +128,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
-        String[] urls = new String[batches.size()];
-        return HttpRespUtils.getResult(cdnApplier.apply(batches.toArray(urls)));
+        return HttpRespUtils.getResult(cdnApplier.apply(batches));
     }
 
     @Override
@@ -179,7 +183,6 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             batches = null;
             lines = null;
             cdnApplier = null;
-            saveIndex = null;
         } else {
             saveIndex.decrementAndGet();
         }

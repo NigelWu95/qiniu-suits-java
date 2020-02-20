@@ -1127,6 +1127,12 @@ public class QSuitsEntry {
         return single ? new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol, domain, urlIndex,
                 false) : new CdnUrlQuery(qiniuAccessKey, qiniuSecretKey, getNewQiniuConfig(), protocol,
                 domain, urlIndex, false, savePath);
+//        String pageNo = entryParam.getValue("pageNo", "").trim();
+//        String pageSize = entryParam.getValue("pageSize", "").trim();
+//        String startTime = entryParam.getValue("startTime", "").trim();
+//        ParamsUtils.checked(startTime, "startTime", "\\d{4}-[01]\\d-[0-3]\\d");
+//        String endTime = entryParam.getValue("endTime", "").trim();
+//        ParamsUtils.checked(endTime, "endTime", "\\d{4}-[01]\\d-[0-3]\\d");
     }
 
     private ILineProcess<Map<String, String>> getPrefetchQuery(Map<String, String> indexMap, boolean single) throws IOException {
