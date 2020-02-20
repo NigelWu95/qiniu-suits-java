@@ -11,7 +11,6 @@ import com.qiniu.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,18 +22,27 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
     private String urlIndex;
     private boolean isDir;
 //    private boolean prefetch;
-    private String[] batches;
+    private List<String> batches;
     private List<Map<String, String>> lines;
 //    private Configuration configuration;
+    private CdnHelper cdnHelper;
     private ICdnApplier cdnApplier;
 
     public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                          String urlIndex, boolean isDir, boolean prefetch) throws IOException {
         super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null);
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth, configuration);
-        this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
-                dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
+        cdnHelper = new CdnHelper(auth, configuration);
+        this.cdnApplier = prefetch ? urls -> {
+            String[] urlArray = new String[urls.size()];
+            return cdnHelper.prefetch(urls.toArray(urlArray));
+        } : isDir ? urls -> {
+            String[] urlArray = new String[urls.size()];
+            return cdnHelper.refresh(null, urls.toArray(urlArray));
+        } : urls -> {
+            String[] urlArray = new String[urls.size()];
+            return cdnHelper.refresh(urls.toArray(urlArray), null);
+        };
         CloudApiUtils.checkQiniu(auth);
         set(configuration, protocol, domain, urlIndex, isDir);
 //        this.prefetch = prefetch;
@@ -44,12 +52,20 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
                          String urlIndex, boolean isDir, boolean prefetch, String savePath, int saveIndex) throws IOException {
         super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null, savePath, saveIndex);
         this.batchSize = isDir ? 10 : 30;
-        this.batches = new String[batchSize];
+        this.batches = new ArrayList<>(batchSize);
         this.lines = new ArrayList<>(batchSize);
         Auth auth = Auth.create(accessKey, secretKey);
-        CdnHelper cdnHelper = new CdnHelper(auth, configuration);
-        this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
-                dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);
+        cdnHelper = new CdnHelper(auth, configuration);
+        this.cdnApplier = prefetch ? urls -> {
+            String[] urlArray = new String[urls.size()];
+            return cdnHelper.prefetch(urls.toArray(urlArray));
+        } : isDir ? urls -> {
+            String[] urlArray = new String[urls.size()];
+            return cdnHelper.refresh(null, urls.toArray(urlArray));
+        } : urls -> {
+            String[] urlArray = new String[urls.size()];
+            return cdnHelper.refresh(urls.toArray(urlArray), null);
+        };
         CloudApiUtils.checkQiniu(auth);
         set(configuration, protocol, domain, urlIndex, isDir);
 //        this.prefetch = prefetch;
@@ -100,26 +116,23 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
 
     @Override
     protected synchronized List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
-        Arrays.fill(batches, null);
+        batches.clear();
         lines.clear();
-        Map<String, String> line;
         if (domain == null) {
-            for (int i = 0; i < processList.size(); i++) {
-                line = processList.get(i);
+            for (Map<String, String> line : processList) {
                 lines.add(line);
-                batches[i] = line.get(urlIndex);
+                batches.add(line.get(urlIndex));
             }
         } else {
             String key;
-            for (int i = 0; i < processList.size(); i++) {
-                line = processList.get(i);
+            for (Map<String, String> line : processList) {
                 key = line.get("key");
                 if (key == null) {
                     fileSaveMapper.writeError("key and url are not exist or empty in " + line, false);
                 } else {
                     lines.add(line);
-                    batches[i] = String.join("", protocol, "://", domain, "/",
-                            key.replace("\\?", "%3f"));
+                    batches.add(String.join("", protocol, "://", domain, "/",
+                            key.replace("\\?", "%3f")));
                 }
             }
         }
@@ -162,14 +175,12 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
         String url;
         if (domain == null) {
             url = line.get(urlIndex);
-            String[] urls = new String[]{url};
-            return String.join("\t", url, HttpRespUtils.getResult(cdnApplier.apply(urls)));
+            return String.join("\t", url, HttpRespUtils.getResult(cdnApplier.apply(new ArrayList<String>(){{ add(url); }})));
         } else {
             String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
             url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"));
-            String[] urls = new String[]{url};
-            return String.join("\t", key, HttpRespUtils.getResult(cdnApplier.apply(urls)));
+            return String.join("\t", key, HttpRespUtils.getResult(cdnApplier.apply(new ArrayList<String>(){{ add(url); }})));
         }
     }
 
@@ -182,6 +193,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
             urlIndex = null;
             batches = null;
             lines = null;
+            cdnHelper = null;
             cdnApplier = null;
         } else {
             saveIndex.decrementAndGet();
