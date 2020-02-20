@@ -57,9 +57,9 @@ public class QiniuPfop extends Base<Map<String, String>> {
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             this.pfopConfigs = pfopConfigs;
         } else if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
-            this.pfopConfigs = new ArrayList<>();
             JsonFile jsonFile = new JsonFile(pfopJsonPath);
             JsonArray array = jsonFile.getElement("pfop").getAsJsonArray();
+            this.pfopConfigs = new ArrayList<>(array.size());
             for (JsonElement jsonElement : array) {
                 JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), false);
                 this.pfopConfigs.add(jsonObject);

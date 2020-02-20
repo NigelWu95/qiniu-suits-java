@@ -72,7 +72,7 @@ public class QiniuLister implements IStorageLister<FileInfo> {
         InputStream inputStream = new BufferedInputStream(response.bodyStream());
         Reader reader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(reader);
-        List<FileInfo> fileInfoList = new ArrayList<>(limit > 100 ? (int)(limit * 0.67) : limit);
+        List<FileInfo> fileInfoList = new ArrayList<>(limit > 100 ? limit * 2 / 3 + 1 : limit);
         String line = bufferedReader.readLine();
         try {
             if (line == null) {

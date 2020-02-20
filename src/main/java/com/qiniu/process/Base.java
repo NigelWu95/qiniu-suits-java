@@ -153,7 +153,7 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
                             jsonObject.toString()), false);
                     break;
                 case 0:
-                    if (retryList == null) retryList = new ArrayList<>();
+                    if (retryList == null) retryList = new ArrayList<>(1);
                     retryList.add(processList.get(j)); // 放回重试列表
                     break;
                 case -1:

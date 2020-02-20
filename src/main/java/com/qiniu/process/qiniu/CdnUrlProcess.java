@@ -43,9 +43,9 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
     public CdnUrlProcess(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                          String urlIndex, boolean isDir, boolean prefetch, String savePath, int saveIndex) throws IOException {
         super(prefetch ? "cdnprefetch" : "cdnrefresh", accessKey, secretKey, null, savePath, saveIndex);
-        this.batchSize = 30;
-        this.batches = new String[30];
-        this.lines = new ArrayList<>();
+        this.batchSize = isDir ? 10 : 30;
+        this.batches = new String[batchSize];
+        this.lines = new ArrayList<>(batchSize);
         Auth auth = Auth.create(accessKey, secretKey);
         CdnHelper cdnHelper = new CdnHelper(auth, configuration);
         this.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
@@ -81,7 +81,7 @@ public class CdnUrlProcess extends Base<Map<String, String>> {
     @Override
     public CdnUrlProcess clone() throws CloneNotSupportedException {
 //        CdnUrlProcess cdnUrlProcess = (CdnUrlProcess)super.clone();
-//        cdnUrlProcess.lines = new ArrayList<>();
+//        cdnUrlProcess.lines = new ArrayList<>(batchSize);
 //        CdnHelper cdnHelper = new CdnHelper(Auth.create(accessId, secretKey), configuration);
 //        cdnUrlProcess.cdnApplier = prefetch ? cdnHelper::prefetch : isDir ?
 //                dirs -> cdnHelper.refresh(null, dirs) : urls -> cdnHelper.refresh(urls, null);

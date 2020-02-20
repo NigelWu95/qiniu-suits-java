@@ -123,7 +123,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, Map<String, 
 
     private void listForNextIteratively(List<String> prefixes) throws Exception {
         List<String> tempPrefixes;
-        List<Future<List<String>>> futures = new ArrayList<>();
+        List<Future<List<String>>> futures = new ArrayList<>(prefixes.size() * 2 / 3 + 1);
         for (String prefix : prefixes) {
             if (atomicLong.get() > threads) {
                 tempPrefixes = directoriesAfterListerRun(prefix);

@@ -38,7 +38,7 @@ public class ChangeStatus extends Base<Map<String, String>> {
         this.status = status;
         this.batchSize = 1000;
         this.batchOperations = new BatchOperations();
-        this.lines = new ArrayList<>();
+        this.lines = new ArrayList<>(1000);
         this.configuration = configuration;
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
@@ -53,8 +53,10 @@ public class ChangeStatus extends Base<Map<String, String>> {
     public ChangeStatus clone() throws CloneNotSupportedException {
         ChangeStatus changeStatus = (ChangeStatus)super.clone();
         changeStatus.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
-        changeStatus.batchOperations = new BatchOperations();
-        changeStatus.lines = new ArrayList<>();
+        if (fileSaveMapper != null) {
+            changeStatus.batchOperations = new BatchOperations();
+            changeStatus.lines = new ArrayList<>(batchSize);
+        }
         return changeStatus;
     }
 

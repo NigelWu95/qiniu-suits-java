@@ -991,7 +991,7 @@ public class CommonParams {
             return;
         }
         int fieldsMode = 0;
-        List<String> keys = new ArrayList<>();
+        List<String> keys = new ArrayList<>(9);
         String indexes = entryParam.getValue("indexes", "").trim();
         boolean useDefault = "".equals(indexes);
         boolean zeroDefault = false;
@@ -1323,7 +1323,7 @@ public class CommonParams {
             rmFields = null;
         } else {
             String[] fields = ParamsUtils.escapeSplit(param);
-            rmFields = new ArrayList<>();
+            rmFields = new ArrayList<>(fields.length);
             Collections.addAll(rmFields, fields);
         }
     }

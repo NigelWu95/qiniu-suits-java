@@ -44,7 +44,7 @@ public class FileInfoLister implements IFileLister<FileInfo, File> {
         }
         File[] fs = fileFilter == null ? file.listFiles() : file.listFiles(fileFilter);
         if (fs == null) throw new IOException(file.getPath() + " is not valid directory path.");
-        int initSize = fs.length > 10 ? (int)(fs.length * 0.7) : fs.length;
+        int initSize = fs.length > 10 ? fs.length * 2 / 3 + 1 : fs.length;
         fileInfoList = new ArrayList<>(initSize);
         if (keepDir) {
             FileInfo fileInfo = new FileInfo(file, transferPath, leftTrimSize);
@@ -72,7 +72,7 @@ public class FileInfoLister implements IFileLister<FileInfo, File> {
                 fileInfo.mime = e.getMessage().replace("\n", ","); }});
         }
         if (withParent) fileInfoList.forEach(FileInfo::withParent);
-        currents = new ArrayList<>();
+        currents = count < limit ? new ArrayList<>((int)count) : new ArrayList<>(limit);
         fileInfoList.sort(Comparator.comparing(fileInfo -> fileInfo.filepath));
         iterator = fileInfoList.iterator();
         count = fileInfoList.size();
@@ -107,7 +107,7 @@ public class FileInfoLister implements IFileLister<FileInfo, File> {
                     fileInfo.filepath.compareTo(startPrefix) > 0 && fileInfo.filepath.compareTo(endPrefix) <= 0);
         }
         this.fileInfoList = stream.sorted(Comparator.comparing(fileInfo -> fileInfo.filepath)).collect(Collectors.toList());
-        currents = new ArrayList<>();
+        currents = count < limit ? new ArrayList<>((int)count) : new ArrayList<>(limit);
         iterator = this.fileInfoList.iterator();
         count = this.fileInfoList.size();
 //        if (iterator.hasNext()) {

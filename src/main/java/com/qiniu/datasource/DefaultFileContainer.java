@@ -84,7 +84,7 @@ public class DefaultFileContainer extends FileContainer<FileInfo, Map<String, St
                 fileInfo.mime = e.getMessage().replace("\n", ","); }
         }
         if (indexMap.containsKey("parent")) fileInfo = fileInfo.withParent();
-        List<FileInfo> list = new ArrayList<>();
+        List<FileInfo> list = new ArrayList<>(1);
         list.add(fileInfo);
         return getLister(singleFilePath, list, null, null, unitLen);
     }

@@ -42,7 +42,7 @@ public class StatFile extends Base<Map<String, String>> {
         set(configuration, rmFields, format, separator);
         this.batchSize = 100;
         this.batchOperations = new BatchOperations();
-        this.lines = new ArrayList<>();
+        this.lines = new ArrayList<>(1000);
         this.bucketManager = new BucketManager(Auth.create(accessKey, secretKey), configuration);
         CloudApiUtils.checkQiniu(bucketManager, bucket);
     }
@@ -79,8 +79,10 @@ public class StatFile extends Base<Map<String, String>> {
     public StatFile clone() throws CloneNotSupportedException {
         StatFile statFile = (StatFile)super.clone();
         statFile.bucketManager = new BucketManager(Auth.create(accessId, secretKey), configuration);
-        statFile.batchOperations = new BatchOperations();
-        statFile.lines = new ArrayList<>();
+        if (fileSaveMapper != null) {
+            statFile.batchOperations = new BatchOperations();
+            statFile.lines = new ArrayList<>(batchSize);
+        }
         statFile.stringFormatter = getNewStatJsonFormatter(rmFields);
         return statFile;
     }
@@ -136,7 +138,7 @@ public class StatFile extends Base<Map<String, String>> {
                         fileSaveMapper.writeSuccess(stringFormatter.toFormatString(data), false);
                         break;
                     case 0:
-                        if (retryList == null) retryList = new ArrayList<>();
+                        if (retryList == null) retryList = new ArrayList<>(1);
                         retryList.add(processList.get(j)); // 放回重试列表
                         break;
                     case -1:

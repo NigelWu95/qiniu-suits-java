@@ -46,9 +46,9 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
     public CdnUrlQuery(String accessKey, String secretKey, Configuration configuration, String protocol, String domain,
                        String urlIndex, boolean prefetch, String savePath, int saveIndex) throws IOException {
         super(prefetch ? "prefetchquery" : "refreshquery", accessKey, secretKey, null, savePath, saveIndex);
-        this.batchSize = 30;
-        this.batches = new String[30];
-        this.lines = new ArrayList<>();
+        this.batchSize = 100;
+        this.batches = new String[100];
+        this.lines = new ArrayList<>(100);
         Auth auth = Auth.create(accessKey, secretKey);
         cdnHelper = new CdnHelper(auth, configuration);
         this.cdnApplier = prefetch ? cdnHelper::queryPrefetch : cdnHelper::queryRefresh;
@@ -99,7 +99,10 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
     @Override
     public CdnUrlQuery clone() throws CloneNotSupportedException {
         CdnUrlQuery cdnUrlQuery = (CdnUrlQuery)super.clone();
-        cdnUrlQuery.lines = new ArrayList<>();
+        if (fileSaveMapper != null) {
+            cdnUrlQuery.batches = new String[batchSize];
+            cdnUrlQuery.lines = new ArrayList<>(batchSize);
+        }
         cdnUrlQuery.cdnHelper = new CdnHelper(Auth.create(accessId, secretKey), configuration);
         if (hasOption) {
             cdnUrlQuery.cdnApplier = prefetch ? urls -> {
@@ -126,7 +129,7 @@ public class CdnUrlQuery extends Base<Map<String, String>> {
     }
 
     @Override
-    protected synchronized List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
+    protected List<Map<String, String>> putBatchOperations(List<Map<String, String>> processList) throws IOException {
         Arrays.fill(batches, null);
         lines.clear();
         Map<String, String> line;

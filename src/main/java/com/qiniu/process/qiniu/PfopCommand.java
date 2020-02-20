@@ -56,9 +56,9 @@ public class PfopCommand extends Base<Map<String, String>> {
         if (pfopConfigs != null && pfopConfigs.size() > 0) {
             this.pfopConfigs = pfopConfigs;
         } else if (pfopJsonPath != null && !"".equals(pfopJsonPath)) {
-            this.pfopConfigs = new ArrayList<>();
             JsonFile jsonFile = new JsonFile(pfopJsonPath);
             JsonArray array = jsonFile.getElement("pfopcmd").getAsJsonArray();
+            this.pfopConfigs = new ArrayList<>(array.size());
             for (JsonElement jsonElement : array) {
                 JsonObject jsonObject = PfopUtils.checkPfopJson(jsonElement.getAsJsonObject(), false);
                 this.pfopConfigs.add(jsonObject);
@@ -87,18 +87,18 @@ public class PfopCommand extends Base<Map<String, String>> {
         String info;
         Avinfo avinfo;
         String fopCmd;
-        StringBuilder fops = new StringBuilder();
         VideoStream videoStream;
         List<Integer> scale;
-        List<String> resultList = new ArrayList<>();
+        key = line.get("key");
+        if (key == null) throw new IOException("key is not exists or empty in " + line);
+        info = line.get(avinfoIndex);
+        if (info == null || "".equals(info)) throw new IOException("avinfo is empty.");
+        avinfo = mediaManager.getAvinfoByJson(JsonUtils.fromJson(info, JsonObject.class));
+        videoStream = avinfo.getVideoStream();
+        if (videoStream == null) throw new IOException("videoStream is null.");
+        StringBuilder fops = new StringBuilder();
+        List<String> resultList = new ArrayList<>(pfopConfigs.size());
         for (JsonObject pfopConfig : pfopConfigs) {
-            key = line.get("key");
-            if (key == null) throw new IOException("key is not exists or empty in " + line);
-            info = line.get(avinfoIndex);
-            if (info == null || "".equals(info)) throw new IOException("avinfo is empty.");
-            avinfo = mediaManager.getAvinfoByJson(JsonUtils.fromJson(info, JsonObject.class));
-            videoStream = avinfo.getVideoStream();
-            if (videoStream == null) throw new IOException("videoStream is null.");
             if (pfopConfig.get("scale") instanceof JsonArray) {
                 scale = JsonUtils.fromJsonArray(pfopConfig.get("scale").getAsJsonArray(), new TypeToken<List<Integer>>() {
                 });
@@ -111,15 +111,23 @@ public class PfopCommand extends Base<Map<String, String>> {
                 fopCmd = PfopUtils.generateFopCmd(key, pfopConfig);
             }
             if (fopCmd.contains("$(duration)")) fopCmd = fopCmd.replace("$(duration)", avinfo.getFormat().duration);
-            if (combine) fops.append(fopCmd);
-            else fops.append(key).append("\t").append(fopCmd);
-            if (hasDuration) fops.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
-            if (hasSize) fops.append("\t").append(Long.parseLong(avinfo.getFormat().size));
+            if (combine) {
+                fops.append(fopCmd);
+            } else {
+                fops.append(key).append("\t").append(fopCmd);
+                if (hasDuration) fops.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
+                if (hasSize) fops.append("\t").append(Long.parseLong(avinfo.getFormat().size));
+            }
             resultList.add(fops.toString());
             fops.delete(0, fops.length());
         }
-        if (combine) return String.join("\t", key, String.join(";", resultList));
-        else return String.join("\n", resultList);
+        if (combine) {
+            if (hasDuration) fops.append("\t").append(Double.valueOf(avinfo.getFormat().duration));
+            if (hasSize) fops.append("\t").append(Long.parseLong(avinfo.getFormat().size));
+            return String.join("\t", key, String.join(";", resultList)) + fops;
+        } else {
+            return String.join("\n", resultList);
+        }
     }
 
     @Override
