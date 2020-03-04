@@ -1,7 +1,7 @@
 # 资源 url
 
 ## 简介
-对资源名拼接域名导出 url。  
+对资源名拼接域名导出 url 或对 url 添加处理参数。  
 1. **操作需要指定数据源，默认表示从七牛空间列举文件执行操作，如非默认或需更多条件，请先[配置数据源](datasource.md)**  
 2. 单次对一个资源名 key 生成 url 请参考[ single 操作](single.md)  
 3. 交互式操作随时输入资源名 key 生成 url请参考[ interactive 操作](interactive.md)  

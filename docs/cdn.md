@@ -95,6 +95,11 @@ url-index=
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 
+#### 关于 url-index
+当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
+加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
+及[关于 parse 和索引](datasource.md#关于-parse)。  
+
 #### 批量查询的 url 条数
 每次提交查询条数默认 100 条，如果需要其他规模，可以通过 batch-size 参数来设置，如 `batch-size=80`，但是查询的每次提交条数上限是 100。  
 
