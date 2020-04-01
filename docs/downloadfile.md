@@ -7,7 +7,9 @@
 3. 交互式操作随时输入 url 进行下载请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=download
 protocol=
 domain=
@@ -38,6 +40,8 @@ private=
 |down-path| 文件保存路径|设置下载文件的保存路径，为本地的目录名称，下载文件进行保存时必须设置|  
 |private| 数据源私有类型|是否是对私有空间资源进行下载，选择对应的私有类型，参考[私有访问](#资源需要私有签名)|  
 
+运行参数：`-config=config.txt`
+
 ### 关于 queries 参数
 queries 参数用于设置 url 的后缀或 ?+参数部分，资源下载可能需要下载不同格式或尺寸的如图片文件，因此可以通过一些图片处理样式或参数来设置对处理之后的
 图片进行下载。当设置 private（私有签名）的情况下，该参数会使用在 privateurl 操作中（因为 privateurl 操作在前，当前操作在后）。  
@@ -62,6 +66,6 @@ key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes �
 
 ### 命令行参数方式
 ```
--process=download -ak= -sk= -protocol= -domain= -host= -add-prefix= -down-path= ...
+-path= -process=download -ak= -sk= -protocol= -domain= -host= -add-prefix= -down-path= ...
 ```
 

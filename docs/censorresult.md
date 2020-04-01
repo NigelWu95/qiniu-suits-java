@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 id 进行查询请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=censorresult
 ak=
 sk=
@@ -20,9 +22,11 @@ id-index=
 |ak、sk|长度 40 的字符串|七牛账号的ak、sk，通过七牛控制台个人中心获取|  
 |id-index| 字符串| 转码结果查询所需 jobId 的索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "id"|  
 
+运行参数：`-config=config.txt`
+
 ### 命令行方式
 ```
--process=censorresult -id-index=
+-path= -process=censorresult -id-index=
 ```
 
 ## 备注

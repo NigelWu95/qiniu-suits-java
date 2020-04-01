@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 key 进行修改请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=status
 ak=
 sk=
@@ -24,7 +26,9 @@ status=
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |status| 0/1| 设置资源的状态为 type，0 表示文件启用，1 表示文件禁用|  
 
+运行参数：`-config=config.txt`
+
 ### 命令行方式
 ```
--process=status -ak= -sk= -bucket= -status=  
+-path= -process=status -ak= -sk= -bucket= -status=  
 ```

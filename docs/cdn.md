@@ -10,7 +10,9 @@
 
 ## 配置
 ### CDN 刷新缓存
+> config.txt
 ```
+path=
 process=cdnrefresh
 ak=
 sk=
@@ -30,6 +32,8 @@ is-dir=
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 |is-dir| true/false| 是否进行目录刷新，设置为 true 时，输入的 url 或 key 必须是目录形式（即以 / 结尾），默认为 false，表示进行 url 刷新|  
 
+运行参数：`-config=config.txt`
+
 #### 关于 url-index
 当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
 加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
@@ -41,11 +45,13 @@ is-dir=
 
 #### 命令行方式
 ```
--process=cdnrefresh -ak= -sk= -bucket= -batch-size= 
+-path= -process=cdnrefresh -ak= -sk= -bucket= -batch-size= 
 ```
 
 ### CDN 资源预取
+> config.txt
 ```
+path=
 process=cdnprefetch
 ak=
 sk=
@@ -63,6 +69,8 @@ url-index=
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 
+运行参数：`-config=config.txt`
+
 #### 关于 url-index
 当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
 加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
@@ -73,11 +81,13 @@ url-index=
 
 #### 命令行方式
 ```
--process=cdnprefetch -ak= -sk= -bucket= 
+-path= -process=cdnprefetch -ak= -sk= -bucket= 
 ```
 
 ### CDN 刷新/预取结果查询
+> config.txt
 ```
+path=
 process=refreshquery/prefetchquery
 ak=
 sk=
@@ -95,6 +105,8 @@ url-index=
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 
+运行参数：`-config=config.txt`
+
 #### 关于 url-index
 当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
 加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
@@ -105,5 +117,5 @@ url-index=
 
 #### 命令行方式
 ```
--process=refreshquery/prefetchquery -ak= -sk= -bucket= -batch-size= 
+-path= -process=refreshquery/prefetchquery -ak= -sk= -bucket= -batch-size= 
 ```

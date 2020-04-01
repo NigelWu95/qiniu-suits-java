@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 key 进行查询请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=stat
 ak=
 sk=
@@ -22,9 +24,11 @@ indexes=
 |bucket| 字符串| 操作的资源原空间，当数据源为 qiniu 时无需再设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 
+运行参数：`-config=config.txt`
+
 ### 命令行方式
 ```
--process=stat -ak= -sk= -bucket=
+-path= -process=stat -ak= -sk= -bucket=
 ```
 
 ## 备注

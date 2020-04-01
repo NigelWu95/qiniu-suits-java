@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 key 进行更新请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=mirror
 ak/qiniu-ak=
 sk/qiniu-sk=
@@ -27,7 +29,9 @@ check=
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |check|字符串| 进行文件存在性检查，目前可设置为 `stat`，表示通过 stat 接口检查目标文件名是否存在，如果存在则不进行 fetch，而记录为 `file exsits`|  
 
+运行参数：`-config=config.txt`
+
 ### 命令行方式
 ```
--process=mirror -ak= -sk= -to-bucket=  
+-path= -process=mirror -ak= -sk= -to-bucket=  
 ```

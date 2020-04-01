@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 key 进行修改请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=mime
 ak=
 sk=
@@ -25,12 +27,14 @@ indexes=
 |mime| 字符串| 非必填字端，如果设置表示所有文件均设置为该 mime 类型，否则需要从每一行中获取 mime 的值，mime 值的索引通过 [indexes](datasource.md#关于-indexes-索引) 的第五个字段获取|  
 |cond.[]| 字符串| 可以设置一些修改操作时的条件 condition，cond 当前支持设置 hash、mime、fsize、putTime 条件，只有条件匹配才会执行修改操作，如 cond.mime=text/plain|  
 
+运行参数：`-config=config.txt`
+
 ### 关于 indexes
 这里的 indexes 表示取文件名的索引配置，非存储数据源的情况下默认只会包含 key 的索引，会根据 parse 类型设置为 0 或 "key"，如果需要从每一行读取
 mime 用于资源的类型修改，则需要设置 mime 的索引，如 `indexes=0,-1,-1,-1,mime`，具体参见[ indexes 索引](datasource.md#关于-indexes-索引)及[关于 parse 和索引](datasource.md#关于-parse)。  
 
 ### 命令行参数方式
 ```
--process=mime -ak= -sk= -bucket= -mime= ...
+-path= -process=mime -ak= -sk= -bucket= -mime= ...
 ```
 

@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 key 进行 pfop 请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=pfop 
 ak= 
 sk= 
@@ -37,6 +39,8 @@ pfop-config=
 |pfop-config| 文件路径字符串| 进行转码和另存规则设置的 json 配置文件路径，可设置多个转码条件和指令，该配置会覆盖 fops-index 设置的转码命令，[配置写法](#pfop-config-配置文件)|  
 |cmd| 字符串| pfop 命令，如 avthumb/mp4，和 pfop-config 中的 cmd 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas 设置的方式|  
 |saveas| 字符串| saveas 的格式，如 bucket:$(key)F720.mp4，和 pfop-config 中的 saveas 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas 设置的方式|  
+
+运行参数：`-config=config.txt`
 
 ### 关于 fops-index
 指定输入行中对应转码的命令字段下标，不设置为则无法进行解析。由于转码必须参数包含 key 和 fops，因此输入行中也必须包含 key 字段的值，使用 indexes 
@@ -79,5 +83,5 @@ pfop-config=
 
 ### 命令行方式
 ```
--process=pfop -ak= -sk= -bucket= -pipeline= -force-public=
+-path= -process=pfop -ak= -sk= -bucket= -pipeline= -force-public=
 ```

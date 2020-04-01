@@ -15,7 +15,9 @@
 3. 交互式操作随时输入 id 进行查询请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=pfopresult 
 id-index=
 ```  
@@ -24,9 +26,11 @@ id-index=
 |process=pfopresult| 查询 pfop 转码结果时设置为pfopresult| 表示查询 pfop 转码结果操作|  
 |id-index| 字符串| 转码结果查询所需 persistentId 的索引（下标），未设置任何索引时根据 parse 类型默认为 0 或 "id"|  
 
+运行参数：`-config=config.txt`
+
 ### 命令行方式
 ```
--process=pfopresult -id-index=
+-path= -process=pfopresult -id-index=
 ```
 
 ## 备注

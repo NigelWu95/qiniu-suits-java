@@ -7,7 +7,9 @@
 3. 交互式操作随时输入资源名 key 生成 url请参考[ interactive 操作](interactive.md)  
 
 ## 配置参数
+> config.txt
 ```
+path=
 process=publicurl
 ak=
 sk=
@@ -26,6 +28,8 @@ url-index=
 |queries| 字符串| url 的 query 参数或样式后缀，如 `?v=1.1&time=1565171107845` 或 `-w480`，[关于 queries 参数](#关于-queries-参数)|  
 |url-index| 字符串| 通过已有的 url 来添加 queries 时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 
+运行参数：`-config=config.txt`
+
 #### 关于 key
 key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)及[关于 parse 和索引](datasource.md#关于-parse)。  
 
@@ -34,5 +38,5 @@ queries 参数用于设置 ?+参数部分（或 url 的后缀），希望在 url
 
 #### 命令行方式
 ```
--process=privateurl -ak= -sk= -bucket= 
+-path= -process=privateurl -ak= -sk= -bucket= 
 ```

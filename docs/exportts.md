@@ -7,7 +7,9 @@
 4. 交互式操作随时输入 url 进行导出请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=exportts
 protocol=
 domain=
@@ -22,6 +24,8 @@ url-index=
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 
+运行参数：`-config=config.txt`
+
 ### 关于 url-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
 key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
@@ -29,5 +33,5 @@ key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes �
 
 ### 命令行方式
 ```
--process=avinfo -protocol= -domain=
+-path= -process=avinfo -protocol= -domain=
 ```

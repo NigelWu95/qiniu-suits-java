@@ -6,7 +6,9 @@
 1. **操作需指定数据源，请先[配置数据源](datasource.md)**  
 
 ## 配置
+> config.txt
 ```
+path=
 f-prefix=
 f-suffix=
 f-regex=
@@ -42,6 +44,8 @@ f-check-rewrite=
 |f-check|字符串| 是否进行字段关联匹配性检查，不符合规范的疑似异常文件将被筛选出来|  
 |f-check-config|配置文件路径字符串| 自定义资源字段规范对应关系列表的配置文件，格式为 json|  
 |f-check-rewrite|true/false| 是否完全使用自定义的规范列表进行检查，默认为 false|  
+
+运行参数：`-config=config.txt`
 
 ### 关于 f-type
 |存储源|type 参数类型|具体值                   |
@@ -80,5 +84,5 @@ f-prefix,f-suffix,f-inner,f-regex 四个均为针对文件名 key 的过滤条�
 
 ### 命令行方式
 ```
--f-prefix= -f-suffix= -f-inner= -f-regex= -f-mime= -f-type= -f-status= -f-date-scale= -f-anti-prefix= -f-anti-suffix= -f-anti-inner= -f-anti-regex= -f-anti-mime=
+-path= -f-prefix= -f-suffix= -f-inner= -f-regex= -f-mime= -f-type= -f-status= -f-date-scale= -f-anti-prefix= -f-anti-suffix= -f-anti-inner= -f-anti-regex= -f-anti-mime=
 ```
