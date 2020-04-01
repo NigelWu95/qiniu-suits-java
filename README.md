@@ -389,7 +389,7 @@ java.net.SocketTimeoutException: timeout
 2、对于云存储文件列表列举操作记录的断点可以直接作为下次续操作的配置来使用完成后续列举，如断点文件为 \<filename\>.json，则在下次列举时使用断点文件
 作为前缀配置文件: prefix-config=<breakpoint_filepath> 即可，参见：[prefix-config 配置](docs/datasource.md#prefix-config-配置)。  
 3、对于 file 数据源读取文件列表时，产生的断点文件记录了读取的文本行，可以直接作为下次续操作的配置来使用完成后续列举，如断点文件为 \<filename\>.json，
-则在下次继续读 file 数据源操作时使用断点文件作为行配置文件: uri-config=<breakpoint_filepath> 即可，参见：[uri-config 配置](docs/datasource.md#uri-config-配置)。 
+则在下次继续读 file 数据源操作时使用断点文件作为行配置文件: uri-config=<breakpoint_filepath> 即可，参见：[uri-config 配置](docs/datasource.md#uri-config-配置)。  
 4、对于 file 数据源进行上传的情况，断点信息记录的是目录下已经上传到的文件名位置，产生的断点文件亦可以直接作为下次续操作的配置来使用完成后续上传，如
 断点文件为 \<filename\>.json，则在下次继续上传该 path 目录的文件时使用断点文件作为行配置文件: directory-config=<breakpoint_filepath> 
 即可（注意是 directory-config），参见：[directory-config 配置](docs/uploadfile.md#directory-config-配置)。  

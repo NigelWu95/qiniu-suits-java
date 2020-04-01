@@ -133,14 +133,14 @@ public abstract class DatasourceActor {
         } else {
             breakpointSaver.closeWriters();
             File file = new File(breakpointFileName + ".json");
-            boolean success = file.delete();
-            if (!success) success = file.delete();
+            if (!file.delete()) file.delete();
         }
         procedureLogger.info(record);
     }
 
     void showdownHook() {
         SignalHandler handler = signal -> {
+            rootLogger.info(signal.toString());
             try {
                 stopped = true;
                 endAction();

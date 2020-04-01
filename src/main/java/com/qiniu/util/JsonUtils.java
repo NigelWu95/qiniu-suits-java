@@ -53,8 +53,8 @@ public final class JsonUtils {
                 .replace("\"{}\"", "{}")
                 .replace("\"{\\\"", "{\"")
                 .replace("\\\"}\"", "\"}")
-                .replace("\\\":\\\"", "\":\"")
-                .replace("\\\\", "\\");
+                .replace("\\\":\\\"", "\":\"");
+//                .replace("\\\\", "\\");
     }
 
     public static JsonObject toJsonObject(Map<String, String> map) {

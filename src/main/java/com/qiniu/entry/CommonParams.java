@@ -717,6 +717,7 @@ public class CommonParams {
                 Map<String, String> map = new HashMap<>();
                 while ((line = bufferedReader.readLine()) != null) {
                     index = line.indexOf("-|-");
+                    if (index < 0) System.out.println(line);
                     map.put(line.substring(0, index), line.substring(index));
                 }
                 Map<String, String> configMap;
@@ -1160,13 +1161,13 @@ public class CommonParams {
             }
         }
         if ("type".equals(process) && (baseFilter == null || !baseFilter.checkTypeCon()) && indexMap.containsValue("type")) {
-            throw new IOException("please set \"f-type\" like \"f-type=0/\" for \"process=type\" if you want to set target "
-                    + "files \"type=1\", or \"type=0\" with \"f-type=1/\", and recommend you to set "
+            throw new IOException("please set \"f-type\" like \"f-type=0\" for \"process=type\" if you want to set target "
+                    + "files \"type=1\", or \"type=0\" with \"f-type=1\", and recommend you to set "
                     + "\"f-strict-error=true\" to record unmatched lines.");
         }
         if ("status".equals(process) && (baseFilter == null || !baseFilter.checkStatusCon()) && indexMap.containsValue("status")) {
-            throw new IOException("please set \"f-status\" like \"f-status=0/\" for \"process=status\" if you want to set "
-                    + "target files \"status=1\", or \"status=0\" with \"f-status=1/\", and recommend you to set "
+            throw new IOException("please set \"f-status\" like \"f-status=0\" for \"process=status\" if you want to set "
+                    + "target files \"status=1\", or \"status=0\" with \"f-status=1\", and recommend you to set "
                     + "\"f-strict-error=true\" to record unmatched lines.");
         }
     }
@@ -1295,7 +1296,7 @@ public class CommonParams {
                 if (isOk) {
                     if (pathConfigMap == null || pathConfigMap.size() <= 0) {
                         throw new IOException(String.format("please change the save-path \"%s\", " +
-                                "because there are remained files from last job, for not cover them.", savePath));
+                                "because there are remained files from last job, not to cover them.", savePath));
                     }
                 }
 //                取消目录非空校验，因为结果文件的前缀也可以区分
