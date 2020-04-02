@@ -8,7 +8,9 @@
 3. 交互式操作随时输入filepath 进行上传请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=qupload
 path=
 directories=
@@ -53,6 +55,8 @@ check=
 |crc| true/false| 是否开启 crc32 来校验文件的上传，默认为 false|  
 |threshold| 整型数字| 设置文件分片上传的阈值，超过该阈值时才启用分片上传，小于该阈值的文件都是表单上传，默认阈值是 4M，对于内网上传时可以设置较大的阈值提高上传效率|  
 |check|字符串| 进行文件存在性检查，目前可设置为 `stat`，表示通过 stat 接口检查目标文件名是否存在，如果存在则不进行 fetch，而记录为 `file exsits`|  
+
+运行参数：`-config=config.txt`
 
 ### 关于 directory-config
 directory-config 用来设置要读取的文件目录及位置信息，在 path 为空的情况下，directory-config 中的文件名必须是完整的目录路径，path 为目录时，
@@ -122,6 +126,6 @@ indexes=1
 
 ### 命令行参数方式
 ```
--process=qupload -ak= -sk= -bucket= -path= ...
+-path= -process=qupload -ak= -sk= -bucket= -path= ...
 ```
 

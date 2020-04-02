@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 key 进行修改请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=lifecycle
 ak=
 sk=
@@ -24,7 +26,9 @@ days=
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |days| 整型数字| 设置资源的生命周期为 days（单位天数），为 0 时表示永久的生命周期|  
 
+运行参数：`-config=config.txt`
+
 ### 命令行方式
 ```
--process=lifecycle -ak= -sk= -bucket= -days=  
+-path= -process=lifecycle -ak= -sk= -bucket= -days=  
 ```

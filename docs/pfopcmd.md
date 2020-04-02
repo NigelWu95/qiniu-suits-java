@@ -9,7 +9,9 @@
 3. 交互式操作随时输入 avinfo 进行指令生成请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=pfopcmd
 indexes=
 avinfo-index=
@@ -33,6 +35,8 @@ combine=true/false
 |cmd| 字符串| pfop 命令，如 avthumb/mp4，和 pfop-config 中的 cmd 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas + scale 设置的方式|  
 |saveas| 字符串| saveas 的格式，如 bucket:$(key)F720.mp4，和 pfop-config 中的 saveas 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas + scale 设置的方式|  
 |scale| 字符串| scale 的格式，如 `[1000,1280]`，和 pfop-config 中的 scale 相同，如果不想设置 pfop-config 配置文件则可采用 cmd + saveas + scale 设置的方式|  
+
+运行参数：`-config=config.txt`
 
 ### pfop-config 配置文件
 ```json
@@ -78,5 +82,5 @@ combine=true/false
 
 ### 命令行方式
 ```
--process=pfopcmd -pfop-config= -has-duration= -has-size=
+-path= -process=pfopcmd -pfop-config= -has-duration= -has-size=
 ```

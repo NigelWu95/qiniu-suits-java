@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 key 进行删除请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=delete
 ak=
 sk=
@@ -22,7 +24,12 @@ indexes=
 |bucket| 字符串| 操作的资源所在空间，当数据源为 qiniu 时无需再设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 
+运行参数：`-config=config.txt`
+
 ### 命令行方式
 ```
--process=delete -ak= -sk= -bucket=  
+-path= -process=delete -ak= -sk= -bucket=  
 ```
+
+## 备注
+delete 是个高危操作，只有 bucket 参数的情况下会导致整个空间的文件被删除，请注意设置过滤条件，在正式执行前会有确认提示，请确认参数是否正确，谨慎操作！  

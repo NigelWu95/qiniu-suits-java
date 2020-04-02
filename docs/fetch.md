@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 url 进行抓取请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=fetch
 ak/qiniu-ak=
 sk/qiniu-sk=
@@ -37,6 +39,8 @@ check=
 |to-bucket|字符串| 保存抓取结果的空间名|  
 |check|字符串| 进行文件存在性检查，目前可设置为 `stat`，表示通过 stat 接口检查目标文件名是否存在，如果存在则不进行 fetch，而记录为 `file exsits`|  
 
+运行参数：`-config=config.txt`
+
 ### 关于 url-index
 当使用 file 源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行含 url 形式的源文件地址，未设置的情况下则使用 
 key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
@@ -44,6 +48,6 @@ key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes �
 
 ### 命令行参数方式
 ```
--process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -protocol= -domain=
+-path= -process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -protocol= -domain=
 ```
 

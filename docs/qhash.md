@@ -7,7 +7,9 @@
 3. 交互式操作随时输入 key 进行查询请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=qhash 
 protocol=
 domain=
@@ -24,6 +26,8 @@ algorithm=
 |url-index| 字符串| 通过 url 操作时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 |algorithm| md5/sha1| 查询 qhash 使用的算法,默认为 md5|  
 
+运行参数：`-config=config.txt`
+
 ### 关于 url-index
 当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
 加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
@@ -31,5 +35,5 @@ algorithm=
 
 ### 命令行方式
 ```
--process=qhash -protocol= -domain= -algorithm=md5 
+-path= -process=qhash -protocol= -domain= -algorithm=md5 
 ```

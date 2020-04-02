@@ -16,7 +16,9 @@
 ## 配置
 
 ### 七牛配置参数
+> config.txt
 ```
+path=
 process=privateurl
 ak=
 sk=
@@ -38,6 +40,8 @@ queries=
 |expires| 整型| url 签名的过期时间，单位 s，默认 3600s|  
 |queries| 字符串| url 的 query 参数或样式后缀，如 `?v=1.1&time=1565171107845` 或 `-w480`，[关于 queries 参数](#关于-queries-参数)|  
 
+运行参数：`-config=config.txt`
+
 #### 关于 url-index
 当 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中存在 url 形式的源文件地址，未设置的情况下则默认从 key 字段
 加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
@@ -48,11 +52,13 @@ queries 参数用于设置 ?+参数部分（或 url 的后缀），希望在私�
 
 #### 命令行方式
 ```
--process=privateurl -ak= -sk= -bucket= 
+-path= -process=privateurl -ak= -sk= -bucket= 
 ```
 
 ### 其他存储配置参数
+> config.txt
 ```
+path=
 process=tenprivate/aliprivate/s3private/huaweiprivate/baiduprivate
 <密钥配置>
 region=
@@ -67,6 +73,9 @@ queries=
 |expires| 整型| url 签名的过期时间，单位 s，默认 3600s|  
 |queries| 字符串| url 的 query 参数或样式后缀，如 `?v=1.1&time=1565171107845`，[关于 queries 参数](#关于-queries-参数)|  
 
+运行参数：`-config=config.txt`
+
+#### 密钥配置
 |其他存储|             密钥和 region 字段         |                  对应关系和描述                |  
 |------|---------------------------------------|---------------------------------------------|  
 |tencent|`ten-id=`<br>`ten-secret=`<br>`region=ap-beijing/...`| 密钥对应腾讯云账号的 SecretId 和 SecretKey<br>region使用简称(可不设置)，参考[腾讯 Region](https://cloud.tencent.com/document/product/436/6224)|  
@@ -80,5 +89,5 @@ queries 参数用于设置 ?+参数部分（或 url 的后缀），希望在私�
 
 #### 命令行方式
 ```
--process=tenprivate -ak= -sk= -bucket= 
+-path= -process=tenprivate -ak= -sk= -bucket= 
 ```

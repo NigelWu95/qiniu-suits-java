@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 url 进行抓取请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=asyncfetch
 ak/qiniu-ak=
 sk/qiniu-sk=
@@ -54,6 +56,8 @@ check-url=
 |ignore-same-key| true/false|为 false 时表示覆盖同名文件，为 true 表示不覆盖|  
 |check-url| true/false|表示是否在提交任务之前对回调地址进行简单的 post 请求验证（无body的纯post请求），默认为 true，如果无需验证则设置为 false|  
 
+运行参数：`-config=config.txt`
+
 ### 关于 url-index 和 md5-index
 当使用 file 数据源且 parse=tab/csv 时 [xx-]index(ex) 设置的下标必须为整数。url-index 表示输入行中含 url 的字段索引，未设置的情况下则使用
 key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)
@@ -61,6 +65,6 @@ key 字段加上 domain 的方式访问源文件地址，key 下标用 indexes �
 
 ### 命令行参数方式
 ```
--process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -protocol= -domain= -host= -callback-url= -callback-body= -callback-body-type= -callback-host= -file-type= -ignore-same-key=
+-path= -process=asyncfetch -ak= -sk= -to-bucket= -add-prefix= -protocol= -domain= -host= -callback-url= -callback-body= -callback-body-type= -callback-host= -file-type= -ignore-same-key=
 ```
 

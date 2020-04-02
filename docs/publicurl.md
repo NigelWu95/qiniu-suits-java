@@ -1,13 +1,15 @@
 # 资源 url
 
 ## 简介
-对资源名拼接域名导出 url。  
+对资源名拼接域名导出 url 或对 url 添加处理参数。  
 1. **操作需要指定数据源，默认表示从七牛空间列举文件执行操作，如非默认或需更多条件，请先[配置数据源](datasource.md)**  
 2. 单次对一个资源名 key 生成 url 请参考[ single 操作](single.md)  
 3. 交互式操作随时输入资源名 key 生成 url请参考[ interactive 操作](interactive.md)  
 
 ## 配置参数
+> config.txt
 ```
+path=
 process=publicurl
 ak=
 sk=
@@ -26,6 +28,8 @@ url-index=
 |queries| 字符串| url 的 query 参数或样式后缀，如 `?v=1.1&time=1565171107845` 或 `-w480`，[关于 queries 参数](#关于-queries-参数)|  
 |url-index| 字符串| 通过已有的 url 来添加 queries 时需要设置的 url 索引（下标），未设置任何索引和 domain 时根据 parse 类型默认为 0 或 "url"|  
 
+运行参数：`-config=config.txt`
+
 #### 关于 key
 key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)及[关于 parse 和索引](datasource.md#关于-parse)。  
 
@@ -34,5 +38,5 @@ queries 参数用于设置 ?+参数部分（或 url 的后缀），希望在 url
 
 #### 命令行方式
 ```
--process=privateurl -ak= -sk= -bucket= 
+-path= -process=privateurl -ak= -sk= -bucket= 
 ```

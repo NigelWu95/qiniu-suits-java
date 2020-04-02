@@ -8,7 +8,9 @@
 4. 交互式操作随时输入 key 进行重命名请参考[ interactive 操作](interactive.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=rename
 ak=
 sk=
@@ -30,6 +32,8 @@ force=
 |rm-prefix| 字符串| 表示将原文件名去除存在的指定前缀后作为 rename 之后保存的文件名|  
 |force| true/false| 修改后的文件名如果空间中已存在是否进行强制覆盖，默认为 false|  
 
+运行参数：`-config=config.txt`
+
 ### 关于 toKey-index
 指定输入行中对应修改之后的文件名字段下标，不设置则无法进行解析，当使用 file 源且 parse=tab/csv 时下标必须为整数，toKey 下标和 key 字段下标不可
 相同，key 下标用 indexes 参数设置，默认会根据 parse 类型设置为 0 或 "key"，参见[ indexes 索引](datasource.md#关于-indexes-索引)及[关于 parse 和索引](datasource.md#关于-parse)。  
@@ -37,5 +41,5 @@ force=
 
 ### 命令行方式
 ```
--process=rename -ak= -sk= -bucket= -toKey-index= -add-prefix= -rm-prefix=
+-path= -process=rename -ak= -sk= -bucket= -toKey-index= -add-prefix= -rm-prefix=
 ```

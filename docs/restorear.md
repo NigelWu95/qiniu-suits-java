@@ -9,7 +9,9 @@
 5. 由于归档解冻是异步行为需要 1-5 分钟完成，不能立即调用转换为低频或标准的接口，如果要转换，需要单独使用[ type 操作](type.md)  
 
 ## 配置
+> config.txt
 ```
+path=
 process=restorear
 ak=
 sk=
@@ -26,7 +28,9 @@ cond.[]=
 |days| 整型数字| 设置解冻的有效期为 days（单位天数），范围 1-7 天|  
 |cond.[]| 字符串| 可以设置一些操作时的 condition，cond 当前支持设置 hash、mime、fsize、putTime 条件，只有条件匹配才会执行修改操作，如 cond.mime=text/plain|  
 
+运行参数：`-config=config.txt`
+
 ### 命令行方式
 ```
--process=restorear -ak= -sk= -bucket= -days=  
+-path= -process=restorear -ak= -sk= -bucket= -days=  
 ```

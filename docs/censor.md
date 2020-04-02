@@ -12,7 +12,9 @@
 ### 图片审核
 审核 image 类型的资源，同步审核，审核结果输出为 json：[七牛图片审核响应 json](https://developer.qiniu.com/censor/api/5588/image-censor#4)
 如果数据源的资源类型不确定（如云存储数据源），建议设置 filter 选项：f-mime=image  
+> config.txt
 ```
+path=
 process=imagecensor
 ak=
 sk=
@@ -48,8 +50,10 @@ queries 参数用于设置 url 的后缀或 ?+参数部分，内容审核可能�
 ### 视频审核
 审核 video 类型的资源，异步审核，审核结果输出为 jobId，要获取进一步的实际审核结果需要通过 id 查询，参考该工具的 [censorresult 操作](censorresult.md)，
 七牛官网文档见：[通过jobid获取视频审核结果](https://developer.qiniu.com/censor/api/5620/video-censor#4)，如果数据源的资源类型不确定
-（如云存储数据源），建议设置 filter 选项：f-mime=video
+（如云存储数据源），建议设置 filter 选项：f-mime=video  
+> config.txt
 ```
+path=
 process=videocensor
 ak=
 sk=
@@ -81,6 +85,8 @@ private=
 |check-url| true/false|表示是否在提交任务之前对回调地址进行简单的 post 请求验证（无body的纯post请求），默认为 true，如果无需验证则设置为 false|  
 |private| 数据源私有类型|是否是对私有空间资源进行审核，选择对应的私有类型，参考[私有访问](#资源需要私有签名)|  
 
+运行参数：`-config=config.txt`
+
 ### 资源需要私有签名
 当进行图片审核的 url 需要通过私有鉴权访问时（资源来自于存储私有权限的空间），本工具支持串联操作，即先进行对应的私有签名再提交审核，使用如下的 private
 参数设置即可，如不需要进行私有访问则不设置，目前支持以下几类签名：  
@@ -93,6 +99,6 @@ private=
 
 ### 命令行参数方式
 ```
--process=imagecensor/videocensor -ak= -sk= -protocol= -domain= ...
+-path= -process=imagecensor/videocensor -ak= -sk= -protocol= -domain= ...
 ```
 
