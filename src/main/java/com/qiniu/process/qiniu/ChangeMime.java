@@ -23,7 +23,7 @@ public class ChangeMime extends Base<Map<String, String>> {
     private Auth auth;
     private Configuration configuration;
     private Client client;
-    private static final String URL = "http://rs.qiniu.com/batch";
+    private static String requestUrl;
 
     public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
                       String mimeIndex, String condition) throws IOException {
@@ -37,6 +37,7 @@ public class ChangeMime extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
         this.client = new Client(configuration.clone());
+        requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/chgm/" : "http://rs.qiniu.com/chgm/";
     }
 
     public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
@@ -53,6 +54,8 @@ public class ChangeMime extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
         this.client = new Client(configuration.clone());
+        requestUrl = configuration.useHttpsDomains ? CloudApiUtils.QINIU_RS_BATCH_URL.replace("http://", "https://")
+                : CloudApiUtils.QINIU_RS_BATCH_URL;
     }
 
     public ChangeMime(String accessKey, String secretKey, Configuration configuration, String bucket, String mimeType,
@@ -70,6 +73,13 @@ public class ChangeMime extends Base<Map<String, String>> {
             changeType.lines = new ArrayList<>(batchSize);
         }
         return changeType;
+    }
+
+    @Override
+    public void batchSizeTrigger() {
+        if (batchSize <= 1) {
+            requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/chgm/" : "http://rs.qiniu.com/chgm/";
+        }
     }
 
     @Override
@@ -124,7 +134,7 @@ public class ChangeMime extends Base<Map<String, String>> {
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        return HttpRespUtils.getResult(client.post(URL, body, auth.authorization(URL, body, Client.FormMime), Client.FormMime));
+        return HttpRespUtils.getResult(client.post(requestUrl, body, auth.authorization(requestUrl, body, Client.FormMime), Client.FormMime));
     }
 
     @Override
@@ -135,7 +145,7 @@ public class ChangeMime extends Base<Map<String, String>> {
         if (mimeType == null) {
             String mime = line.get(mimeIndex);
             if (mime == null) throw new IOException("mime is not exists or empty in " + line);
-            urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
+            urlBuilder = new StringBuilder(requestUrl)
                     .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
                     .append("/mime/").append(UrlSafeBase64.encodeToString(mime));
             if (encodedCondition != null) urlBuilder.append("/cond/").append(encodedCondition);
@@ -145,7 +155,7 @@ public class ChangeMime extends Base<Map<String, String>> {
             response.close();
             return String.join("\t", key, mime, "200");
         } else {
-            urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
+            urlBuilder = new StringBuilder(requestUrl)
                     .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
                     .append("/mime/").append(encodedMime);
             if (encodedCondition != null) urlBuilder.append("/cond/").append(encodedCondition);

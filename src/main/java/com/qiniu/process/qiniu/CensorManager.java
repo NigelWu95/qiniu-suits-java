@@ -40,7 +40,16 @@ public class CensorManager {
 
     public CensorManager(Auth auth, Configuration configuration) {
         this.auth = auth;
-        this.client = configuration == null ? new Client() : new Client(configuration.clone());
+        if (configuration == null) {
+            this.client = new Client();
+        } else {
+            this.client = new Client(configuration.clone());
+            if (configuration.useHttpsDomains) {
+                imageCensorUrl = imageCensorUrl.replace("http://", "https://");
+                videoCensorUrl = videoCensorUrl.replace("http://", "https://");
+                videoJobsUrl = videoJobsUrl.replace("http://", "https://");
+            }
+        }
         this.bodyJson = new JsonObject();
         this.paramsJson = new JsonObject();
         this.uriJson = new JsonObject();

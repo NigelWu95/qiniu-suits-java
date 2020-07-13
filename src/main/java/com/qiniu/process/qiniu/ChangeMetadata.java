@@ -21,6 +21,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
     private Auth auth;
     private Configuration configuration;
     private Client client;
+    private static String requestUrl;
 
     public ChangeMetadata(String accessKey, String secretKey, Configuration configuration, String bucket,
                           Map<String, String> metadata, String condition) throws IOException {
@@ -32,6 +33,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
         this.client = new Client(configuration.clone());
+        requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/chgm/" : "http://rs.qiniu.com/chgm/";
     }
 
     public ChangeMetadata(String accessKey, String secretKey, Configuration configuration, String bucket,
@@ -47,6 +49,8 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.configuration = configuration;
         this.client = new Client(configuration.clone());
+        requestUrl = configuration.useHttpsDomains ? CloudApiUtils.QINIU_RS_BATCH_URL.replace("http://", "https://")
+                : CloudApiUtils.QINIU_RS_BATCH_URL;
     }
 
     public ChangeMetadata(String accessKey, String secretKey, Configuration configuration, String bucket,
@@ -64,6 +68,13 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         changeMetadata.auth = Auth.create(accessId, secretKey);
         changeMetadata.client = new Client(configuration.clone());
         return changeMetadata;
+    }
+
+    @Override
+    public void batchSizeTrigger() {
+        if (batchSize <= 1) {
+            requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/chgm/" : "http://rs.qiniu.com/chgm/";
+        }
     }
 
     @Override
@@ -104,8 +115,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        return HttpRespUtils.getResult(client.post(CloudApiUtils.QINIU_RS_BATCH_URL, body,
-                auth.authorization(CloudApiUtils.QINIU_RS_BATCH_URL, body, Client.FormMime), Client.FormMime));
+        return HttpRespUtils.getResult(client.post(requestUrl, body, auth.authorization(requestUrl, body, Client.FormMime), Client.FormMime));
     }
 
     @Override
@@ -113,8 +123,7 @@ public class ChangeMetadata extends Base<Map<String, String>> {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
 //        String path = String.format("/chgm/%s", BucketManager.encodedEntry(bucket, key));
-        StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/chgm/")
-                .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)));
+        StringBuilder urlBuilder = new StringBuilder(requestUrl).append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)));
         for (String k : metadata.keySet()) {
 //            path = String.format("%s/x-qn-meta-!%s/%s", path, k, UrlSafeBase64.encodeToString(metadata.get(k)));
             urlBuilder.append("/x-qn-meta-!").append(k).append("/").append(UrlSafeBase64.encodeToString(metadata.get(k)));

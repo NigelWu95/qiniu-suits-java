@@ -45,7 +45,8 @@ public class RestoreArchive extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
-        requestUrl = configuration.useHttpsDomains ? "https://rs.qbox.me/restoreAr/" : "http://rs.qbox.me/restoreAr/";
+        requestUrl = configuration.useHttpsDomains ? CloudApiUtils.QINIU_RS_BATCH_URL.replace("http://", "https://")
+                : CloudApiUtils.QINIU_RS_BATCH_URL;
     }
 
     public RestoreArchive(String accessKey, String secretKey, Configuration configuration, String bucket, int days,
@@ -63,6 +64,13 @@ public class RestoreArchive extends Base<Map<String, String>> {
         restoreArchive.auth = Auth.create(accessId, secretKey);
         restoreArchive.client = new Client(configuration.clone());
         return restoreArchive;
+    }
+
+    @Override
+    public void batchSizeTrigger() {
+        if (batchSize <= 1) {
+            requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/restoreAr/" : "http://rs.qiniu.com/restoreAr/";
+        }
     }
 
     @Override
@@ -96,8 +104,7 @@ public class RestoreArchive extends Base<Map<String, String>> {
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        return HttpRespUtils.getResult(client.post(CloudApiUtils.QINIU_RS_BATCH_URL, body,
-                auth.authorization(CloudApiUtils.QINIU_RS_BATCH_URL, body, Client.FormMime), Client.FormMime));
+        return HttpRespUtils.getResult(client.post(requestUrl, body, auth.authorization(requestUrl, body, Client.FormMime), Client.FormMime));
     }
 
     @Override

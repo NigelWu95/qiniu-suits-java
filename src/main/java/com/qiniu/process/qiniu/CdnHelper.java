@@ -17,14 +17,24 @@ public class CdnHelper {
 
     private final Auth auth;
     private final Client client;
-    private static final String refreshUrl = "http://fusion.qiniuapi.com/v2/tune/refresh";
-    private static final String prefetchUrl = "http://fusion.qiniuapi.com/v2/tune/prefetch";
-    private static final String refreshQueryUrl = "http://fusion.qiniuapi.com/v2/tune/refresh/list";
-    private static final String prefetchQueryUrl = "http://fusion.qiniuapi.com/v2/tune/prefetch/list";
+    private static String refreshUrl = "http://fusion.qiniuapi.com/v2/tune/refresh";
+    private static String prefetchUrl = "http://fusion.qiniuapi.com/v2/tune/prefetch";
+    private static String refreshQueryUrl = "http://fusion.qiniuapi.com/v2/tune/refresh/list";
+    private static String prefetchQueryUrl = "http://fusion.qiniuapi.com/v2/tune/prefetch/list";
 
     public CdnHelper(Auth auth, Configuration configuration) {
         this.auth = auth;
-        this.client = configuration == null ? new Client() : new Client(configuration);
+        if (configuration == null) {
+            this.client = new Client();
+        } else {
+            this.client = new Client(configuration.clone());
+            if (configuration.useHttpsDomains) {
+                refreshUrl = refreshUrl.replace("http://", "https://");
+                prefetchUrl = prefetchUrl.replace("http://", "https://");
+                refreshQueryUrl = refreshQueryUrl.replace("http://", "https://");
+                prefetchQueryUrl = prefetchQueryUrl.replace("http://", "https://");
+            }
+        }
     }
 
     public Response refresh(String[] urls, String[] dirs) throws QiniuException {

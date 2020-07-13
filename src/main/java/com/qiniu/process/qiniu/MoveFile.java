@@ -25,6 +25,7 @@ public class MoveFile extends Base<Map<String, String>> {
     private ArrayList<String> ops;
     private Configuration configuration;
     private List<Map<String, String>> lines;
+    private static String requestUrl;
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String toKeyIndex, String addPrefix, String rmPrefix, boolean force) throws IOException {
@@ -34,6 +35,7 @@ public class MoveFile extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix, force);
+        requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/move/" : "http://rs.qiniu.com/move/";
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -48,6 +50,8 @@ public class MoveFile extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix, force);
+        requestUrl = configuration.useHttpsDomains ? CloudApiUtils.QINIU_RS_BATCH_URL.replace("http://", "https://")
+                : CloudApiUtils.QINIU_RS_BATCH_URL;
     }
 
     public MoveFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -91,6 +95,13 @@ public class MoveFile extends Base<Map<String, String>> {
         moveFile.auth = Auth.create(accessId, secretKey);
         moveFile.client = new Client(configuration.clone());
         return moveFile;
+    }
+
+    @Override
+    public void batchSizeTrigger() {
+        if (batchSize <= 1) {
+            requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/move/" : "http://rs.qiniu.com/move/";
+        }
     }
 
     @Override
@@ -152,8 +163,7 @@ public class MoveFile extends Base<Map<String, String>> {
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        return HttpRespUtils.getResult(client.post(CloudApiUtils.QINIU_RS_BATCH_URL, body,
-                auth.authorization(CloudApiUtils.QINIU_RS_BATCH_URL, body, Client.FormMime), Client.FormMime));
+        return HttpRespUtils.getResult(client.post(requestUrl, body, auth.authorization(requestUrl, body, Client.FormMime), Client.FormMime));
     }
 
     @Override
@@ -161,7 +171,7 @@ public class MoveFile extends Base<Map<String, String>> {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
         String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, defaultToKey ? key : line.get(toKeyIndex));
-        StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/move/")
+        StringBuilder urlBuilder = new StringBuilder(requestUrl)
                 .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key))).append("/")
                 .append(UrlSafeBase64.encodeToString(String.join(":", toBucket, toKey))).append(forceOption);
         StringMap headers = auth.authorization(urlBuilder.toString(), null, Client.FormMime);

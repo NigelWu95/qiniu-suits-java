@@ -70,8 +70,11 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
             throw new IOException("batch size must less than 1000 and more than 0.");
         } else {
             this.batchSize = batchSize;
+            batchSizeTrigger();
         }
     }
+
+    public void batchSizeTrigger() {}
 
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
