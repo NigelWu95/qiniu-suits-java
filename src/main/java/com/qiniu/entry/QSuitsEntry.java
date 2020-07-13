@@ -630,7 +630,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getCopyFile(Map<String, String> indexMap, boolean single) throws IOException {
-        String toBucket = entryParam.getValue("to-bucket").trim();
+        String toBucket = entryParam.getValue("to-bucket", bucket).trim();
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);
