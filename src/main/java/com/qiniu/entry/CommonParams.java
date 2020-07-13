@@ -889,11 +889,12 @@ public class CommonParams {
         List<String> antiKeyInnerList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyInner));
         List<String> antiKeyRegexList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyRegex));
         List<String> antiMimeTypeList = Arrays.asList(ParamsUtils.escapeSplit(antiMimeType));
+        List<String> typeList = Arrays.asList(ParamsUtils.escapeSplit(type));
 
         try {
             baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
                     antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
-                    putTimeMin, putTimeMax, type, status) {
+                    putTimeMin, putTimeMax, typeList, status) {
                 @Override
                 protected String valueFrom(Map<String, String> item, String key) {
                     return item.get(key);

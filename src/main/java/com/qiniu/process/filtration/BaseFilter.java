@@ -16,7 +16,7 @@ public abstract class BaseFilter<T> {
     private LocalDateTime datetimeMin;
     private LocalDateTime datetimeMax;
     private List<String> mimeType;
-    private String type;
+    private List<String> typeList;
     private String status;
     private List<String> antiKeyPrefix;
     private List<String> antiKeySuffix;
@@ -27,7 +27,7 @@ public abstract class BaseFilter<T> {
     public BaseFilter(List<String> keyPrefix, List<String> keySuffix, List<String> keyInner, List<String> keyRegex,
                       List<String> antiKeyPrefix, List<String> antiKeySuffix, List<String> antiKeyInner,
                       List<String> antiKeyRegex, List<String> mimeType, List<String> antiMimeType, LocalDateTime putTimeMin,
-                      LocalDateTime putTimeMax, String type, String status) throws IOException {
+                      LocalDateTime putTimeMax, List<String> typeList, String status) throws IOException {
         this.keyPrefix = keyPrefix;
         this.keySuffix = keySuffix;
         this.keyInner = keyInner;
@@ -40,7 +40,7 @@ public abstract class BaseFilter<T> {
         this.antiMimeType = antiMimeType;
         this.datetimeMin = putTimeMin;
         this.datetimeMax = putTimeMax;
-        this.type = type == null ? "" : type;
+        this.typeList = typeList;
         this.status = status == null ? "" : status;
         if (!checkKeyCon() && !checkMimeTypeCon() && !checkDatetimeCon() && !checkTypeCon() && !checkStatusCon())
             throw new IOException("all conditions are invalid.");
@@ -64,7 +64,7 @@ public abstract class BaseFilter<T> {
     }
 
     public boolean checkTypeCon() {
-        return type != null && !"".equals(type);
+        return checkList(typeList);
     }
 
     public boolean checkStatusCon() {
@@ -128,7 +128,9 @@ public abstract class BaseFilter<T> {
     public boolean filterType(T item) {
         try {
             if (item == null) return false;
-            return valueFrom(item, ConvertingUtils.defaultTypeField).equals(type);
+            String type = valueFrom(item, ConvertingUtils.defaultTypeField);
+            for (String s : typeList) if (type.equals(s)) return true;
+            return false;
         } catch (NullPointerException e) {
             return true;
         }

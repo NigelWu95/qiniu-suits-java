@@ -31,7 +31,7 @@ public class RestoreArchive extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         CloudApiUtils.checkQiniu(accessKey, secretKey, configuration, bucket);
-        requestUrl = configuration.useHttpsDomains ? "https://rs.qbox.me/restoreAr/" : "http://rs.qbox.me/restoreAr/";
+        requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/restoreAr/" : "http://rs.qiniu.com/restoreAr/";
     }
 
     public RestoreArchive(String accessKey, String secretKey, Configuration configuration, String bucket, int days,

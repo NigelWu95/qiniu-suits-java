@@ -46,7 +46,7 @@ public abstract class FilterProcess<T> implements ILineProcess<T>, Cloneable {
         List<Method> filterMethods = new ArrayList<Method>() {{
             if (baseFilter != null) {
                 Class<?> clazz = baseFilter.getClass();
-                if (baseFilter.checkKeyCon()) add(clazz.getMethod("filterKey", Object.class));
+                add(clazz.getMethod("filterKey", Object.class));
                 if (baseFilter.checkMimeTypeCon()) add(clazz.getMethod("filterMimeType", Object.class));
                 if (baseFilter.checkDatetimeCon()) add(clazz.getMethod("filterDatetime", Object.class));
                 if (baseFilter.checkTypeCon()) add(clazz.getMethod("filterType", Object.class));
