@@ -21,7 +21,7 @@ public class RestoreArchiveTest {
         String secretKey = propertiesFile.getValue("sk");
         String bucket = propertiesFile.getValue("bucket");
         RestoreArchive restoreArchive = new RestoreArchive(accessKey, secretKey, new Configuration(), bucket, 1,
-                null, "~/Downloads/restorear");
+                "~/Downloads/restorear");
         List<Map<String, String>> list = new ArrayList<>();
         list.add(new HashMap<String, String>(){{ put("key", "qiniu_success_1.txt"); }});
         list.add(new HashMap<String, String>(){{ put("key", "qiniu_success_2.txt"); }});

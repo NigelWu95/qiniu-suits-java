@@ -239,14 +239,20 @@ public class CommonParams {
             case "delete":
             case "status":
             case "lifecycle":
+            case "type":
+            case "mirror":
+            case "restorear":
+            case "metadata":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
                 break;
             case "copy":
             case "move":
             case "rename":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
-                indexMap.put("toKey", "toKey");
-                mapLine.put("toKey", entryParam.getValue("to-key", entryParam.getParamsMap().containsKey("to-key") ? "" : null));
+                if (entryParam.getParamsMap().containsKey("to-key")) {
+                    indexMap.put("toKey", "toKey");
+                    mapLine.put("toKey", entryParam.getValue("to-key", ""));
+                }
                 break;
             case "stat":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
@@ -883,11 +889,12 @@ public class CommonParams {
         List<String> antiKeyInnerList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyInner));
         List<String> antiKeyRegexList = Arrays.asList(ParamsUtils.escapeSplit(antiKeyRegex));
         List<String> antiMimeTypeList = Arrays.asList(ParamsUtils.escapeSplit(antiMimeType));
+        List<String> typeList = Arrays.asList(ParamsUtils.escapeSplit(type));
 
         try {
             baseFilter = new BaseFilter<Map<String, String>>(keyPrefixList, keySuffixList, keyInnerList, keyRegexList,
                     antiKeyPrefixList, antiKeySuffixList, antiKeyInnerList, antiKeyRegexList, mimeTypeList, antiMimeTypeList,
-                    putTimeMin, putTimeMax, type, status) {
+                    putTimeMin, putTimeMax, typeList, status) {
                 @Override
                 protected String valueFrom(Map<String, String> item, String key) {
                     return item.get(key);

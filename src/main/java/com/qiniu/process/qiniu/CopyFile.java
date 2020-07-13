@@ -29,6 +29,7 @@ public class CopyFile extends Base<Map<String, String>> {
     private List<Map<String, String>> lines;
 //    private BucketManager bucketManager;
 //    private BatchOperations batchOperations;
+    private static String requestUrl;
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
                     String toKeyIndex, String addPrefix, String rmPrefix, boolean force) throws IOException {
@@ -40,6 +41,7 @@ public class CopyFile extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix, force);
+        requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/copy/" : "http://rs.qiniu.com/copy/";
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -59,6 +61,8 @@ public class CopyFile extends Base<Map<String, String>> {
         this.auth = Auth.create(accessKey, secretKey);
         this.client = new Client(configuration.clone());
         set(configuration, toBucket, toKeyIndex, addPrefix, rmPrefix, force);
+        requestUrl = configuration.useHttpsDomains ? CloudApiUtils.QINIU_RS_BATCH_URL.replace("http://", "https://")
+                : CloudApiUtils.QINIU_RS_BATCH_URL;
     }
 
     public CopyFile(String accessKey, String secretKey, Configuration configuration, String bucket, String toBucket,
@@ -96,6 +100,13 @@ public class CopyFile extends Base<Map<String, String>> {
         copyFile.auth = Auth.create(accessId, secretKey);
         copyFile.client = new Client(configuration.clone());
         return copyFile;
+    }
+
+    @Override
+    public void batchSizeTrigger() {
+        if (batchSize <= 1) {
+            requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/copy/" : "http://rs.qiniu.com/copy/";
+        }
     }
 
     @Override
@@ -159,8 +170,7 @@ public class CopyFile extends Base<Map<String, String>> {
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
 //        return HttpRespUtils.getResult(bucketManager.batch(batchOperations));
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        return HttpRespUtils.getResult(client.post(CloudApiUtils.QINIU_RS_BATCH_URL, body,
-                auth.authorization(CloudApiUtils.QINIU_RS_BATCH_URL, body, Client.FormMime), Client.FormMime));
+        return HttpRespUtils.getResult(client.post(requestUrl, body, auth.authorization(requestUrl, body, Client.FormMime), Client.FormMime));
     }
 
     @Override
@@ -169,7 +179,7 @@ public class CopyFile extends Base<Map<String, String>> {
         if (key == null) throw new IOException("key is not exists or empty in " + line);
         String toKey = addPrefix + FileUtils.rmPrefix(rmPrefix, defaultToKey ? key : line.get(toKeyIndex));
 //        Response response = bucketManager.copy(bucket, key, toBucket, toKey, false);
-        StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/copy/")
+        StringBuilder urlBuilder = new StringBuilder(requestUrl)
                 .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key))).append("/")
                 .append(UrlSafeBase64.encodeToString(String.join(":", toBucket, toKey))).append(forceOption);
         StringMap headers = auth.authorization(urlBuilder.toString(), null, Client.FormMime);

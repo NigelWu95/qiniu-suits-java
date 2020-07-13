@@ -23,6 +23,7 @@ public class ChangeType extends Base<Map<String, String>> {
     private Client client;
     private Auth auth;
 //    private BucketManager bucketManager;
+    private static String requestUrl;
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type) throws IOException {
         super("type", accessKey, secretKey, bucket);
@@ -34,6 +35,7 @@ public class ChangeType extends Base<Map<String, String>> {
         this.client = new Client(configuration.clone());
 //        this.bucketManager = new BucketManager(auth, configuration);
 //        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/chtype/" : "http://rs.qiniu.com/chtype/";
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type, String savePath,
@@ -51,6 +53,8 @@ public class ChangeType extends Base<Map<String, String>> {
 //        this.batchOperations = new BatchOperations();
 //        this.bucketManager = new BucketManager(auth, configuration);
 //        CloudApiUtils.checkQiniu(bucketManager, bucket);
+        requestUrl = configuration.useHttpsDomains ? CloudApiUtils.QINIU_RS_BATCH_URL.replace("http://", "https://")
+                : CloudApiUtils.QINIU_RS_BATCH_URL;
     }
 
     public ChangeType(String accessKey, String secretKey, Configuration configuration, String bucket, int type,
@@ -70,6 +74,13 @@ public class ChangeType extends Base<Map<String, String>> {
         changeType.auth = Auth.create(accessId, secretKey);
         changeType.client = new Client(configuration.clone());
         return changeType;
+    }
+
+    @Override
+    public void batchSizeTrigger() {
+        if (batchSize <= 1) {
+            requestUrl = configuration.useHttpsDomains ? "https://rs.qiniu.com/chtype/" : "http://rs.qiniu.com/chtype/";
+        }
     }
 
     @Override
@@ -116,15 +127,14 @@ public class ChangeType extends Base<Map<String, String>> {
     @Override
     protected String batchResult(List<Map<String, String>> lineList) throws IOException {
         byte[] body = StringUtils.utf8Bytes(StringUtils.join(ops, "&op=", "op="));
-        return HttpRespUtils.getResult(client.post(CloudApiUtils.QINIU_RS_BATCH_URL, body,
-                auth.authorization(CloudApiUtils.QINIU_RS_BATCH_URL, body, Client.FormMime), Client.FormMime));
+        return HttpRespUtils.getResult(client.post(requestUrl, body, auth.authorization(requestUrl, body, Client.FormMime), Client.FormMime));
     }
 
     @Override
     protected String singleResult(Map<String, String> line) throws IOException {
         String key = line.get("key");
         if (key == null) throw new IOException("key is not exists or empty in " + line);
-        StringBuilder urlBuilder = new StringBuilder("http://rs.qiniu.com/chtype/")
+        StringBuilder urlBuilder = new StringBuilder(requestUrl)
                 .append(UrlSafeBase64.encodeToString(String.join(":", bucket, key)))
                 .append("/type/").append(type);
         StringMap headers = auth.authorization(urlBuilder.toString(), null, Client.FormMime);

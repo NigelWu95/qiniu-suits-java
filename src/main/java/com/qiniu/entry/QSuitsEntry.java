@@ -607,19 +607,18 @@ public class QSuitsEntry {
     private ILineProcess<Map<String, String>> getRestoreArchive(boolean single) throws IOException {
         String days = entryParam.getValue("days", "1").trim();
         ParamsUtils.checked(days, "days", "[1-7]");
-        StringBuilder condition = new StringBuilder();
-        for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
-            if (entry.getKey().startsWith("cond.")) {
-                if (condition.length() > 0) {
-                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim()).append("&");
-                } else {
-                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim());
-                }
-            }
-        }
-        return single ? new RestoreArchive(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(days),
-                condition.toString()) : new RestoreArchive(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket,
-                Integer.parseInt(days), condition.toString(), savePath);
+//        StringBuilder condition = new StringBuilder();
+//        for (Map.Entry<String, String> entry : entryParam.getParamsMap().entrySet()) {
+//            if (entry.getKey().startsWith("cond.")) {
+//                if (condition.length() > 0) {
+//                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim()).append("&");
+//                } else {
+//                    condition.append(entry.getKey().substring(5)).append("=").append(entry.getValue().trim());
+//                }
+//            }
+//        }
+        return single ? new RestoreArchive(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(days))
+                : new RestoreArchive(qiniuAccessKey, qiniuSecretKey, getQiniuConfig(), bucket, Integer.parseInt(days), savePath);
     }
 
     private ILineProcess<Map<String, String>> getChangeLifecycle(boolean single) throws IOException {
@@ -630,7 +629,7 @@ public class QSuitsEntry {
     }
 
     private ILineProcess<Map<String, String>> getCopyFile(Map<String, String> indexMap, boolean single) throws IOException {
-        String toBucket = entryParam.getValue("to-bucket").trim();
+        String toBucket = entryParam.getValue("to-bucket", bucket).trim();
         String toKeyIndex = indexMap.containsValue("toKey") ? "toKey" : null;
         String addPrefix = entryParam.getValue("add-prefix", null);
         String rmPrefix = entryParam.getValue("rm-prefix", null);

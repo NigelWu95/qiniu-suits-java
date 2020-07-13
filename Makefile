@@ -1,7 +1,7 @@
-version=8.4.2
+version=8.4.3
 
 package_no_test:
-	mvn package -Dmaven.test.skip=true
+	mvn clean package -Dmaven.test.skip=true
 
 deploy_no_test:
 	mvn clean deploy -P release -Dmaven.test.skip=true

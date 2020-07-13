@@ -3,6 +3,7 @@ package com.qiniu.config;
 import com.qiniu.util.FileUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.Set;
 
@@ -21,7 +22,7 @@ public class PropertiesFile {
             }
             if (inputStream == null) throw new IOException(resourceName + " may be not exists.");
             properties = new Properties();
-            properties.load(new InputStreamReader(new BufferedInputStream(inputStream), "utf-8"));
+            properties.load(new InputStreamReader(new BufferedInputStream(inputStream), StandardCharsets.UTF_8));
         } finally {
             if (inputStream != null) {
                 try {
