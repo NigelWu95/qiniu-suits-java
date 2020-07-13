@@ -245,8 +245,10 @@ public class CommonParams {
             case "move":
             case "rename":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
-                indexMap.put("toKey", "toKey");
-                mapLine.put("toKey", entryParam.getValue("to-key", entryParam.getParamsMap().containsKey("to-key") ? "" : null));
+                if (entryParam.getParamsMap().containsKey("to-key")) {
+                    indexMap.put("toKey", "toKey");
+                    mapLine.put("toKey", entryParam.getValue("to-key", ""));
+                }
                 break;
             case "stat":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
