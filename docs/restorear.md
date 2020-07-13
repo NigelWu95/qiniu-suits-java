@@ -17,7 +17,6 @@ ak=
 sk=
 bucket=
 days=
-cond.[]=
 ```  
 |参数名|参数值及类型 | 含义|  
 |-----|-------|-----|  
@@ -26,7 +25,6 @@ cond.[]=
 |bucket| 字符串| 操作的资源原空间，当数据源为 qiniu 时无需再设置|  
 |indexes|字符串| 设置输入行中 key 字段的下标（有默认值），参考[数据源 indexes 设置](datasource.md#1-公共参数)|  
 |days| 整型数字| 设置解冻的有效期为 days（单位天数），范围 1-7 天|  
-|cond.[]| 字符串| 可以设置一些操作时的 condition，cond 当前支持设置 hash、mime、fsize、putTime 条件，只有条件匹配才会执行修改操作，如 cond.mime=text/plain|  
 
 运行参数：`-config=config.txt`
 
