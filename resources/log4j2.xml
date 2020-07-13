@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="error" strict="true" name="XMLConfig">
+
+    <Filter type="ThresholdFilter" level="debug"/>
+
+    <Appenders>
+        <Appender type="Console" name="STDOUT">
+            <Layout type="PatternLayout" pattern="[%d{yyyy-MM-dd'T'HH:mm:ss.SSS}] %m%n"/>
+        </Appender>
+        <Appender type="File" name="procedure" fileName="${sys:procedure}.log" append="false">
+            <Filters>
+                <Filter type="ThresholdFilter" level="warn" onMatch="DENY" onMismatch="NEUTRAL"/>
+            </Filters>
+        </Appender>
+        <Appender type="File" name="info" fileName="${sys:qsuits}.info" append="false">
+            <Layout type="PatternLayout" pattern="%d{yyyy-MM-dd'T'HH:mm:ss.SSS} %m%n"/>
+            <Filters>
+                <Filter type="ThresholdFilter" level="warn" onMatch="DENY" onMismatch="NEUTRAL"/>
+            </Filters>
+        </Appender>
+        <Appender type="File" name="error" fileName="${sys:qsuits}.error" append="false">
+            <Layout type="PatternLayout" pattern="%d{yyyy-MM-dd'T'HH:mm:ss.SSS} %m%n"/>
+            <Filters>
+                <Filter type="ThresholdFilter" level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </Appender>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="procedure" level="info" additivity="false">
+            <AppenderRef ref="procedure"/>
+        </Logger>
+        <Logger name="info" level="info">
+            <AppenderRef ref="info"/>
+        </Logger>
+        <Logger name="error" level="error">
+            <AppenderRef ref="error"/>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
