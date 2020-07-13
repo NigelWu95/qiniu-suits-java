@@ -239,6 +239,10 @@ public class CommonParams {
             case "delete":
             case "status":
             case "lifecycle":
+            case "type":
+            case "mirror":
+            case "restorear":
+            case "metadata":
                 if (!fromLine) mapLine.put("key", entryParam.getValue("key", entryParam.getParamsMap().containsKey("key") ? "" : null));
                 break;
             case "copy":

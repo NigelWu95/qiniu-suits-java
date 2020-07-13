@@ -30,6 +30,6 @@ cond.[]=
 
 ### 命令行参数方式
 ```
--path= -process=metadata -ak= -sk= -bucket= -meta.Cache-Control=no store ...
+-path= -process=metadata -ak= -sk= -bucket= -meta.Cache-Control="no store" ...
 ```
 
