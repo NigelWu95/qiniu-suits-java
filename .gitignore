@@ -27,3 +27,9 @@ assembly/
 .DS_Store
 
 logs*
+
+### vscode
+.classpath
+.factorypath
+.project
+.settings/
