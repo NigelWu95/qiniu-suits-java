@@ -29,6 +29,7 @@ assembly/
 logs*
 
 ### vscode
+.vscode
 .classpath
 .factorypath
 .project
