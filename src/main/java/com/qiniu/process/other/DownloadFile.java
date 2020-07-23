@@ -68,10 +68,8 @@ public class DownloadFile extends Base<Map<String, String>> {
             headers = new StringMap().put("Host", host);
         }
         if (range != null && range.length > 0) {
-            if (headers == null)
-                headers = new StringMap();
-            headers.put("Range",
-                    new StringBuilder("bytes=").append(range[0]).append("-").append(range.length > 1 ? range[1] : ""));
+            if (headers == null) headers = new StringMap();
+            headers.put("Range", new StringBuilder("bytes=").append(range[0]).append("-").append(range.length > 1 ? range[1] : ""));
         }
         this.suffixOrQuery = suffixOrQuery == null ? "" : suffixOrQuery;
         this.addPrefix = addPrefix == null ? "" : addPrefix;
