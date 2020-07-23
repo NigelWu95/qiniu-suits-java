@@ -52,6 +52,7 @@ public class ImageCensor extends Base<Map<String, String>> {
             } else {
                 this.urlIndex = urlIndex;
             }
+            this.domain = null;
         } else {
             this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             RequestUtils.lookUpFirstIpFromHost(domain);
@@ -84,8 +85,7 @@ public class ImageCensor extends Base<Map<String, String>> {
         } else {
             String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = String.join("", protocol, "://", domain, "/",
-                    key.replace("\\?", "%3f"), suffixOrQuery);
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"), suffixOrQuery);
             return String.join("\t", key, censorManager.doImageCensor(url, paramsJson));
         }
     }

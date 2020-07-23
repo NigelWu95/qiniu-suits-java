@@ -141,8 +141,7 @@ public class CensorManager {
 
     public String censorString(String jobId) throws QiniuException {
         String queryUrl = String.join("", videoJobsUrl, jobId);
-        String token = String.join(" ", "Qiniu",
-                auth.signRequestV2(queryUrl, "GET", null, null));
+        String token = String.join(" ", "Qiniu", auth.signRequestV2(queryUrl, "GET", null, null));
         headers.put("Authorization", token);
         Response response = client.get(queryUrl, headers);
         String result = response.bodyString();

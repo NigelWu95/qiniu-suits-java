@@ -45,6 +45,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
             } else {
                 this.urlIndex = urlIndex;
             }
+            this.domain = null;
         } else {
             this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             RequestUtils.lookUpFirstIpFromHost(domain);
@@ -79,14 +80,12 @@ public class PrivateUrl extends Base<Map<String, String>> {
         String url;
         if (domain == null) {
             url = line.get(urlIndex);
-            if (nextProcessor == null) return String.join("\t", auth
-                    .privateDownloadUrl(url + suffixOrQuery, expires));
+            if (nextProcessor == null) return auth.privateDownloadUrl(url + suffixOrQuery, expires);
         } else {
             String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = String.join("", protocol, "://", domain, "/",
-                    key.replace("\\?", "%3f"), suffixOrQuery);
-            if (nextProcessor == null) return String.join("\t", auth.privateDownloadUrl(url, expires));
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"), suffixOrQuery);
+            if (nextProcessor == null) return auth.privateDownloadUrl(url, expires);
         }
         url = auth.privateDownloadUrl(url, expires);
         line.put("url", auth.privateDownloadUrl(url, expires));

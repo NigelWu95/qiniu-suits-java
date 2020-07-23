@@ -73,8 +73,8 @@ public class EntryMain {
         boolean interactive = paramsMap.containsKey("interactive") && Boolean.parseBoolean(paramsMap.get("interactive"));
         CommonParams commonParams = single ? new CommonParams(paramsMap) : new CommonParams(entryParam);
         QSuitsEntry qSuitsEntry = new QSuitsEntry(entryParam, commonParams);
-        ILineProcess<Map<String, String>> processor = single || interactive ? qSuitsEntry.whichNextProcessor(true) :
-                qSuitsEntry.getProcessor();
+        ILineProcess<Map<String, String>> processor = single || interactive ?
+            qSuitsEntry.whichNextProcessor(true) : qSuitsEntry.getProcessor();
         if (processVerify && processor != null) {
             String process = processor.getProcessName();
             if (processor.getNextProcessor() != null) process = processor.getNextProcessor().getProcessName();
@@ -88,9 +88,8 @@ public class EntryMain {
                 }
                 Scanner scanner = new Scanner(System.in);
                 String an = scanner.next();
-                if (!an.equalsIgnoreCase("y") && !an.equalsIgnoreCase("yes")) {
-                    return;
-                }
+                scanner.close();
+                if (!an.equalsIgnoreCase("y") && !an.equalsIgnoreCase("yes")) return;
             }
         }
         if (single) {
