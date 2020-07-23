@@ -157,17 +157,12 @@ public final class FileUtils {
 
     public static boolean mkDirAndFile(File filePath) throws IOException {
         File parent = filePath.getParentFile();
-        boolean success = parent.exists();
-        if (!success) {
-            success = parent.mkdirs();
-            if (!success) return false;
+        if (!parent.exists()) {
+            if (!parent.mkdirs()) {
+                if (!parent.mkdirs()) return false;
+            }
         }
-        success = filePath.exists();
-        if (!success) {
-            return filePath.createNewFile();
-        } else {
-            return true;
-        }
+        return filePath.exists() || filePath.createNewFile() || filePath.createNewFile();
     }
 
     public static boolean createIfNotExists(File file) throws IOException {

@@ -9,8 +9,10 @@ import com.qiniu.persistence.FileSaveMapper;
 import com.qiniu.util.*;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -78,6 +80,19 @@ public abstract class Base<T> implements ILineProcess<T>, Cloneable {
 
     public void setRetryTimes(int retryTimes) {
         this.retryTimes = retryTimes < 1 ? 5 : retryTimes;
+    }
+
+    public void updateFields(Map<String, String> fieldsMap) {
+        Class cClass = this.getClass();
+        fieldsMap.forEach((key, value) -> {
+            try {
+                Field field = cClass.getDeclaredField(key);
+                field.setAccessible(true);
+                field.set(this, value);
+            } catch (Exception ignored) {
+                ignored.printStackTrace();
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")

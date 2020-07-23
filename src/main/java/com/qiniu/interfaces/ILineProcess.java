@@ -2,6 +2,7 @@ package com.qiniu.interfaces;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface ILineProcess<T> {
 
@@ -16,6 +17,8 @@ public interface ILineProcess<T> {
     default void setBatchSize(int batchSize) throws IOException {}
 
     default void setRetryTimes(int retryTimes) {}
+
+    default void updateFields(Map<String, String> fieldsMap) {}
 
     default void setNextProcessor(ILineProcess<T> nextProcessor) {}
 

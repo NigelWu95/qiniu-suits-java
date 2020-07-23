@@ -41,6 +41,7 @@ public class PublicUrl extends Base<Map<String, String>> {
                 this.urlIndex = urlIndex;
                 if ("".equals(this.suffixOrQuery)) throw new IOException("please set suffix or query if url-index used.");
             }
+            this.domain = null;
         } else {
             this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             RequestUtils.lookUpFirstIpFromHost(domain);
@@ -64,7 +65,7 @@ public class PublicUrl extends Base<Map<String, String>> {
 
     @Override
     protected String resultInfo(Map<String, String> line) {
-        return line.get("key");
+        return domain == null ? line.get(urlIndex) : line.get("key");
     }
 
     @Override
@@ -76,8 +77,7 @@ public class PublicUrl extends Base<Map<String, String>> {
         } else {
             String key = line.get("key");
             if (key == null) throw new IOException("key is not exists or empty in " + line);
-            url = String.join("", protocol, "://", domain, "/",
-                    key.replace("\\?", "%3f"), suffixOrQuery);
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"), suffixOrQuery);
             if (nextProcessor == null) return url;
         }
         line.put("url", url);

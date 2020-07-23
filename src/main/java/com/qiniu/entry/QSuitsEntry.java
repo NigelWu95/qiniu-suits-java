@@ -561,6 +561,10 @@ public class QSuitsEntry {
             processor.setRetryTimes(retryTimes);
             processor.setCheckType(entryParam.getValue("check", "").trim());
             if (privateProcessor != null) {
+                processor.updateFields(new HashMap<String, String>(){{
+                    put("domain", null);
+                    put("urlIndex", "url");
+                }});
                 privateProcessor.setNextProcessor(processor);
                 return privateProcessor;
             }

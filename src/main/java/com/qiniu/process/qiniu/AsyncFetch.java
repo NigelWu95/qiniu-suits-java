@@ -73,6 +73,7 @@ public class AsyncFetch extends Base<Map<String, String>> {
             } else {
                 this.urlIndex = urlIndex;
             }
+            this.domain = null;
         } else {
             this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             RequestUtils.lookUpFirstIpFromHost(domain);

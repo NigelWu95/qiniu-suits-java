@@ -31,11 +31,8 @@ public class HttpDownloader {
             File file = new File(filepath);
             if (file.exists()) {
                 throw new IOException(String.join("", "file: ", filepath, " is already exists."));
-            } else {
-                boolean exists = FileUtils.mkDirAndFile(file);
-                while (!exists) {
-                    exists = FileUtils.mkDirAndFile(file);
-                }
+            } else if (!FileUtils.mkDirAndFile(file)) {
+                throw new IOException(String.join("", "file: ", filepath, " can not be created."));
             }
             byte[] buffer = new byte[4096];
             int byteRead;

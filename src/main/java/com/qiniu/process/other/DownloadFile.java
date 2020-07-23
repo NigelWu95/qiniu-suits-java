@@ -25,30 +25,30 @@ public class DownloadFile extends Base<Map<String, String>> {
     private Configuration configuration;
     private HttpDownloader downloader;
 
-    public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host, int[] range,
-                        String suffixOrQuery, String addPrefix, String rmPrefix, String downPath, String savePath, int saveIndex)
-            throws IOException {
+    public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
+            int[] range, String suffixOrQuery, String addPrefix, String rmPrefix, String downPath, String savePath,
+            int saveIndex) throws IOException {
         super("download", "", "", null, savePath, saveIndex);
         set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix, downPath);
         downloader = new HttpDownloader(configuration);
     }
 
-    public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host, int[] range,
-                        String suffixOrQuery, String addPrefix, String rmPrefix, String downPath) throws IOException {
+    public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
+            int[] range, String suffixOrQuery, String addPrefix, String rmPrefix, String downPath) throws IOException {
         super("download", "", "", null);
         set(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix, downPath);
         downloader = new HttpDownloader(configuration);
     }
 
     public DownloadFile(Configuration configuration, String protocol, String domain, String urlIndex, String host,
-                        int[] range, String suffixOrQuery, String addPrefix, String rmPrefix,
-                        String downPath, String savePath) throws IOException {
-        this(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix,
-                downPath, savePath, 0);
+            int[] range, String suffixOrQuery, String addPrefix, String rmPrefix, String downPath, String savePath)
+            throws IOException {
+        this(configuration, protocol, domain, urlIndex, host, range, suffixOrQuery, addPrefix, rmPrefix, downPath,
+                savePath, 0);
     }
 
-    private void set(Configuration configuration, String protocol, String domain, String urlIndex, String host, int[] range,
-                     String suffixOrQuery, String addPrefix, String rmPrefix, String downPath) throws IOException {
+    private void set(Configuration configuration, String protocol, String domain, String urlIndex, String host,
+            int[] range, String suffixOrQuery, String addPrefix, String rmPrefix, String downPath) throws IOException {
         this.configuration = configuration;
         if (domain == null || "".equals(domain)) {
             if (urlIndex == null || "".equals(urlIndex)) {
@@ -56,6 +56,7 @@ public class DownloadFile extends Base<Map<String, String>> {
             } else {
                 this.urlIndex = urlIndex;
             }
+            this.domain = null;
         } else {
             this.protocol = protocol == null || !protocol.matches("(http|https)") ? "http" : protocol;
             RequestUtils.lookUpFirstIpFromHost(domain);
@@ -79,8 +80,10 @@ public class DownloadFile extends Base<Map<String, String>> {
             this.preDown = true;
         } else {
             File file = new File(downPath);
-            if (file.exists() && !file.isDirectory()) {
-                throw new IOException("please change down-path because it's existed file.");
+            if (file.exists()) {
+                if (!file.isDirectory()) throw new IOException("please change down-path because it's existed file.");
+            } else if (!file.mkdirs()) {
+                if (!file.mkdirs()) throw new IOException(String.join("", "directory: ", downPath, " can not be created."));
             }
         }
     }
@@ -108,8 +111,7 @@ public class DownloadFile extends Base<Map<String, String>> {
             url = url + suffixOrQuery;
         } else {
             if (key == null || "".equals(key)) throw new IOException("key is not exists or empty in " + line);
-            url = String.join("", protocol, "://", domain, "/",
-                    key.replace("\\?", "%3f"), suffixOrQuery);
+            url = String.join("", protocol, "://", domain, "/", key.replace("\\?", "%3f"), suffixOrQuery);
             key = String.join("", addPrefix, FileUtils.rmPrefix(rmPrefix, key)); // 目标文件名
         }
         if (preDown) {
