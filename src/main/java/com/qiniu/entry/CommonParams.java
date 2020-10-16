@@ -1040,11 +1040,12 @@ public class CommonParams {
                 keys.remove(ConvertingUtils.defaultStatusField);
                 keys.remove(ConvertingUtils.defaultMd5Field);
             }
-            if (!useDefault)  {
-                setIndexes(keys, indexes, fieldIndex);
-            } else if (isStorageSource) {
+            if (useDefault && isStorageSource)  {
                 for (String key : keys) indexMap.put(key, key);
-            } else if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
+            } else {
+                setIndexes(keys, indexes, fieldIndex);
+            }
+            if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
                 // 由于 filepath 可能依据 parent 和文件名生成，故列表第一列亦可能为文件名，所以要确保没有设置 parent 才能给默认的 filepath-index=0
                 String filepathIndex = entryParam.getValue("filepath-index", "").trim();
                 if ("".equals(filepathIndex)) {
