@@ -224,12 +224,12 @@ public class CommonParams {
         setIndexMap();
         setRetryTimes();
         String line = entryParam.getValue("line", null);
-        ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
         boolean fromLine = line != null && !"".equals(line);
-        if ((entryParam.getValue("indexes", null) != null || indexMap.size() > 1) && !fromLine && !"qupload".equals(process)) {
-            throw new IOException("you have set parameter for line index but no line data to parse, please set \"-line=<data>\".");
-        }
+//        if ((entryParam.getValue("indexes", null) != null || indexMap.size() > 1) && !fromLine && !"qupload".equals(process)) {
+//            throw new IOException("you have set parameter for line index but no line data to parse, please set \"-line=<data>\".");
+//        }
         if (fromLine) {
+            ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
             mapLine = converter.convertToV(line);
             fromLine = "domainsofbucket".equals(process) ? mapLine.containsKey("bucket") : mapLine.containsKey("key");
         } else {
@@ -338,6 +338,13 @@ public class CommonParams {
                 break;
             case "domainsofbucket": if (!fromLine) mapLine.put("bucket", entryParam.getValue("bucket")); break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key")); break;
+        }
+        if (mapLine.size() <= 0) {
+            if (fromLine) {
+                throw new IOException("please check your line or indexes settings because there are no target data.");
+            } else {
+                throw new IOException("if you have set line indexes, please set \"-line=<data>\".");
+            }
         }
     }
 
