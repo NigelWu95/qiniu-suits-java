@@ -224,12 +224,12 @@ public class CommonParams {
         setIndexMap();
         setRetryTimes();
         String line = entryParam.getValue("line", null);
-        ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
         boolean fromLine = line != null && !"".equals(line);
-        if ((entryParam.getValue("indexes", null) != null || indexMap.size() > 1) && !fromLine && !"qupload".equals(process)) {
-            throw new IOException("you have set parameter for line index but no line data to parse, please set \"-line=<data>\".");
-        }
+//        if ((entryParam.getValue("indexes", null) != null || indexMap.size() > 1) && !fromLine && !"qupload".equals(process)) {
+//            throw new IOException("you have set parameter for line index but no line data to parse, please set \"-line=<data>\".");
+//        }
         if (fromLine) {
+            ITypeConvert<String, Map<String, String>> converter = new LineToMap(parse, separator, addKeyPrefix, rmKeyPrefix, indexMap);
             mapLine = converter.convertToV(line);
             fromLine = "domainsofbucket".equals(process) ? mapLine.containsKey("bucket") : mapLine.containsKey("key");
         } else {
@@ -338,6 +338,13 @@ public class CommonParams {
                 break;
             case "domainsofbucket": if (!fromLine) mapLine.put("bucket", entryParam.getValue("bucket")); break;
             default: if (!fromLine) mapLine.put("key", entryParam.getValue("key")); break;
+        }
+        if (mapLine.size() <= 0) {
+            if (fromLine) {
+                throw new IOException("please check your line or indexes settings because there are no target data.");
+            } else {
+                throw new IOException("if you have set line indexes, please set \"-line=<data>\".");
+            }
         }
     }
 
@@ -711,8 +718,7 @@ public class CommonParams {
         String lastLine = FileUtils.lastLineOfFile(logFile);
         if (lastLine != null && !"".equals(lastLine)) {
             try {
-                JsonObject jsonObject = JsonUtils.toJsonObject(lastLine);
-                parseConfigMapFromJson(jsonObject, withMarker, withEnd);
+                parseConfigMapFromJson(JsonUtils.toJsonObject(lastLine), withMarker, withEnd);
             } catch (Exception e) {
                 File file = new File(logFile);
                 FileReader fileReader = new FileReader(file);
@@ -723,8 +729,16 @@ public class CommonParams {
                 Map<String, String> map = new HashMap<>();
                 while ((line = bufferedReader.readLine()) != null) {
                     index = line.indexOf("-|-");
-                    if (index < 0) System.out.println(line);
-                    map.put(line.substring(0, index), line.substring(index));
+                    if (index < 0) {
+                        try {
+                            parseConfigMapFromJson(JsonUtils.toJsonObject(line), withMarker, withEnd);
+                            return;
+                        } catch (Exception exception) {
+                            exception.printStackTrace();
+                        }
+                    } else {
+                        map.put(line.substring(0, index), line.substring(index));
+                    }
                 }
                 Map<String, String> configMap;
                 for (String key : map.keySet()) {
@@ -738,6 +752,13 @@ public class CommonParams {
                         }
                         pathConfigMap.put(key, configMap);
                     }
+                }
+                try {
+                    bufferedReader.close();
+                    fileReader.close();
+                } catch (IOException ioe) {
+                    bufferedReader = null;
+                    fileReader = null;
                 }
             }
         }
@@ -1040,11 +1061,12 @@ public class CommonParams {
                 keys.remove(ConvertingUtils.defaultStatusField);
                 keys.remove(ConvertingUtils.defaultMd5Field);
             }
-            if (!useDefault)  {
-                setIndexes(keys, indexes, fieldIndex);
-            } else if (isStorageSource) {
+            if (useDefault && isStorageSource)  {
                 for (String key : keys) indexMap.put(key, key);
-            } else if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
+            } else {
+                setIndexes(keys, indexes, fieldIndex);
+            }
+            if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
                 // 由于 filepath 可能依据 parent 和文件名生成，故列表第一列亦可能为文件名，所以要确保没有设置 parent 才能给默认的 filepath-index=0
                 String filepathIndex = entryParam.getValue("filepath-index", "").trim();
                 if ("".equals(filepathIndex)) {
