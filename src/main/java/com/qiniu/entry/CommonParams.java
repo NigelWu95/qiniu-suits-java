@@ -718,8 +718,7 @@ public class CommonParams {
         String lastLine = FileUtils.lastLineOfFile(logFile);
         if (lastLine != null && !"".equals(lastLine)) {
             try {
-                JsonObject jsonObject = JsonUtils.toJsonObject(lastLine);
-                parseConfigMapFromJson(jsonObject, withMarker, withEnd);
+                parseConfigMapFromJson(JsonUtils.toJsonObject(lastLine), withMarker, withEnd);
             } catch (Exception e) {
                 File file = new File(logFile);
                 FileReader fileReader = new FileReader(file);
@@ -730,8 +729,16 @@ public class CommonParams {
                 Map<String, String> map = new HashMap<>();
                 while ((line = bufferedReader.readLine()) != null) {
                     index = line.indexOf("-|-");
-                    if (index < 0) System.out.println(line);
-                    map.put(line.substring(0, index), line.substring(index));
+                    if (index < 0) {
+                        try {
+                            parseConfigMapFromJson(JsonUtils.toJsonObject(line), withMarker, withEnd);
+                            return;
+                        } catch (Exception exception) {
+                            exception.printStackTrace();
+                        }
+                    } else {
+                        map.put(line.substring(0, index), line.substring(index));
+                    }
                 }
                 Map<String, String> configMap;
                 for (String key : map.keySet()) {
@@ -745,6 +752,13 @@ public class CommonParams {
                         }
                         pathConfigMap.put(key, configMap);
                     }
+                }
+                try {
+                    bufferedReader.close();
+                    fileReader.close();
+                } catch (IOException ioe) {
+                    bufferedReader = null;
+                    fileReader = null;
                 }
             }
         }
