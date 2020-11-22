@@ -77,6 +77,15 @@ directory-config 中的目录名可以采取相对 path 路径下的目录名。
 |key|上述配置文件中的 "/Users/wubingheng/Projects/Github/test" 等表示目录名或路径，不可重复，重复情况下后者会覆盖前者|  
 |value| 表示数据源中某一行的内容，如 "qiniu_success_1.txt" 表示 "/Users/wubingheng/Projects/Github/test" 目录中可能存在该文件名|  
 
+### 上传域名
+```
+#上传域名，accup 为加速域名，srcup 为源站域名
+accup-domain=upload.qiniu.com
+srcup-domain=upload.qiniu.com
+#是否使用 https 对上述设置的域名进行请求
+config-https=true/false
+```
+
 ### 上传超时时间
 timeout 参数可以通过全局的 timeout 来设置，参考：[网络设置](../README.md#7-网络设置)  
 

@@ -10,6 +10,7 @@ import com.qcloud.cos.region.Region;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
 import com.qiniu.util.CloudApiUtils;
+import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -43,6 +44,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         else clientConfig.setHttpProtocol(HttpProtocol.http);
         cosClient = new COSClient(credentials, clientConfig);
         CloudApiUtils.checkTencent(cosClient);
+        LogUtils.getLogPath(LogUtils.QSUITS);
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String region, boolean useHttps, long expires,
@@ -62,6 +64,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         else clientConfig.setHttpProtocol(HttpProtocol.http);
         cosClient = new COSClient(credentials, clientConfig);
         CloudApiUtils.checkTencent(cosClient);
+        LogUtils.getLogPath(LogUtils.QSUITS);
     }
 
     public PrivateUrl(String secretId, String secretKey, String bucket, String endpoint, boolean useHttps, long expires,

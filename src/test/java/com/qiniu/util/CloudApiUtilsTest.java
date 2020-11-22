@@ -12,12 +12,34 @@ import java.io.IOException;
 public class CloudApiUtilsTest {
 
     @Test
+    public void testGetQiniuRegion() throws IOException {
+        PropertiesFile propertiesFile = new PropertiesFile("resources/.application.properties");
+        String secretId = propertiesFile.getValue("ak");
+        String secretKey = propertiesFile.getValue("sk");
+        String bucket = propertiesFile.getValue("bucket");
+        String region = CloudApiUtils.getQiniuQosRegion(secretId, secretKey, bucket);
+        System.out.println(bucket + "\t" + region);
+    }
+
+    @Test
     public void testGetTenCosRegion() throws IOException {
+        LogUtils.getLogPath(LogUtils.QSUITS);
         PropertiesFile propertiesFile = new PropertiesFile("resources/.tencent.properties");
         String secretId = propertiesFile.getValue("ten-id");
         String secretKey = propertiesFile.getValue("ten-secret");
         String bucket = propertiesFile.getValue("bucket");
         String region = CloudApiUtils.getTenCosRegion(secretId, secretKey, bucket);
+        System.out.println(bucket + "\t" + region);
+    }
+
+    @Test
+    public void testGetHuaweiObsRegion() throws IOException {
+        LogUtils.getLogPath(LogUtils.QSUITS);
+        PropertiesFile propertiesFile = new PropertiesFile("resources/.huawei.properties");
+        String secretId = propertiesFile.getValue("hua-id");
+        String secretKey = propertiesFile.getValue("hua-secret");
+        String bucket = propertiesFile.getValue("bucket");
+        String region = CloudApiUtils.getHuaweiObsRegion(secretId, secretKey, bucket);
         System.out.println(bucket + "\t" + region);
     }
 
@@ -60,19 +82,19 @@ public class CloudApiUtilsTest {
         FileItem fileItem1 = new FileItem();
         fileItem1.key = name1;
         fileItem1.attribute = "folder";
-        System.out.println(CloudApiUtils.getUpYunMarker(bucket, fileItem1));
+        System.out.println(CloudApiUtils.getUpYunYosMarker(bucket, fileItem1));
         String name2 = "wordSplit/xml/20161220/FF8080815919A15101591AFE37C603F7/4028965B591534B501591BBEC0E8049A.txt";
         FileItem fileItem2 = new FileItem();
         fileItem2.key = name2;
-        System.out.println(CloudApiUtils.getUpYunMarker(bucket, fileItem2));
+        System.out.println(CloudApiUtils.getUpYunYosMarker(bucket, fileItem2));
     }
 
     @Test
     public void testDecodeUpYunMarker() {
         String marker1 = "c3F1aXJyZWwvfndvcmRTcGxpdC9+eG1sL34yMDE2MTIyMC9AfkZGODA4MDgxNTkxOUExNTEwMTU5MTlEN0RDOEYwMDM2";
         String marker2 = "c3F1aXJyZWwvfndvcmRTcGxpdC9+eG1sL34yMDE2MTIyMC9+RkY4MDgwODE1OTE5QTE1MTAxNTkxQUZFMzdDNjAzRjcvQCM0MDI4OTY1QjU5MTUzNEI1MDE1OTFCQkVDMEU4MDQ5QS50eHQ=";
-        System.out.println(CloudApiUtils.decodeUpYunMarker(marker1));
-        System.out.println(CloudApiUtils.decodeUpYunMarker(marker2));
+        System.out.println(CloudApiUtils.decodeUpYunYosMarker(marker1));
+        System.out.println(CloudApiUtils.decodeUpYunYosMarker(marker2));
     }
 
     @Test

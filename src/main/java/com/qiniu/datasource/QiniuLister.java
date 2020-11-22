@@ -220,8 +220,8 @@ public class QiniuLister implements IStorageLister<FileInfo> {
 
     @Override
     public synchronized String currentEndKey() {
-        if (hasNext()) return CloudApiUtils.decodeQiniuMarker(marker);
-        if (truncateMarker != null && !"".equals(truncateMarker)) return CloudApiUtils.decodeQiniuMarker(truncateMarker);
+        if (hasNext()) return CloudApiUtils.decodeQiniuQosMarker(marker);
+        if (truncateMarker != null && !"".equals(truncateMarker)) return CloudApiUtils.decodeQiniuQosMarker(truncateMarker);
         if (last != null) return last.key;
         if (fileInfoList.size() > 0) last = fileInfoList.get(fileInfoList.size() - 1);
         if (last != null) return last.key;

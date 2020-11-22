@@ -90,7 +90,7 @@ public class UpYosContainer extends CloudStorageContainer<FileItem, Map<String, 
 
     @Override
     protected IStorageLister<FileItem> getLister(String prefix, String marker, String start, String end, int unitLen) throws SuitsException {
-        if (marker == null || "".equals(marker)) marker = CloudApiUtils.getUpYunMarker(username, password, bucket, start);
+        if (marker == null || "".equals(marker)) marker = CloudApiUtils.getUpYunYosMarker(username, password, bucket, start);
         return new UpLister(new UpYunClient(configuration, username, password), bucket, prefix, marker, end, unitLen);
     }
 

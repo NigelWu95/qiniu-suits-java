@@ -55,7 +55,7 @@ public class UpYunClient {
         conn.setUseCaches(false);
         String date = DatetimeUtils.getGMTDate();
         conn.setRequestProperty(UpYunConfig.DATE, date);
-        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudApiUtils.upYunSign(UpYunConfig.METHOD_HEAD, date, uri,
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudApiUtils.upYunYosSign(UpYunConfig.METHOD_HEAD, date, uri,
                 userName, password, null));
         conn.connect();
         int code = conn.getResponseCode();
@@ -92,7 +92,7 @@ public class UpYunClient {
         conn.setUseCaches(false);
         String date = DatetimeUtils.getGMTDate();
         conn.setRequestProperty(UpYunConfig.DATE, date);
-        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudApiUtils.upYunSign(UpYunConfig.METHOD_GET, date, uri,
+        conn.setRequestProperty(UpYunConfig.AUTHORIZATION, CloudApiUtils.upYunYosSign(UpYunConfig.METHOD_GET, date, uri,
                 userName, password, null));
         if (headers != null) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
