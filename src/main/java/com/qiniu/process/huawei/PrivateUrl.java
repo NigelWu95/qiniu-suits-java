@@ -6,6 +6,7 @@ import com.obs.services.model.TemporarySignatureRequest;
 import com.qiniu.interfaces.ILineProcess;
 import com.qiniu.process.Base;
 import com.qiniu.util.CloudApiUtils;
+import com.qiniu.util.LogUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         configuration.setEndPoint(endpoint);
         obsClient = new ObsClient(accessId, secretKey, configuration);
         CloudApiUtils.checkHuaWei(obsClient);
+        LogUtils.getLogPath(LogUtils.QSUITS);
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,
@@ -58,6 +60,7 @@ public class PrivateUrl extends Base<Map<String, String>> {
         configuration.setEndPoint(endpoint);
         obsClient = new ObsClient(accessId, secretKey, configuration);
         CloudApiUtils.checkHuaWei(obsClient);
+        LogUtils.getLogPath(LogUtils.QSUITS);
     }
 
     public PrivateUrl(String accessKeyId, String accessKeySecret, String bucket, String endpoint, long expires,

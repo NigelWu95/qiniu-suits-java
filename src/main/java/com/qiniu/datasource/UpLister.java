@@ -215,9 +215,9 @@ public class UpLister implements IStorageLister<FileItem> {
 
     @Override
     public synchronized String currentEndKey() {
-        if (hasNext()) return CloudApiUtils.decodeUpYunMarker(marker);
+        if (hasNext()) return CloudApiUtils.decodeUpYunYosMarker(marker);
         if (truncateMarker != null && !"".equals(truncateMarker) && !"g2gCZAAEbmV4dGQAA2VvZg".equals(marker)) {
-            return CloudApiUtils.decodeUpYunMarker(truncateMarker);
+            return CloudApiUtils.decodeUpYunYosMarker(truncateMarker);
         }
         if (last != null) return last.key;
         if (fileItems.size() > 0) last = fileItems.get(fileItems.size() - 1);

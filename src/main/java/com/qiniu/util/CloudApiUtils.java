@@ -129,11 +129,7 @@ public final class CloudApiUtils {
         return aliStatus.getOrDefault(error, Default);
     }
 
-    public static int NetStatusCode(String error, int Default) {
-        return aliStatus.getOrDefault(error, Default);
-    }
-
-    public static String getQiniuMarker(FileInfo fileInfo) {
+    public static String getQiniuQosMarker(FileInfo fileInfo) {
         return getQiniuMarker(fileInfo.key);
     }
 
@@ -153,7 +149,7 @@ public final class CloudApiUtils {
         return obsObject.getKey();
     }
 
-    public static String getUpYunMarker(String bucket, FileItem fileItem) {
+    public static String getUpYunYosMarker(String bucket, FileItem fileItem) {
         if (fileItem.key.contains("/")) {
             String convertedKey = fileItem.key.replace("/", "/~");
             int lastIndex = convertedKey.lastIndexOf("~");
@@ -186,11 +182,11 @@ public final class CloudApiUtils {
         return key;
     }
 
-    public static String getUpYunMarker(String username, String password, String bucket, String key) throws SuitsException {
+    public static String getUpYunYosMarker(String username, String password, String bucket, String key) throws SuitsException {
         if (key == null || "".equals(key)) return null;
         UpYunClient upYunClient = new UpYunClient(new UpYunConfig(), username, password);
         try {
-            return getUpYunMarker(bucket, upYunClient.getFileInfo(bucket, key));
+            return getUpYunYosMarker(bucket, upYunClient.getFileInfo(bucket, key));
         } catch (Exception e) {
             throw new SuitsException(e, 848);
         } finally {
@@ -198,7 +194,7 @@ public final class CloudApiUtils {
         }
     }
 
-    public static String decodeQiniuMarker(String marker) {
+    public static String decodeQiniuQosMarker(String marker) {
         String decodedMarker = new String(Base64.decode(marker, Base64.URL_SAFE | Base64.NO_WRAP));
         JsonObject jsonObject = new JsonParser().parse(decodedMarker).getAsJsonObject();
         return jsonObject.get("k").getAsString();
@@ -216,7 +212,7 @@ public final class CloudApiUtils {
         return marker;
     }
 
-    public static String decodeUpYunMarker(String marker) {
+    public static String decodeUpYunYosMarker(String marker) {
         String keyString = new String(decoder.decode(marker));
         int index = keyString.contains("/~") ? keyString.indexOf("/~") + 2 : keyString.indexOf("/") + 1;
         return keyString.substring(index).replace("(/~|/@~|/@#)", "/");
@@ -278,7 +274,7 @@ public final class CloudApiUtils {
         bosClient.listBuckets();
     }
 
-    public static Region getQiniuRegion(String regionName) throws IOException {
+    public static Region getQiniuQosRegion(String regionName) throws IOException {
         if (regionName == null || "".equals(regionName)) return Region.autoRegion();
         switch (regionName) {
             case "z0":
@@ -305,7 +301,7 @@ public final class CloudApiUtils {
         }
     }
 
-    public static String getQiniuRegion(String accessKey, String secretKey, String bucket) throws SuitsException {
+    public static String getQiniuQosRegion(String accessKey, String secretKey, String bucket) throws SuitsException {
         try {
             Auth auth = Auth.create(accessKey, secretKey);
             Configuration configuration = new Configuration();
@@ -347,6 +343,7 @@ public final class CloudApiUtils {
     }
 
     public static String getTenCosRegion(String secretId, String secretKey, String bucket) throws SuitsException {
+        LogUtils.getLogPath(LogUtils.QSUITS);
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
         ClientConfig clientConfig = new ClientConfig();
         COSClient cosClient = new COSClient(cred, clientConfig);
@@ -396,6 +393,7 @@ public final class CloudApiUtils {
     }
 
     public static String getHuaweiObsRegion(String accessKeyId, String secretKey, String bucket) throws SuitsException {
+        LogUtils.getLogPath(LogUtils.QSUITS);
         ObsClient obsClient = new ObsClient(accessKeyId, secretKey, "https://obs.myhuaweicloud.com");
         try {
             return obsClient.getBucketLocation(bucket);
@@ -419,7 +417,7 @@ public final class CloudApiUtils {
 
     private static final String lineSeparator = System.getProperty("line.separator");
 
-    public static String upYunSign(String method, String date, String path, String userName, String password, String md5)
+    public static String upYunYosSign(String method, String date, String path, String userName, String password, String md5)
             throws IOException {
         StringBuilder sb = new StringBuilder();
         String sp = "&";

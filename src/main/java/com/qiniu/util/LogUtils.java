@@ -30,7 +30,7 @@ public class LogUtils {
                 } while (logFile.exists());
                 s = String.valueOf(serial);
             }
-            System.setProperty(QSUITS, String.join(FileUtils.pathSeparator, LOG_PATH, QSUITS + s));
+            System.setProperty(logName, String.join(FileUtils.pathSeparator, LOG_PATH, logName + s));
             System.setProperty(PROCEDURE, String.join(FileUtils.pathSeparator, LOG_PATH, PROCEDURE + s));
             return logPath.toString();
         }

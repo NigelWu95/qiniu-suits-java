@@ -140,19 +140,23 @@ public class QSuitsEntry {
     }
 
     private Configuration getDefaultQiniuConfig(String ak, String sk, String regionName, String bucket) throws IOException {
-        com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionName);
+        com.qiniu.storage.Region region = CloudApiUtils.getQiniuQosRegion(regionName);
         String rsfDomain = entryParam.getValue("rsf-domain", null);
         String rsDomain = entryParam.getValue("rs-domain", null);
         String apiDomain = entryParam.getValue("api-domain", null);
+        String accUpDomain = entryParam.getValue("accup-domain", null);
+        String srcUpDomain = entryParam.getValue("srcup-domain", null);
         if (rsfDomain != null || rsDomain != null || apiDomain != null) {
             com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder();
             if (rsfDomain != null) region = builder.rsfHost(rsfDomain).build();
             if (rsDomain != null) region = builder.rsHost(rsDomain).build();
             if (apiDomain != null) region = builder.apiHost(apiDomain).build();
+            if (apiDomain != null) region = builder.accUpHost(accUpDomain).build();
+            if (apiDomain != null) region = builder.srcUpHost(srcUpDomain).build();
         } else {
             region = (regionName == null || "".equals(regionName)) ?
-                    CloudApiUtils.getQiniuRegion(CloudApiUtils.getQiniuRegion(ak, sk, bucket))
-                    : CloudApiUtils.getQiniuRegion(regionName);
+                    CloudApiUtils.getQiniuQosRegion(CloudApiUtils.getQiniuQosRegion(ak, sk, bucket))
+                    : CloudApiUtils.getQiniuQosRegion(regionName);
         }
         Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
@@ -163,15 +167,19 @@ public class QSuitsEntry {
     }
 
     private Configuration getNewQiniuConfig() throws IOException {
-        com.qiniu.storage.Region region = CloudApiUtils.getQiniuRegion(regionName);
+        com.qiniu.storage.Region region = CloudApiUtils.getQiniuQosRegion(regionName);
         String rsfDomain = entryParam.getValue("rsf-domain", null);
         String rsDomain = entryParam.getValue("rs-domain", null);
         String apiDomain = entryParam.getValue("api-domain", null);
+        String accUpDomain = entryParam.getValue("accup-domain", null);
+        String srcUpDomain = entryParam.getValue("srcup-domain", null);
         if (rsfDomain != null || rsDomain != null || apiDomain != null) {
             com.qiniu.storage.Region.Builder builder = new com.qiniu.storage.Region.Builder();
             if (rsfDomain != null) region = builder.rsfHost(rsfDomain).build();
             if (rsDomain != null) region = builder.rsHost(rsDomain).build();
             if (apiDomain != null) region = builder.apiHost(apiDomain).build();
+            if (apiDomain != null) region = builder.accUpHost(accUpDomain).build();
+            if (apiDomain != null) region = builder.srcUpHost(srcUpDomain).build();
         }
         Configuration configuration = new Configuration(region);
         if (connectTimeout > Constants.CONNECT_TIMEOUT) configuration.connectTimeout = connectTimeout;
