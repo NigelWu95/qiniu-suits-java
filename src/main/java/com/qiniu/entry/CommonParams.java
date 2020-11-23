@@ -1045,70 +1045,70 @@ public class CommonParams {
             setIndex(entryParam.getValue("filepath-index", "filepath").trim(), "filepath");
         } else { // 存储数据源的 keys 定义
             keys.addAll(ConvertingUtils.defaultFileFields);
-            if ("upyun".equals(source)) {
-                fieldsMode = 1;
-                keys.remove(ConvertingUtils.defaultEtagField);
-                keys.remove(ConvertingUtils.defaultTypeField);
-                keys.remove(ConvertingUtils.defaultStatusField);
-                keys.remove(ConvertingUtils.defaultMd5Field);
-                keys.remove(ConvertingUtils.defaultOwnerField);
-            } else if ("huawei".equals(source)) {
-                fieldsMode = 2;
-                keys.remove(ConvertingUtils.defaultStatusField);
-            } else if (isStorageSource && !"qiniu".equals(source)) {
-                fieldsMode = 3;
-                keys.remove(ConvertingUtils.defaultMimeField);
-                keys.remove(ConvertingUtils.defaultStatusField);
-                keys.remove(ConvertingUtils.defaultMd5Field);
-            }
             if (useDefault && isStorageSource)  {
+                if ("upyun".equals(source)) {
+                    fieldsMode = 1;
+                    keys.remove(ConvertingUtils.defaultEtagField);
+                    keys.remove(ConvertingUtils.defaultTypeField);
+                    keys.remove(ConvertingUtils.defaultStatusField);
+                    keys.remove(ConvertingUtils.defaultMd5Field);
+                    keys.remove(ConvertingUtils.defaultOwnerField);
+                } else if ("huawei".equals(source)) {
+                    fieldsMode = 2;
+                    keys.remove(ConvertingUtils.defaultStatusField);
+                } else if (!"qiniu".equals(source)) {
+                    fieldsMode = 3;
+                    keys.remove(ConvertingUtils.defaultMimeField);
+                    keys.remove(ConvertingUtils.defaultStatusField);
+                    keys.remove(ConvertingUtils.defaultMd5Field);
+                }
                 for (String key : keys) indexMap.put(key, key);
             } else {
                 setIndexes(keys, indexes, fieldIndex);
-            }
-            if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
-                // 由于 filepath 可能依据 parent 和文件名生成，故列表第一列亦可能为文件名，所以要确保没有设置 parent 才能给默认的 filepath-index=0
-                String filepathIndex = entryParam.getValue("filepath-index", "").trim();
-                if ("".equals(filepathIndex)) {
-                    zeroDefault = true;
-                    if (entryParam.getValue("parent-path", null) == null) {
-                        indexMap.put(fieldIndex ? "filepath" : "0", "filepath");
+                if (ProcessUtils.needFilepath(process) || "file".equals(parse)) {
+                    // 由于 filepath 可能依据 parent 和文件名生成，故列表第一列亦可能为文件名，所以要确保没有设置 parent 才能给默认的 filepath-index=0
+                    String filepathIndex = entryParam.getValue("filepath-index", "").trim();
+                    if ("".equals(filepathIndex)) {
+                        zeroDefault = true;
+                        if (entryParam.getValue("parent-path", null) == null) {
+                            indexMap.put(fieldIndex ? "filepath" : "0", "filepath");
+                        } else {
+                            indexMap.put(fieldIndex ? "key" : "0", "key");
+                        }
                     } else {
-                        indexMap.put(fieldIndex ? "key" : "0", "key");
+                        indexMap.put(filepathIndex, "filepath");
+                    }
+                } else if (ProcessUtils.needUrl(process)) {
+                    // 由于 url 可能依据 domain 和文件名生成，故列表第一列亦可能为文件名，所以要确保没有设置 domain 才能给默认的 url-index=0
+                    String urlIndex = entryParam.getValue("url-index", "").trim();
+                    if ("".equals(urlIndex)) {
+                        zeroDefault = true;
+                        if (entryParam.getValue("domain", null) == null) {
+                            indexMap.put(fieldIndex ? "url" : "0", "url");
+                        } else {
+                            indexMap.put(fieldIndex ? "key" : "0", "key");
+                        }
+                    } else {
+                        indexMap.put(urlIndex, "url");
+                    }
+                } else if (ProcessUtils.needId(process)) {
+                    String idIndex = entryParam.getValue("id-index", "").trim();
+                    if ("".equals(idIndex)) {
+                        zeroDefault = true;
+                        indexMap.put(fieldIndex ? "id" : "0", "id");
+                    } else {
+                        indexMap.put(idIndex, "id");
                     }
                 } else {
-                    indexMap.put(filepathIndex, "filepath");
+                    indexMap.put(fieldIndex ? "key" : "0", "key");
+                    if (ProcessUtils.needToKey(process))
+                        // move/copy/rename 等操作不设置默认 toKey，因为大部分情况是增加或删除前缀，需要优先考虑，查看 processor 的实现
+                        setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
+                    if (ProcessUtils.needFops(process))
+                        setIndex(entryParam.getValue("fops-index", fieldIndex ? "fops" : "1").trim(), "fops");
+                    if (ProcessUtils.needAvinfo(process))
+                        setIndex(entryParam.getValue("avinfo-index", fieldIndex ? "avinfo" : "1").trim(), "avinfo");
                 }
-            } else if (ProcessUtils.needUrl(process)) {
-                // 由于 url 可能依据 domain 和文件名生成，故列表第一列亦可能为文件名，所以要确保没有设置 domain 才能给默认的 url-index=0
-                String urlIndex = entryParam.getValue("url-index", "").trim();
-                if ("".equals(urlIndex)) {
-                    zeroDefault = true;
-                    if (entryParam.getValue("domain", null) == null) {
-                        indexMap.put(fieldIndex ? "url" : "0", "url");
-                    } else {
-                        indexMap.put(fieldIndex ? "key" : "0", "key");
-                    }
-                } else {
-                    indexMap.put(urlIndex, "url");
-                }
-            } else if (ProcessUtils.needId(process)) {
-                String idIndex = entryParam.getValue("id-index", "").trim();
-                if ("".equals(idIndex)) {
-                    zeroDefault = true;
-                    indexMap.put(fieldIndex ? "id" : "0", "id");
-                } else {
-                    indexMap.put(idIndex, "id");
-                }
-            } else {
-                indexMap.put(fieldIndex ? "key" : "0", "key");
-                if (ProcessUtils.needToKey(process))
-                    // move/copy/rename 等操作不设置默认 toKey，因为大部分情况是增加或删除前缀，需要优先考虑，查看 processor 的实现
-                    setIndex(entryParam.getValue("toKey-index", "").trim(), "toKey");
-                if (ProcessUtils.needFops(process))
-                    setIndex(entryParam.getValue("fops-index", fieldIndex ? "fops" : "1").trim(), "fops");
-                if (ProcessUtils.needAvinfo(process))
-                    setIndex(entryParam.getValue("avinfo-index", fieldIndex ? "avinfo" : "1").trim(), "avinfo");
             }
         }
 

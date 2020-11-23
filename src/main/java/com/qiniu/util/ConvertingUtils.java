@@ -4,6 +4,7 @@ import com.aliyun.oss.model.OSSObjectSummary;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.baidubce.services.bos.model.BosObjectSummary;
 import com.google.gson.*;
+import com.obs.services.model.ObjectMetadata;
 import com.obs.services.model.ObsObject;
 import com.qcloud.cos.model.COSObjectSummary;
 import com.qiniu.convert.IndentStringPair;
@@ -200,8 +201,8 @@ public final class ConvertingUtils {
                 case "timestamp": pair.put(indexMap.get(index), cosObject.getLastModified() == null ? 0 :
                     cosObject.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), cosObject.getStorageClass()); break;
-                case "owner": if (cosObject.getOwner() != null)
-                    pair.put(indexMap.get(index), cosObject.getOwner().getDisplayName()); break;
+                case "owner": if (cosObject.getOwner() != null) pair.put(indexMap.get(index),
+                    String.join("_", cosObject.getOwner().getId(), cosObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("COSObject doesn't have field: %s, must use fields' standard name", index));
             }
         }
@@ -222,8 +223,8 @@ public final class ConvertingUtils {
                 case "timestamp": pair.put(indexMap.get(index), ossObject.getLastModified() == null ? 0 :
                     ossObject.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), ossObject.getStorageClass()); break;
-                case "owner": if (ossObject.getOwner() != null)
-                    pair.put(indexMap.get(index), ossObject.getOwner().getDisplayName()); break;
+                case "owner": if (ossObject.getOwner() != null) pair.put(indexMap.get(index),
+                    String.join("_", ossObject.getOwner().getId(), ossObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("OSSObject doesn't have field: %s, must use fields' standard name", index));
             }
         }
@@ -245,7 +246,7 @@ public final class ConvertingUtils {
                     s3Object.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), s3Object.getStorageClass()); break;
                 case "owner": if (s3Object.getOwner() != null) pair.put(indexMap.get(index),
-                    s3Object.getOwner().getDisplayName()); break;
+                    String.join("_", s3Object.getOwner().getId(), s3Object.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("S3Object doesn't have field: %s, must use fields' standard name", index));
             }
         }
@@ -273,30 +274,28 @@ public final class ConvertingUtils {
     public static <T> T toPair(ObsObject obsObject, Map<String, String> indexMap, KeyValuePair<String, T> pair)
             throws IOException {
         if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty obsObject or key.");
+        ObjectMetadata objectMetadata = obsObject.getMetadata() == null ? new ObjectMetadata() : obsObject.getMetadata();
         for (String index : indexMap.keySet()) {
             switch (index) {
                 case "key": pair.put(indexMap.get(index), obsObject.getObjectKey()); break;
-                case "etag": String etag = obsObject.getMetadata() == null ? "" : obsObject.getMetadata().getEtag();
+                case "etag": String etag = objectMetadata.getEtag() == null ? "" : objectMetadata.getEtag();
                     if (etag.startsWith("\"")) {
                         etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
                     }
                     pair.put(indexMap.get(index), etag); break;
-                case "size": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? 0 :
-                    obsObject.getMetadata().getContentLength()); break;
-                case "datetime": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
-                    obsObject.getMetadata().getLastModified() == null ? "" :
-                    DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
-                case "timestamp": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? 0 :
-                    obsObject.getMetadata().getLastModified() == null ? 0 :
-                    obsObject.getMetadata().getLastModified().getTime()); break;
-                case "mime": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
-                    obsObject.getMetadata().getContentType()); break;
-                case "type": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
-                    obsObject.getMetadata().getObjectStorageClass() == null ? "" :
-                    obsObject.getMetadata().getObjectStorageClass().getCode()); break;
-                case "md5": pair.put(indexMap.get(index), obsObject.getMetadata() == null ? null :
-                    obsObject.getMetadata().getContentMd5()); break;
-                case "owner": if (obsObject.getOwner() != null) pair.put(indexMap.get(index), obsObject.getOwner().getId()); break;
+                case "size":
+                    pair.put(indexMap.get(index), objectMetadata.getContentLength() == null ? 0 :
+                            objectMetadata.getContentLength()); break;
+                case "datetime": pair.put(indexMap.get(index), objectMetadata.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(objectMetadata.getLastModified())); break;
+                case "timestamp": pair.put(indexMap.get(index), objectMetadata.getLastModified() == null ? 0 :
+                    objectMetadata.getLastModified().getTime()); break;
+                case "mime": pair.put(indexMap.get(index), objectMetadata.getContentType()); break;
+                case "type": pair.put(indexMap.get(index), objectMetadata.getObjectStorageClass() == null ? "" :
+                    objectMetadata.getObjectStorageClass().getCode()); break;
+                case "md5": pair.put(indexMap.get(index), objectMetadata.getContentMd5()); break;
+                case "owner": if (obsObject.getOwner() != null) pair.put(indexMap.get(index),
+                    String.join("_", obsObject.getOwner().getId(), obsObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("ObsObject doesn't have field: %s, must use fields' standard name", index));
             }
         }
@@ -317,7 +316,8 @@ public final class ConvertingUtils {
                 case "timestamp": pair.put(indexMap.get(index), bosObject.getLastModified() == null ? 0 :
                     bosObject.getLastModified().getTime()); break;
                 case "type": pair.put(indexMap.get(index), bosObject.getStorageClass()); break;
-                case "owner": if (bosObject.getOwner() != null) pair.put(indexMap.get(index), bosObject.getOwner().getId()); break;
+                case "owner": if (bosObject.getOwner() != null) pair.put(indexMap.get(index),
+                        String.join("_", bosObject.getOwner().getId(), bosObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("BosObject doesn't have field: %s, must use fields' standard name", index));
             }
         }
@@ -426,7 +426,8 @@ public final class ConvertingUtils {
                 case "timestamp": pair.put(field, cosObject.getLastModified() == null ? 0 :
                     cosObject.getLastModified().getTime()); break;
                 case "type": pair.put(field, cosObject.getStorageClass()); break;
-                case "owner": if (cosObject.getOwner() != null) pair.put(field, cosObject.getOwner().getDisplayName()); break;
+                case "owner": if (cosObject.getOwner() != null) pair.put(field,
+                    String.join("_", cosObject.getOwner().getId(), cosObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("COSObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -446,7 +447,8 @@ public final class ConvertingUtils {
                 case "timestamp": pair.put(field, ossObject.getLastModified() == null ? 0 :
                     ossObject.getLastModified().getTime()); break;
                 case "type": pair.put(field, ossObject.getStorageClass()); break;
-                case "owner": if (ossObject.getOwner() != null) pair.put(field, ossObject.getOwner().getDisplayName()); break;
+                case "owner": if (ossObject.getOwner() != null) pair.put(field,
+                    String.join("_", ossObject.getOwner().getId(), ossObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("OSSObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -466,7 +468,8 @@ public final class ConvertingUtils {
                 case "timestamp": pair.put(field, s3Object.getLastModified() == null ? 0 :
                     s3Object.getLastModified().getTime()); break;
                 case "type": pair.put(field, s3Object.getStorageClass()); break;
-                case "owner": if (s3Object.getOwner() != null) pair.put(field, s3Object.getOwner().getDisplayName()); break;
+                case "owner": if (s3Object.getOwner() != null) pair.put(field,
+                    String.join("_", s3Object.getOwner().getId(), s3Object.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("S3Object doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -493,30 +496,27 @@ public final class ConvertingUtils {
     public static <T> T toPair(ObsObject obsObject, List<String> fields, KeyValuePair<String, T> pair)
             throws IOException {
         if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty fileItem or key.");
+        ObjectMetadata objectMetadata = obsObject.getMetadata() == null ? new ObjectMetadata() : obsObject.getMetadata();
         for (String field : fields) {
             switch (field) {
                 case "key": pair.put(field, obsObject.getObjectKey()); break;
-                case "etag": String etag = obsObject.getMetadata() == null ? "" : obsObject.getMetadata().getEtag();
+                case "etag": String etag = objectMetadata.getEtag() == null ? "" : objectMetadata.getEtag();
                     if (etag.startsWith("\"")) {
                         etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
                     }
                     pair.put(field, etag); break;
-                case "size": pair.put(field, obsObject.getMetadata() == null ? 0 :
-                    obsObject.getMetadata().getContentLength()); break;
-                case "datetime": pair.put(field, obsObject.getMetadata() == null ? "" :
-                    obsObject.getMetadata().getLastModified() == null ? "" :
-                    DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
-                case "timestamp": pair.put(field, obsObject.getMetadata() == null ? 0 :
-                    obsObject.getMetadata().getLastModified() == null ? 0 :
-                    obsObject.getMetadata().getLastModified().getTime()); break;
-                case "mime": pair.put(field, obsObject.getMetadata() == null ? "" :
-                    obsObject.getMetadata().getContentType()); break;
-                case "type": pair.put(field, obsObject.getMetadata() == null ? "" :
-                    obsObject.getMetadata().getObjectStorageClass() == null ? "" :
-                    obsObject.getMetadata().getObjectStorageClass().getCode()); break;
-                case "md5": pair.put(field, obsObject.getMetadata() == null ? "" :
-                    obsObject.getMetadata().getContentMd5()); break;
-                case "owner": if (obsObject.getOwner() != null) pair.put(field, obsObject.getOwner().getId()); break;
+                case "size": pair.put(field, objectMetadata.getContentLength() == null ? 0 :
+                    objectMetadata.getContentLength()); break;
+                case "datetime": pair.put(field, objectMetadata.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(objectMetadata.getLastModified())); break;
+                case "timestamp": pair.put(field, objectMetadata.getLastModified() == null ? 0 :
+                    objectMetadata.getLastModified().getTime()); break;
+                case "mime": pair.put(field, objectMetadata.getContentType()); break;
+                case "type": pair.put(field, objectMetadata.getObjectStorageClass() == null ? "" :
+                    objectMetadata.getObjectStorageClass().getCode()); break;
+                case "md5": pair.put(field, objectMetadata.getContentMd5()); break;
+                case "owner": if (obsObject.getOwner() != null) pair.put(field,
+                    String.join("_", obsObject.getOwner().getId(), obsObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("ObsObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -537,7 +537,8 @@ public final class ConvertingUtils {
                 case "timestamp": pair.put(field, bosObject.getLastModified() == null ? 0 :
                         bosObject.getLastModified().getTime()); break;
                 case "type": pair.put(field, bosObject.getStorageClass()); break;
-                case "owner": if (bosObject.getOwner() != null) pair.put(field, bosObject.getOwner().getId()); break;
+                case "owner": if (bosObject.getOwner() != null) pair.put(field,
+                    String.join("_", bosObject.getOwner().getId(), bosObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("BosObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -647,7 +648,8 @@ public final class ConvertingUtils {
                 case "timestamp": indentStringPair.put(field, cosObject.getLastModified() == null ? 0 :
                         cosObject.getLastModified().getTime()); break;
                 case "type": indentStringPair.put(field, cosObject.getStorageClass()); break;
-                case "owner": if (cosObject.getOwner() != null) indentStringPair.put(field, cosObject.getOwner().getDisplayName()); break;
+                case "owner": if (cosObject.getOwner() != null) indentStringPair.put(field,
+                    String.join("_", cosObject.getOwner().getId(), cosObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("COSObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -670,7 +672,8 @@ public final class ConvertingUtils {
                 case "timestamp": indentStringPair.put(field, ossObject.getLastModified() == null ? 0 :
                         ossObject.getLastModified().getTime()); break;
                 case "type": indentStringPair.put(field, ossObject.getStorageClass()); break;
-                case "owner": if (ossObject.getOwner() != null) indentStringPair.put(field, ossObject.getOwner().getDisplayName()); break;
+                case "owner": if (ossObject.getOwner() != null) indentStringPair.put(field,
+                    String.join("_", ossObject.getOwner().getId(), ossObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("OSSObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -693,7 +696,8 @@ public final class ConvertingUtils {
                 case "timestamp": indentStringPair.put(field, s3Object.getLastModified() == null ? 0 :
                         s3Object.getLastModified().getTime()); break;
                 case "type": indentStringPair.put(field, s3Object.getStorageClass()); break;
-                case "owner": if (s3Object.getOwner() != null) indentStringPair.put(field, s3Object.getOwner().getDisplayName()); break;
+                case "owner": if (s3Object.getOwner() != null) indentStringPair.put(field,
+                    String.join("_", s3Object.getOwner().getId(), s3Object.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("S3Object doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -721,33 +725,30 @@ public final class ConvertingUtils {
 
     public static String toStringWithIndent(ObsObject obsObject, List<String> fields) throws IOException {
         if (obsObject == null || obsObject.getObjectKey() == null) throw new IOException("empty fileItem or key.");
+        ObjectMetadata objectMetadata = obsObject.getMetadata() == null ? new ObjectMetadata() : obsObject.getMetadata();
         IndentStringPair indentStringPair = new IndentStringPair("\t");
         for (String field : fields) {
             switch (field) {
                 case "key": String key = obsObject.getObjectKey();
                     if (key == null) throw new IOException("object key is empty");
                     indentStringPair.putKey(field, key); break;
-                case "etag": String etag = obsObject.getMetadata() == null ? "" : obsObject.getMetadata().getEtag();
+                case "etag": String etag = objectMetadata.getEtag() == null ? "" : objectMetadata.getEtag();
                     if (etag.startsWith("\"")) {
                         etag = etag.endsWith("\"") ? etag.substring(1, etag.length() -1) : etag.substring(1);
                     }
                     indentStringPair.put(field, etag); break;
-                case "size": indentStringPair.put(field, obsObject.getMetadata() == null ? 0 :
-                        obsObject.getMetadata().getContentLength()); break;
-                case "datetime": indentStringPair.put(field, obsObject.getMetadata() == null ? "" :
-                        obsObject.getMetadata().getLastModified() == null ? "" :
-                                DatetimeUtils.stringOf(obsObject.getMetadata().getLastModified())); break;
-                case "timestamp": indentStringPair.put(field, obsObject.getMetadata() == null ? 0 :
-                        obsObject.getMetadata().getLastModified() == null ? 0 :
-                                obsObject.getMetadata().getLastModified().getTime()); break;
-                case "mime": indentStringPair.put(field, obsObject.getMetadata() == null ? "" :
-                        obsObject.getMetadata().getContentType()); break;
-                case "type": indentStringPair.put(field, obsObject.getMetadata() == null ? "" :
-                        obsObject.getMetadata().getObjectStorageClass() == null ? "" :
-                                obsObject.getMetadata().getObjectStorageClass().getCode()); break;
-                case "md5": indentStringPair.put(field, obsObject.getMetadata() == null ? "" :
-                        obsObject.getMetadata().getContentMd5()); break;
-                case "owner": if (obsObject.getOwner() != null) indentStringPair.put(field, obsObject.getOwner().getId()); break;
+                case "size": indentStringPair.put(field, objectMetadata.getContentLength() == null ? 0 :
+                    objectMetadata.getContentLength()); break;
+                case "datetime": indentStringPair.put(field, objectMetadata.getLastModified() == null ? "" :
+                    DatetimeUtils.stringOf(objectMetadata.getLastModified())); break;
+                case "timestamp": indentStringPair.put(field, objectMetadata.getLastModified() == null ? 0 :
+                    objectMetadata.getLastModified().getTime()); break;
+                case "mime": indentStringPair.put(field, objectMetadata.getContentType()); break;
+                case "type": indentStringPair.put(field, objectMetadata.getObjectStorageClass() == null ? "" :
+                    objectMetadata.getObjectStorageClass().getCode()); break;
+                case "md5": indentStringPair.put(field, objectMetadata.getContentMd5()); break;
+                case "owner": if (obsObject.getOwner() != null) indentStringPair.put(field,
+                    String.join("_", obsObject.getOwner().getId(), obsObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("ObsObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
@@ -770,7 +771,8 @@ public final class ConvertingUtils {
                 case "timestamp": indentStringPair.put(field, bosObject.getLastModified() == null ? 0 :
                         bosObject.getLastModified().getTime()); break;
                 case "type": indentStringPair.put(field, bosObject.getStorageClass()); break;
-                case "owner": if (bosObject.getOwner() != null) indentStringPair.put(field, bosObject.getOwner().getId()); break;
+                case "owner": if (bosObject.getOwner() != null) indentStringPair.put(field,
+                    String.join("_", bosObject.getOwner().getId(), bosObject.getOwner().getDisplayName())); break;
                 default: throw new IOException(String.format("BosObject doesn't have field: %s, must use fields' standard name", field));
             }
         }
