@@ -1,4 +1,4 @@
-version=8.4.6
+version=8.4.7
 
 package_no_test:
 	mvn clean package -Dmaven.test.skip=true
