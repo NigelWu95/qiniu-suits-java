@@ -94,11 +94,20 @@ public abstract class DatasourceActor {
         procedureLogger.info("{}-|-{}", key, record);
     }
 
+    void removeRecordedPrefix(String prefix) {
+        procedureLogger.info("{}-|-", prefix);
+        progressMap.remove(prefix);
+    }
+
     void refreshRecordAndStatistics() {
         rootLogger.info("finished count: {}.", statistics.get());
         if (procedureLogFile.length() > 536870912) { // 超过 512M 就处理一次
             try {
                 breakpointSaver.clear(breakpointFileName);
+//                StringBuilder record = new StringBuilder("{\"");
+//                progressMap.forEach((key, m) -> record.append(key).append("\":").append(m).append(",\""));
+//                record.delete(record.length() - 2, record.length()).append("}");
+//                breakpointSaver.writeToKey(breakpointFileName, record.toString().replace("\\", "\\\\"), true);
                 breakpointSaver.writeToKey(breakpointFileName, JsonUtils.toJsonWithoutUrlEscape(progressMap), true);
                 procedureLogFile.delete();
             } catch (IOException e) {
@@ -125,6 +134,10 @@ public abstract class DatasourceActor {
         }
         String record = "{}";
         if (progressMap.size() > 0) {
+//            StringBuilder re = new StringBuilder("{\"");
+//            progressMap.forEach((key, m) -> re.append(key).append("\":").append(m).append(",\""));
+//            re.delete(re.length() - 2, re.length()).append("}");
+//            record = re.toString().replace("\\", "\\\\");
             record = JsonUtils.toJsonWithoutUrlEscape(progressMap);
             breakpointSaver.writeToKey(breakpointFileName, record, true);
             breakpointSaver.closeWriters();

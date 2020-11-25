@@ -268,8 +268,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                 processorMap.put(orderStr, lineProcessor);
             }
             export(lister, saver, lineProcessor);
-            procedureLogger.info("{}-|-", lister.getPrefix());
-            progressMap.remove(lister.getPrefix()); // 只有 export 成功情况下才移除 record
+            removeRecordedPrefix(lister.getPrefix()); // 只有 export 成功情况下才移除 record
         } catch (QiniuException e) {
             try { FileUtils.createIfNotExists(errorLogFile); } catch (IOException ignored) {}
             errorLogger.error("{}: {}, {}", lister.getPrefix(), progressMap.get(lister.getPrefix()), e.error(), e);
@@ -383,7 +382,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
             if (generated == null) return false;
             else if (generated.currents().size() > 0 || generated.hasNext()) return true;
             else {
-                progressMap.remove(generated.getPrefix());
+                removeRecordedPrefix(generated.getPrefix());
                 generated.close();
                 return false;
             }
@@ -412,7 +411,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
         if (lister.currents().size() > 0 || lister.hasNext()) {
             executorPool.execute(() -> listing(lister));
         } else {
-            progressMap.remove(lister.getPrefix());
+            removeRecordedPrefix(lister.getPrefix());
             lister.close();
         }
     }
@@ -483,12 +482,13 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                         // lister 的 prefix 为 final 对象，不能因为 truncate 的操作之后被修改
                         prefix = lister.getPrefix();
                         nextMarker = lister.truncate();
-                        // 防止 truncate 过程中原来的线程中丢失了 prefixAndEndedMap 的操作，这里再判断一次
                         endMap = prefixAndEndedMap.get(prefix);
                         prefixMap = new HashMap<>();
                         if (endMap == null) {
+                            // 做标记，endMap 为空说明该 prefix 本就不是尾结点，重新组合列举时不能因为排序最后而加入到 prefixEndedMap 中去
                             prefixMap.put("remove", "remove");
                         } else {
+                            // 防止 truncate 过程中原来的线程中丢失了 prefixAndEndedMap 的操作，这里再判断一次 endKey 进行更新
                             start = lister.currentEndKey();
                             if (start != null) endMap.put("start", start);
                         }
@@ -645,7 +645,7 @@ public abstract class CloudStorageContainer<E, T> extends DatasourceActor implem
                 if (startLister.currents().size() > 0 || startLister.hasNext()) {
                     listing(startLister);
                 } else {
-                    progressMap.remove(startLister.getPrefix());
+                    removeRecordedPrefix(startLister.getPrefix());
                     startLister.close();
                 }
             } else {

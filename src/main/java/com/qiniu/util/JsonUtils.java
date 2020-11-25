@@ -53,7 +53,8 @@ public final class JsonUtils {
                 .replace("\"{}\"", "{}")
                 .replace("\"{\\\"", "{\"")
                 .replace("\\\"}\"", "\"}")
-                .replace("\\\":\\\"", "\":\"");
+                .replace("\\\":\\\"", "\":\"")
+                .replace("\\\",\\\"", "\",\"");
 //                .replace("\\\\", "\\");
     }
 
