@@ -4,6 +4,7 @@ import com.qiniu.config.ParamsConfig;
 import com.qiniu.interfaces.IEntryParam;
 import org.junit.Test;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
 
@@ -25,5 +26,12 @@ public class CommonParamsTest {
         CommonParams commonParams = new CommonParams(entryParam);
         Map<String,String> map = commonParams.getIndexMap();
         System.out.println(map);
+    }
+
+    @Test
+    public void testFromProcedureLog() throws Exception {
+        CommonParams commonParams = new CommonParams();
+        commonParams.setLogFilepath("/Users/wubingheng/Downloads/procedure0.log.txt");
+//        commonParams.setPathConfigMap("", null, true, true);
     }
 }

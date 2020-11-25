@@ -715,51 +715,51 @@ public class CommonParams {
     }
 
     private void fromProcedureLog(String logFile, boolean withMarker, boolean withEnd) throws IOException {
-        String lastLine = FileUtils.lastLineOfFile(logFile);
-        if (lastLine != null && !"".equals(lastLine)) {
-            try {
+        try {
+            String lastLine = FileUtils.lastLineOfFile(logFile);
+            if (lastLine != null && !"".equals(lastLine)) {
                 parseConfigMapFromJson(JsonUtils.toJsonObject(lastLine), withMarker, withEnd);
-            } catch (Exception e) {
-                File file = new File(logFile);
-                FileReader fileReader = new FileReader(file);
-                BufferedReader bufferedReader = new BufferedReader(fileReader);
-                int index;
-                String line;
-                String value;
-                Map<String, String> map = new HashMap<>();
-                while ((line = bufferedReader.readLine()) != null) {
-                    index = line.indexOf("-|-");
-                    if (index < 0) {
-                        try {
-                            parseConfigMapFromJson(JsonUtils.toJsonObject(line), withMarker, withEnd);
-                            return;
-                        } catch (Exception exception) {
-                            exception.printStackTrace();
-                        }
-                    } else {
-                        map.put(line.substring(0, index), line.substring(index));
+            }
+        } catch (Exception e) {
+            File file = new File(logFile);
+            FileReader fileReader = new FileReader(file);
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            int index;
+            String line;
+            String value;
+            Map<String, String> map = new HashMap<>();
+            while ((line = bufferedReader.readLine()) != null) {
+                index = line.indexOf("-|-");
+                if (index < 0) {
+                    try {
+                        parseConfigMapFromJson(JsonUtils.toJsonObject(line), withMarker, withEnd);
+                        return;
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
                     }
+                } else {
+                    map.put(line.substring(0, index), line.substring(index + 3));
                 }
-                Map<String, String> configMap;
-                for (String key : map.keySet()) {
-                    value = map.get(key);
-                    if (!"".equals(value)) {
-                        try {
-                            configMap = JsonUtils.fromJson(value, map.getClass());
-                        } catch (Exception e1) {
-                            e1.printStackTrace();
-                            continue;
-                        }
-                        pathConfigMap.put(key, configMap);
+            }
+            Map<String, String> configMap;
+            for (String key : map.keySet()) {
+                value = map.get(key);
+                if (!"".equals(value)) {
+                    try {
+                        configMap = JsonUtils.fromJson(value, map.getClass());
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                        continue;
                     }
+                    pathConfigMap.put(key, configMap);
                 }
-                try {
-                    bufferedReader.close();
-                    fileReader.close();
-                } catch (IOException ioe) {
-                    bufferedReader = null;
-                    fileReader = null;
-                }
+            }
+            try {
+                bufferedReader.close();
+                fileReader.close();
+            } catch (IOException ioe) {
+                bufferedReader = null;
+                fileReader = null;
             }
         }
     }
@@ -1489,6 +1489,10 @@ public class CommonParams {
         this.bucket = bucket;
     }
 
+    public void setLogFilepath(String logFilepath) {
+        this.logFilepath = logFilepath;
+    }
+
     public void setPathConfigMap(Map<String, Map<String, String>> pathConfigMap) {
         this.pathConfigMap = pathConfigMap;
     }
@@ -1687,6 +1691,10 @@ public class CommonParams {
 
     public String getBucket() {
         return bucket;
+    }
+
+    public String getLogFilepath() {
+        return logFilepath;
     }
 
     public Map<String, Map<String, String>> getPathConfigMap() {
